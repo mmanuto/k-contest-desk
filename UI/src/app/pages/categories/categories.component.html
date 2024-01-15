@@ -1,0 +1,226 @@
+<div class="col-lg-12 mb-4">
+  <h2 *ngIf="athletestNumber">Totale Iscritti: {{athletestNumber.athletes}} - Totale Categorie {{athletestNumber.categories}}</h2>
+<br/>
+
+<div class="row mb-1">
+  <div class="col">
+      <div class="input-group mb-3 box-shadow"> 
+          <div class="input-group-prepend">
+              <span class="input-group-text border-top-0 border-left-0 border-bottom-0"><i class="fa fa-search"></i></span>
+          </div>                   
+          <input type="text" [(ngModel)]="searchText" placeholder="Search user by name..." class="form-control border-0">
+          <div class="input-group-append">
+              <span class="input-group-text border-top-0 border-right-0 border-bottom-0"><i class="fa fa-user-plus"></i></span>
+              <span (click)="toggle('grid')" class="input-group-text border-top-0 border-right-0 border-bottom-0"><i class="fa fa-th"></i></span>
+              <span (click)="toggle('list')" class="input-group-text border-top-0 border-right-0 border-bottom-0"><i class="fa fa-list"></i></span>
+          </div>
+      </div>
+  </div>
+</div>
+
+<div *ngIf="type=='list'" class="row">
+  <div class="col-12">
+
+          <table class="table table-sm table-hover">
+              <thead>
+                <tr>
+                  <th>Codice</th>
+                  <th>Categoria</th>
+                  <th>Specialità</th>
+                  <th>Genere</th>
+                  <th>N. Atleti</th>
+                  <th>Stato</th>
+                  <th>Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                  <tr *ngFor="let category of categories | paginate: { itemsPerPage: 25, currentPage: p }">                        
+                    <td class="align-middle">{{category.codice}}</td>
+                    <td class="align-middle">{{category.categoria}} - {{category.grado}} {{category.cat_peso}}</td>
+                    <td class="align-middle">{{category.specialita}}</td>
+                    <td class="align-middle">{{category.sesso}}</td>
+                    <td class="align-middle">{{category.n_athletes}}</td>
+                    <td class="align-middle">
+    
+                    <span *ngIf="category.status == 1" class="badge badge-success code">Attiva</span>
+                    <span *ngIf="category.status == 2" class="badge badge-warning code">In corso</span>
+                    <span *ngIf="category.status == 0" class="badge badge-secondary code"> Non assegnata </span>
+                    <span *ngIf="category.status == -1" class="badge badge-danger code">Chiusa</span>
+                    <span *ngIf="category.tatami" class="badge badge-success code ml-2">{{category.tatami}}</span>
+                    </td>
+                    <td class="align-middle">
+                      <button *ngIf="category.status != -1" type="button" class="btn btn-primary mr-1" data-toggle="tooltip" data-placement="top" title="Assegna a tatami"  (click)="openTatamiModal(category.id)">
+                        <i class="fa fa-upload"></i>
+                      </button>
+                      <button type="button" data-toggle="tooltip" data-placement="top" title="Visualizza categoria" class="btn btn-primary tt mr-1" data-animation="false" (click)="openCategory(category)">
+                        <i class="fa fa-tv"></i>
+                      </button>
+                      <button *ngIf="category.status == -1" type="button" class="btn btn-primary mr-1" data-toggle="modal" (click)="openClassification(category.id)">
+                        <i class="fa fa-upload" tooltip="Visualizza classifica"></i>
+                      </button>
+                      <button type="button" class="btn btn-primary mr-1" data-toggle="modal" (click)="generatePdf(category.id)">
+                        <i class="fa fa-tv" tooltip="Stampa tabellone"></i>
+                      </button>
+                    </td>
+                  </tr>
+              </tbody>
+          </table>
+
+  </div>
+</div>
+
+<div *ngIf="type=='grid'" class="row">
+  <div *ngFor="let tatami of tatamiStatus; let i = index;" class="col-xl-4 col-lg-6 mb-4">
+      <div class="flip">
+          <div class="content">
+              <div class="front">
+                  <div class="card border-0 box-shadow rounded-0">
+                      <div class="card-header border-0 rounded-0 text-muted">
+                          <h5 class="mb-0">
+                             <i class="fa fa-user mr-2 text-success" placement="bottom" [ngbTooltip]="'deleted'"></i>
+                             {{tatami.name}}
+                          </h5>
+                          <div class="widget-controls"> 
+                              <a (click)="openMenuAssign($event)" href="javascript:void(0);" class="transition"><i class="fa fa-bars"></i></a> 
+                              <a href="javascript:void(0);" class="transition"><i class="fa fa-pencil"></i></a>             
+                          </div>        
+                      </div>
+                      <div class="card-body pt-3">
+                          
+                          <div class="media">                
+                              <div class="media-body">
+                                  <div class="row" *ngFor="let category of tatami.userCategories">  
+                                      <div class="col-2 text-gray text-right pr-0 font-italic">
+                                        <span *ngIf="category.status == 1" class="badge badge-success code">{{category.categorycode.codice}}</span>
+                                        <span *ngIf="category.status == 2" class="badge badge-warning code">{{category.categorycode.codice}}</span>
+                                        <span *ngIf="category.status == 3" class="badge badge-secondary code">{{category.categorycode.codice}}</span>
+                                      </div>
+                                      <div class="col-10 pl-2">
+                                        <span *ngIf="category.status == 1">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
+                                        <span *ngIf="category.status == 2">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
+                                        <span *ngIf="category.status == 3">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
+                                      </div>                          
+                                  </div>
+                              </div>
+                          </div>
+
+                      </div>
+                  </div>
+              </div>
+              <div class="back">
+                  <div class="card border-0 box-shadow rounded-0">
+                      <div class="card-header border-0 rounded-0 text-muted">
+                          <h5 class="mb-0">
+                            {{tatami.name}} - Categorie concluse
+                          </h5>
+                          <div class="widget-controls"> 
+                              <a (click)="closeMenuAssign($event)" href="javascript:void(0);" class="transition"><i class="fa fa-times"></i></a>
+                          </div>        
+                      </div>
+                      <div class="card-body pt-3"> 
+                        <div class="row" *ngFor="let category of tatami.userCategories">  
+                          <div class="col-2 text-gray text-right pr-0 font-italic">
+                            <span *ngIf="category.status == -1" class="badge badge-danger code">{{category.categorycode.codice}}</span>
+                          </div>
+                          <div class="col-10 pl-2">
+                            <span *ngIf="category.status == -1">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}}</span>
+                          </div>                          
+                      </div>                             
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
+
+<div class="row" *ngIf="type=='list'">
+  <div class="col-12">
+      <div class="bg-white text-center">
+          <pagination-controls autoHide="true" (pageChange)="p = $event" maxSize="3"></pagination-controls>
+      </div>        
+  </div>
+</div>
+
+<div bsModal #primaryModal="bs-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-primary" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Assegna a Tatami</h4>
+        <button type="button" class="close" (click)="primaryModal.hide()" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        
+        <form [formGroup]="tatamiForm" method="post" enctype="multipart/form-data" class="form-horizontal">
+
+          <div class="form-group row">
+            <label class="col-md-3 col-form-label" for="select1">Select</label>
+            <div class="col-md-9">
+              <select class="form-control" id="selectTatami" formControlName="user_id" (change)="showTatamiStatus()" >
+                <option *ngFor="let tatami of tatamiList" [value]="tatami.id">{{tatami.name}}</option>
+            </select>
+            </div>
+          </div>
+        </form>
+
+        
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-danger" (click)="primaryModal.hide()"><i class="fa fa-ban"></i> Chiudi</button>
+        <button type="button" class="btn btn-sm btn-primary" (click)="assignTatami()"><i class="fa fa-dot-circle-o"></i> Invia</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<div bsModal #listModal="bs-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-primary" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 *ngIf="selectedCategory" class="modal-title">{{selectedCategory.codice}} - {{selectedCategory.specialita}} - {{selectedCategory.categoria}} - {{selectedCategory.grado}} {{selectedCategory.sesso}} {{selectedCategory.cat_peso}}</h4>
+        <button type="button" class="close" (click)="listModal.hide()" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="card">
+
+              <div class="card-body">
+                <table datatable class="table table-sm dataTable table-striped hover">
+                  <thead>
+                    <tr role="row">  
+                      <th>Colore</th>
+                      <th>Nome</th>
+                      <th>Data Nascita</th>
+                      <th>Società</th>
+                      <th>Responsabile</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let athlete of athleteList" [ngClass]="athlete.accorpamento ? 'table-info': ''">
+                      <td><i class="fa fa-user-circle-o fa-lg" style="color:blue"></i></td>
+                      <td>{{athlete.athlete.cognome}} {{athlete.athlete.nome}}</td>
+                      <td>{{athlete.athlete.data_nascita}}</td>
+                      <td>{{athlete.athlete.club.nome_societa}}</td>
+                      <td>{{athlete.athlete.club.responsabile}}</td>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!--/.col-->
+      
+        </div>
+
+        
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-danger" (click)="listModal.hide()"><i class="fa fa-ban"></i> Chiudi</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->

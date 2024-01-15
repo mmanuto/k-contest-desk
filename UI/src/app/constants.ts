@@ -1,0 +1,44 @@
+ 
+  
+  export const IMAGES_WEBROOT = "http://localhost:4200/aemserver/webroot/resources/";
+  //export const IMAGES_WEBROOT = "http://www.iscrizionicsenveneto.it/iscrizioniCsenServer/webroot/resources/";
+  
+ //export const BASEAPPURL = "http://www.iscrizionicsenveneto.it/iscrizioniCsenServer/";
+ //export const BASEAPPURL = "http://" + document.location.hostname + "/csenveneto/aemserver/";
+
+  //export const ISCRIZIONI_URL = "https://www.iscrizionicsenveneto.it/iscrizioniCsenServer/"
+  export const ISCRIZIONI_URL = "http://localhost:4200/backend/"
+  
+  //export const BASEAPPURL = "http://" + document.location.hostname + "/csenveneto/aemserver/";
+  export const BASEAPPURL = "http://localhost:4200/ApiV2/";
+  
+  //export const DISPLYINFO_URL = "http://" + document.location.hostname + "/csenveneto/displayinfo"
+  export const DISPLYINFO_URL = "http://localhost:4200/displayinfo"
+
+  export const colorMapping = {
+    AKA: 'red',
+    AO: 'blue',
+    PAL: 'teal',
+    PER: 'teal',
+    KAG: 'teal'    
+  }
+
+  export const PROVA_PERCORSO = 'PER';
+  export const PROVA_PALLONCINO = 'PAL';
+  export const PROVA_KATA_ADULTI = 'KIA';
+  export const PROVA_KATA_BAMBINI = 'KAG';
+  export const PROVA_KUMITE = 'KUA';
+  export const PROVA_KUMITE_U12 = 'KUG';
+  export const PROVA_KATA_SQUADRE = 'KAS';
+
+  export const MONITOR_ATHLETE_1 = 'monitor_athlete_1';
+  export const MONITOR_ATHLETE_2 = 'monitor_athlete_2';
+  export const MONITOR_KUMITE = 'monitor_kumite';
+  export const MONITOR_COUNTDOWN = 'monitor_countdown';
+  export const MONITOR_ACTION = 'ACTION';
+  export const MONITOR_ACTION_PAUSE = 'PAUSE';
+  export const MONITOR_ACTION_START = 'START';
+
+  export const STATUS_TODO = 1;
+  export const STATUS_DOING = 2;
+  export const STATUS_CLOSED = -1;

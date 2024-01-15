@@ -1,0 +1,17 @@
+@import "theme/styles/variables";
+@import "theme/styles/mixins";
+@import "theme/styles/libs-override";
+@import "theme/styles/base";
+
+.sfondo{
+    /* background: url('/assets/img/sfondo/IMG_8794.jpg') no-repeat center center fixed;  */
+    background-color: #202F40;
+    overflow: hidden;
+
+}
+
+.logo-csen{
+    height: 150px;
+    margin-top: -70px;
+}
+

@@ -1,0 +1,19 @@
+{
+  "/ApiV2": {
+    "target": "https://localhost/k-contest-desk/ApiV2/",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/ApiV2": ""
+    }
+
+  },
+  "/backend": {
+    "target": "https://www.iscrizionicsenveneto.it/apiV2/",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/backend": ""
+    }
+  }
+}

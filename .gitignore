@@ -1,0 +1,6 @@
+aemserver/logs
+aemserver/vendor
+aemserver/tmp
+aemserver/uploads
+aemserver/ftpfiles
+.vscode

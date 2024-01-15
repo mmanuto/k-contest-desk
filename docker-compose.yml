@@ -1,0 +1,62 @@
+version: "3.5"
+
+services:
+  mysql:
+    image: mysql:5.7
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - 3309:3306
+    volumes:
+      - aem-datavolume:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: aem
+      MYSQL_USER: developer
+      MYSQL_PASSWORD: developer
+    networks:
+      local_network:
+        aliases:
+          - mysql
+
+  aemserver:
+    build:
+      context: ./aemserver
+      dockerfile: ./docker/Dockerfile
+    image: aemserver:local
+    ports:
+      - 80:80
+    volumes:
+      - ./aemserver/:/code/
+      - ./aemserver/docker/nginx.conf:/etc/nginx/sites-enabled/default
+      - ./aemserver/uploads/:/dati/uploads/
+      - ./aemserver/ftpfiles/:/home/sftp/
+    environment:
+      DOCKER_HOST_IP: ${DOCKER_HOST_IP}
+      DEBUG: "true"
+      DB_NAME: "aem"
+    networks:
+      local_network:
+        aliases:
+          - aemserver
+
+  aemgest:
+    build:
+      context: ./aemgest
+      dockerfile: docker/Dockerfile
+    image: aemgest:local
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./aemgest:/app/
+    networks:
+      local_network:
+        aliases:
+          - aemgest
+
+volumes:
+  aem-datavolume:
+
+networks:
+  local_network:
+    name: aem-dev-network
+

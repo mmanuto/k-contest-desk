@@ -1,0 +1,40 @@
+@import "../../../theme/styles/variables";
+
+.sidebar-outer{
+    height: 0; 
+    width: $sidebar-width;
+    .logo{
+        height: $top-navbar-height;
+        padding: 0 14px;
+        width: 700px;
+    }    
+}
+
+.sidebar-logo{
+    width: 65px;
+    height: 65px;
+    margin-right: 20px;
+}
+
+
+
+// @media (max-width: 768px){
+//     .sidebar-outer .logo{
+//         width: 50px;
+//          .start{
+//                 display: none;
+//             }
+//     }
+// }
+
+
+
+
+// .collapsing {
+// //   position: relative;
+// //   height: 0;
+// //   overflow: hidden;
+//   -webkit-transition: height .15s ease;
+//        -o-transition: height .15s ease;
+//           transition: height .15s ease;
+// }
