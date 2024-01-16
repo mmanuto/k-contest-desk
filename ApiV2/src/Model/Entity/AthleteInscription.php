@@ -17,12 +17,14 @@ use Cake\ORM\Entity;
  * @property int $inviato
  * @property int $modificato
  * @property int $accorpamento
+ * @property int $deleted
  * @property string $old_category
  *
  * @property \App\Model\Entity\Athlete $athlete
  * @property \App\Model\Entity\Categorycode $categorycode
  * @property \App\Model\Entity\Competition $competition
  * @property \App\Model\Entity\Score[] $scores
+ * @property \App\Model\Entity\ScoresOld[] $scores_old
  */
 class AthleteInscription extends Entity
 {
@@ -44,6 +46,7 @@ class AthleteInscription extends Entity
         'inviato' => true,
         'modificato' => true,
         'accorpamento' => true,
+        'deleted' => true,
         'old_category' => true,
         'athlete' => true,
         'categorycode' => true,

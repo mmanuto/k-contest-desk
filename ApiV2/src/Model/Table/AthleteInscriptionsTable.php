@@ -15,6 +15,7 @@ use Cake\Validation\Validator;
  * @property \App\Model\Table\CategorycodesTable&\Cake\ORM\Association\BelongsTo $Categorycodes
  * @property \App\Model\Table\CompetitionsTable&\Cake\ORM\Association\BelongsTo $Competitions
  * @property \App\Model\Table\ScoresTable&\Cake\ORM\Association\HasMany $Scores
+ * @property \App\Model\Table\ScoresOldTable&\Cake\ORM\Association\HasMany $ScoresOld
  *
  * @method \App\Model\Entity\AthleteInscription newEmptyEntity()
  * @method \App\Model\Entity\AthleteInscription newEntity(array $data, array $options = [])
@@ -101,6 +102,9 @@ class AthleteInscriptionsTable extends Table
 
         $validator
             ->notEmptyString('accorpamento');
+
+        $validator
+            ->notEmptyString('deleted');
 
         $validator
             ->scalar('old_category')

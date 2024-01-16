@@ -28,6 +28,7 @@ class AthleteInscriptionsFixture extends TestFixture
                 'inviato' => 1,
                 'modificato' => 1,
                 'accorpamento' => 1,
+                'deleted' => 1,
                 'old_category' => 'Lorem ipsum d',
             ],
         ];

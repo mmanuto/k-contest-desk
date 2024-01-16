@@ -6,6 +6,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 @Component({
   selector: 'app-smart',
   templateUrl: './athletes.component.html',
+  styleUrls: ['./athletes.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
 
@@ -71,6 +72,16 @@ export class AthletesComponent {
       confirmDelete: true
     },
     noDataMessage: 'No data found',
+    rowClassFunction: (row) =>{
+      console.log(row);
+      if(row.data.deleted){
+        return 'red-background';
+      }else if(row.data.modified){
+        return 'orange-background'
+      }else{
+        return 'none-background';
+      }
+    },
     columns: {     
       id: {
         title: 'ID',
@@ -173,6 +184,7 @@ export class AthletesComponent {
   public buildTable(){
 
     this.data = [];
+    console.log(this.athleteList);
     this.athleteList.forEach(element => {
       let dataItem = {
           id: element.id,
@@ -181,23 +193,16 @@ export class AthletesComponent {
           club: element.athlete.club.nome_societa,
           birthdate: element.athlete.data_nascita,
           belt: element.athlete.grado,
-          codes: element.categorycode.codice
+          codes: element.categorycode.codice,
+          modified: element.modificato == 1 ? true:false,
+          deleted: element.deleted == 1 ? true:false
       }
 
       this.data.push(dataItem);
     });
   }
 
-  public getData(data) {
-    const req = new XMLHttpRequest();
-    req.open('GET', 'assets/data/users.json');
-    req.onload = () => {
-      data(JSON.parse(req.response));
-    };
-    req.send();
-  }
-
-  public onDeleteConfirm(event): void {
+   public onDeleteConfirm(event): void {
     if (window.confirm('Are you sure you want to delete?')) {
       console.log(event);
       this.athletesService.deteleAtletaInscription({ 'id': event.data.id}).subscribe((response: any) => {

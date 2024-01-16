@@ -13,6 +13,7 @@ use Cake\ORM\Entity;
  * @property string $username
  * @property string $password
  * @property string|null $email
+ * @property int $is_admin
  *
  * @property \App\Model\Entity\Score[] $scores
  * @property \App\Model\Entity\ScoresOld[] $scores_old
@@ -34,6 +35,7 @@ class User extends Entity
         'username' => true,
         'password' => true,
         'email' => true,
+        'is_admin' => true,
         'scores' => true,
         'scores_old' => true,
         'categorycodes' => true,

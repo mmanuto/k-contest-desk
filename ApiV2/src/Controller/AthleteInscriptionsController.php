@@ -134,7 +134,8 @@ class AthleteInscriptionsController extends ApiController
         $request = $this->request->getData();
         $athleteList = $this->AthleteInscriptions->find()
         ->where([
-            'categorycode_id' => $request['categorycode_id']
+            'categorycode_id' => $request['categorycode_id'],
+            'deleted' => 0
         ])
         ->contain(['Athletes' => ['Clubs'], 'Categorycodes'])
         ->order(['Clubs.id', 'Athletes.id'])
@@ -251,12 +252,11 @@ class AthleteInscriptionsController extends ApiController
     */
     public function deleteInscription()
     {
-        //TODO: modificare in modo da aggiornare un flag senza eliminare veramente
-
         $data = $this->request->getData();
 
         $athleteInscription = $this->AthleteInscriptions->get($data['id']);
-        if ($this->AthleteInscriptions->delete($athleteInscription)) {
+        $athleteInscription->deleted = 1;
+        if ($this->AthleteInscriptions->save($athleteInscription)) {
             
             $this->apiResponse['success'] = true;
         } else {
@@ -465,7 +465,8 @@ class AthleteInscriptionsController extends ApiController
             foreach ($categoryList as $item) {
                 $athleteList = $this->AthleteInscriptions->find()
                 ->where([
-                    'categorycode_id' => $item['id']
+                    'categorycode_id' => $item['id'],
+                    'deleted'=> 0
                 ])
                 ->contain(['Athletes' => ['Clubs']])
                 ->order(['Clubs.id', 'Athletes.id'])

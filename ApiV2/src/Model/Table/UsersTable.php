@@ -85,6 +85,9 @@ class UsersTable extends Table
             ->email('email')
             ->allowEmptyString('email');
 
+        $validator
+            ->notEmptyString('is_admin');
+
         return $validator;
     }
 

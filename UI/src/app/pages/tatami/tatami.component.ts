@@ -212,13 +212,13 @@ export class TatamiComponent {
 
   closeCategory(){
 
-      this.selectedCategory.status = Constants.STATUS_CLOSED;
+      this.selectedCategory.status = Constants.STATUS_DONE;
       this.athleteList = [];
       this.kumiteAthleteList = [];
       let request = {
         categorycode_id: this.selectedCategory.categorycode_id,
         id: this.selectedCategory.id,
-        status: Constants.STATUS_CLOSED,
+        status: Constants.STATUS_DONE,
         user_id: this.selectedCategory.user_id
       }
       this.tatamiService.updateCategoryStatus(request).subscribe((response: any) => {
