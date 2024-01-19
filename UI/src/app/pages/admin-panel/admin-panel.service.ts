@@ -31,7 +31,7 @@ export class AdminPanelService {
     }
 
     syncCompetitionData(){
-        return this.http.post(Constants.ISCRIZIONI_URL + 'competitions/syncCompetitionData', {competition_id:10});
+        return this.http.post(Constants.ISCRIZIONI_URL + 'competitions/syncCompetitionData', {competition_id:11});
     }
 
     importCompetitionData(request){

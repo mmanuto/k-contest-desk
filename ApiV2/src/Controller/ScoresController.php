@@ -286,7 +286,6 @@ class ScoresController extends ApiController
 
         }
 
-
         if($n_prova == 1){
             $this->manageElimintorie($category, $classification);
         }else{

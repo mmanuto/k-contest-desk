@@ -25,7 +25,6 @@ export class AthletesComponent {
   public prove: any[];
   public show = false;
   public categoria = "";
-  //public annoNascita = "";
   public erroreCategoria = false;
   public errorePeso = false;
 
@@ -194,6 +193,7 @@ export class AthletesComponent {
           birthdate: element.athlete.data_nascita,
           belt: element.athlete.grado,
           codes: element.categorycode.codice,
+          categorycode_id: element.categorycode_id,
           modified: element.modificato == 1 ? true:false,
           deleted: element.deleted == 1 ? true:false
       }
@@ -205,7 +205,7 @@ export class AthletesComponent {
    public onDeleteConfirm(event): void {
     if (window.confirm('Are you sure you want to delete?')) {
       console.log(event);
-      this.athletesService.deteleAtletaInscription({ 'id': event.data.id}).subscribe((response: any) => {
+      this.athletesService.deteleAtletaInscription({ 'id': event.data.id, 'code': event.data.codes, 'categorycode_id':event.data.categorycode_id}).subscribe((response: any) => {
         console.log(response);
         if (response.result.success) {
           location.reload();

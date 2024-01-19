@@ -252,11 +252,14 @@ class AthleteInscriptionsController extends ApiController
     */
     public function deleteInscription()
     {
+        $this->loadModel('Scores');
         $data = $this->request->getData();
 
         $athleteInscription = $this->AthleteInscriptions->get($data['id']);
         $athleteInscription->deleted = 1;
+
         if ($this->AthleteInscriptions->save($athleteInscription)) {
+
             
             $this->apiResponse['success'] = true;
         } else {

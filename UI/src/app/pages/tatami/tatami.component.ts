@@ -8,7 +8,6 @@ import {ModalDirective} from 'ngx-bootstrap/modal';
 import * as Dataset from './datasets';
 import { InMemoryDatabase } from './storage/memory';
 import { BracketsManager } from 'brackets-manager';
-import { PreloadAllModules } from '@angular/router';
 
 declare global {
   interface JQuery {
@@ -196,6 +195,20 @@ export class TatamiComponent {
   checkCategoryStatus(){
     
     if(this.selectedCategory.status == Constants.STATUS_TODO){
+
+      this.selectedCategory.status = Constants.STATUS_OPEN;
+      let request = {
+        categorycode_id: this.selectedCategory.categorycode_id,
+        id: this.selectedCategory.id,
+        status: Constants.STATUS_OPEN,
+        user_id: this.selectedCategory.user_id
+      }
+      this.tatamiService.updateCategoryStatus(request).subscribe((response: any) => {
+
+      })
+    }
+
+    if(this.selectedCategory.status == Constants.STATUS_OPEN){
 
       this.selectedCategory.status = Constants.STATUS_DOING;
       let request = {
@@ -433,6 +446,9 @@ export class TatamiComponent {
     this.athleteList = [];
     this.kumiteAthleteList = [];
     this.kumiteMatches = [];
+
+    this.checkCategoryStatus();
+    
     this.getAtlheteList();
   }
 
@@ -1175,9 +1191,6 @@ export class TatamiComponent {
             console.log('----------------------------- ENTRA 4 ---------------------------------------------------------------');
             let firstAthlete = this.kumiteAthleteList.find(x => x.id == fourthRound[0]['id']);
             let secondAthlete = this.kumiteAthleteList.find(x => x.id == fourthRound[1]['id']);
-
-            console.log(firstAthlete);
-            console.log(secondAthlete);
   
             let result = [null,null];
             
@@ -1678,6 +1691,7 @@ export class TatamiComponent {
 
   saveMatch(){
     console.log(this.currentMatch);
+    this.checkCategoryStatus();
     this.tatamiService.saveAthleteScores(this.currentMatch).subscribe((response: any) => {
       if(response.result.success){
         if(this.selectedCategory.categorycode.categoria == 'ESORDIENTI'){

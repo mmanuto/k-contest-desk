@@ -39,7 +39,9 @@
   export const MONITOR_ACTION_PAUSE = 'PAUSE';
   export const MONITOR_ACTION_START = 'START';
 
+  export const STATUS_BACKLOG = 'CAT_BACKLOG';
   export const STATUS_TODO = 'CAT_TODO';
+  export const STATUS_OPEN = 'CAT_OPEN';
   export const STATUS_DOING = 'CAT_DOING';
   export const STATUS_DONE = 'CAT_DONE';
   export const STATUS_AWARD = 'CAT_AWARD';

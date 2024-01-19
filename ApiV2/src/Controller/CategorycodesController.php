@@ -121,7 +121,7 @@ class CategorycodesController extends ApiController
     }
 
     /**
-     * Get all categories with numbers on registrated athletes
+     * Get all categories with numbers of registrated athletes (Stampa frontespizi)
      */
 
     public function getCategories(){
@@ -131,7 +131,7 @@ class CategorycodesController extends ApiController
         $conn = ConnectionManager::get('default');
         $stmt = $conn->execute("SELECT categorycodes.*, COUNT(athlete_inscriptions.id) AS n_athletes FROM athlete_inscriptions 
                                 JOIN categorycodes ON categorycodes.id = athlete_inscriptions.categorycode_id 
-                                WHERE categorycodes.codiceTipoCategorie = 3
+                                WHERE categorycodes.codiceTipoCategorie = 3 AND athlete_inscriptions.deleted = 0
                                 GROUP BY categorycodes.id");
 
         $categories = $stmt->fetchAll('assoc');
@@ -150,7 +150,7 @@ class CategorycodesController extends ApiController
                 $category['status'] = $status['status'];
                 $category['tatami'] = $status['user']['name'];
             }else{
-                $category['status'] = 0;
+                $category['status'] = 'CAT_BACKLOG';
             }
             
             array_push($newCategories, $category);
@@ -161,7 +161,7 @@ class CategorycodesController extends ApiController
     }
 
     /**
-     * Get all categories with athleteList
+     * Get all categories with athleteList (Stampa sintetico categoria)
      */
     public function getCategoriesWithAthletes(){
         $this->loadModel('AthleteInscriptions');
@@ -170,7 +170,7 @@ class CategorycodesController extends ApiController
         $conn = ConnectionManager::get('default');
         $stmt = $conn->execute("SELECT categorycodes.*, COUNT(athlete_inscriptions.id) AS n_athletes FROM athlete_inscriptions 
                                 JOIN categorycodes ON categorycodes.id = athlete_inscriptions.categorycode_id 
-                                WHERE categorycodes.codiceTipoCategorie = 3
+                                WHERE categorycodes.codiceTipoCategorie = 3 AND athlete_inscriptions.deleted = 0
                                 GROUP BY categorycodes.id");
 
         $categories = $stmt->fetchAll('assoc');
@@ -181,7 +181,8 @@ class CategorycodesController extends ApiController
        
             $athleteList = $this->AthleteInscriptions->find()
             ->where([
-                'categorycode_id' => $category['id']
+                'categorycode_id' => $category['id'],
+                'deleted' => 0
             ])
             ->contain(['Athletes' => ['Clubs'], 'Categorycodes'])
             ->order(['Clubs.id', 'Athletes.id'])

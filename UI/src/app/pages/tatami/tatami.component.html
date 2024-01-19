@@ -7,10 +7,9 @@
                 <li *ngFor="let category of tatamiStatus;">
     
                   <button [class.selected]="selectedCategory && category.categorycode_id === selectedCategory.categorycode_id" type="button" (click)="onSelect(category)">
-                    <span *ngIf="category.status == 1" class="badge badge-success code">{{category.categorycode.codice}}</span>
-                    <span *ngIf="category.status == 2" class="badge badge-warning code">{{category.categorycode.codice}}</span>
-                    <span *ngIf="category.status == 3" class="badge badge-secondary code">{{category.categorycode.codice}}</span>
-                    <span *ngIf="category.status == -1" class="badge badge-danger code">{{category.categorycode.codice}}</span>
+                    <span *ngIf="category.status == constants.STATUS_TODO" class="badge badge-success code">{{category.categorycode.codice}}</span>
+                    <span *ngIf="category.status == constants.STATUS_DOING" class="badge badge-warning code">{{category.categorycode.codice}}</span>
+                    <span *ngIf="category.status == constants.STATUS_DONE" class="badge badge-danger code">{{category.categorycode.codice}}</span>
                     <span class="name">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} </span>
                     <span></span>
                     

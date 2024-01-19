@@ -3,7 +3,7 @@
         <div class="d-flex justify-content-start align-items-center top-navbar">                  
             
             <a class="logo" routerLink="/" (click)="closeSubMenus()">
-                <span class="start">Iscrizioni</span><span class="ng">CSEN</span>
+                <span class="start">Iscrizioni</span><span class="ng">CSEN VENETO</span>
             </a>
 
 <!--             <span class="navbar-text menu-icon transition ml-3 mr-3" [ngClass]="{'open': settings.theme.showMenu}"
@@ -28,13 +28,11 @@
             <app-favorites class="d-none d-lg-inline-block"></app-favorites>
 
             <div class="top-rigth-icons ml-auto">
-                
-                <span class="d-none d-sm-inline-block">
-                    <app-user-menu></app-user-menu>
-                </span> 
+                <div class="logo user"> {{currentUser.name | uppercase}}</div>
+
                 <span class="pl-2 pr-2">
                     <a routerLink="/login">
-                        <i class="fa fa-sign-out" aria-hidden="true"></i>
+                        <i class="fa fa-sign-out logout" aria-hidden="true"></i>
                     </a>                   
                 </span> 
             </div> 

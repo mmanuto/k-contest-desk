@@ -1,13 +1,13 @@
 import { Component, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
-import { UntypedFormGroup, FormControl, UntypedFormBuilder, Validators, FormGroup} from '@angular/forms';
-import { IMultiSelectOption, IMultiSelectSettings, IMultiSelectTexts } from 'angular-2-dropdown-multiselect';
-import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
+import { UntypedFormBuilder, FormGroup} from '@angular/forms';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { CategoriesService } from './categories.service';
 import { MenuService } from '../../theme/components/menu/menu.service';
 import { TranslateService } from '@ngx-translate/core';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import {interval,Subscription} from 'rxjs';
+import * as Constants from '../../constants';
  
 @Component({
   selector: 'app-membership',
@@ -33,8 +33,9 @@ export class CategoriesComponent implements OnInit {
   public athletestNumber = null;
   selectedCategory: any = null;
   mySubscription: Subscription;
-
+  constants = Constants;
   alertsDismiss: any = [];
+  message: string = '';
 
   public tatamiForm: FormGroup;
   
@@ -95,13 +96,25 @@ export class CategoriesComponent implements OnInit {
 
   showTatamiStatus(){
     this.getTatamiStatus();
-    console.log('CATEGORIA', this.tatamiForm.value.categorycode_id);
-    console.log('TATAMI', this.tatamiForm.value.user_id);
   }
 
   //--------------------------------------------- Assegna a tatami --------------------------------------------------------------------
   openTatamiModal(category_id){
     console.log(category_id);
+    this.message = '';
+    this.getTatamiStatus();
+
+    console.log(this.tatamiStatus);
+
+    this.tatamiStatus.forEach(tatami => {
+      tatami.userCategories.forEach(category => {
+          if(category.id == this.tatamiForm.value.categorycode_id){
+            this.message = 'La categoria selezionata è già assegnata al ' + tatami.name;
+            
+          }
+      });
+    });
+
     this.tatamiForm = this.fb.group({
       'user_id': [''],
       'categorycode_id': [category_id]
@@ -113,7 +126,7 @@ export class CategoriesComponent implements OnInit {
     let request = {
       user_id: this.tatamiForm.value.user_id,
       categorycode_id: this.tatamiForm.value.categorycode_id,
-      status: 1
+      status: Constants.STATUS_TODO
     }
 
     this.categoriesService.saveTatamiAssegnee(request).subscribe((response: any) => {

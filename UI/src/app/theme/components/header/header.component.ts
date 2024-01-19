@@ -2,7 +2,6 @@ import { Component, OnInit, ViewEncapsulation, HostListener } from '@angular/cor
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { AppSettings } from '../../../app.settings';
 import { Settings } from '../../../app.settings.model';
-import { Router } from '@angular/router';
 import { LocalStorageService } from 'angular-2-local-storage';
 
 import { MenuService } from '../menu/menu.service';
@@ -27,13 +26,17 @@ export class HeaderComponent implements OnInit {
   public showInfoContent: boolean = false;
   public settings: Settings;
   public menuItems: Array<any>;
-  constructor(public appSettings: AppSettings, public menuService: MenuService) {
+  public currentUser;
+
+
+  constructor(public appSettings: AppSettings, public menuService: MenuService, protected localStorageService: LocalStorageService) {
     this.settings = this.appSettings.settings;
     this.menuItems = this.menuService.getHorizontalMenuItems();
+    this.currentUser = this.localStorageService.get('currentUser');
   }
 
   ngOnInit() {
- 
+    this.currentUser = this.localStorageService.get('currentUser');
   }
 
   /*logout() {

@@ -118,7 +118,7 @@ class UsersCategorycodesController extends ApiController
             $userCategories = $this->UsersCategorycodes->find()
             ->where([
                 'user_id' => $request['id'],
-                'status <>' => '-1'
+                'status <>' => 'CAT_DONE'
             ])
             ->contain(['Categorycodes'])
             ->toArray();

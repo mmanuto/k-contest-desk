@@ -133,66 +133,66 @@ class CompetitionsController extends ApiController
         $this->loadModel('UsersCategorycodes');
 
         // ----------------------------------- COMPETITIONS ---------------------------------------------------------
-        $this->Competitions->connection()->transactional(function ($conn) {
-            $sqls = $this->Competitions->schema()->truncateSql($this->Competitions->connection());
+        $this->Competitions->getConnection()->transactional(function ($conn) {
+            $sqls = $this->Competitions->getSchema()->truncateSql($this->Competitions->getConnection());
             foreach ($sqls as $sql) {
-                $this->Competitions->connection()->execute($sql)->execute();
+                $this->Competitions->getConnection()->execute($sql)->execute();
             }
         });
 
         // ----------------------------------- AthleteInscriptions ---------------------------------------------------------
-        $this->AthleteInscriptions->connection()->transactional(function ($conn) {
-            $sqls = $this->AthleteInscriptions->schema()->truncateSql($this->AthleteInscriptions->connection());
+        $this->AthleteInscriptions->getConnection()->transactional(function ($conn) {
+            $sqls = $this->AthleteInscriptions->getSchema()->truncateSql($this->AthleteInscriptions->getConnection());
             foreach ($sqls as $sql) {
-                $this->AthleteInscriptions->connection()->execute($sql)->execute();
+                $this->AthleteInscriptions->getConnection()->execute($sql)->execute();
             }
         });
 
         // ----------------------------------- ClubInscriptions ---------------------------------------------------------
-        $this->ClubInscriptions->connection()->transactional(function ($conn) {
-            $sqls = $this->ClubInscriptions->schema()->truncateSql($this->ClubInscriptions->connection());
+        $this->ClubInscriptions->getConnection()->transactional(function ($conn) {
+            $sqls = $this->ClubInscriptions->getSchema()->truncateSql($this->ClubInscriptions->getConnection());
             foreach ($sqls as $sql) {
-                $this->ClubInscriptions->connection()->execute($sql)->execute();
+                $this->ClubInscriptions->getConnection()->execute($sql)->execute();
             }
         });
 
         // ----------------------------------- Athletes ---------------------------------------------------------
-        $this->Athletes->connection()->transactional(function ($conn) {
-            $sqls = $this->Athletes->schema()->truncateSql($this->Athletes->connection());
+        $this->Athletes->getConnection()->transactional(function ($conn) {
+            $sqls = $this->Athletes->getSchema()->truncateSql($this->Athletes->getConnection());
             foreach ($sqls as $sql) {
-                $this->Athletes->connection()->execute($sql)->execute();
+                $this->Athletes->getConnection()->execute($sql)->execute();
             }
         });
 
         // ----------------------------------- Clubs ---------------------------------------------------------
-        $this->Clubs->connection()->transactional(function ($conn) {
-            $sqls = $this->Clubs->schema()->truncateSql($this->Clubs->connection());
+        $this->Clubs->getConnection()->transactional(function ($conn) {
+            $sqls = $this->Clubs->getSchema()->truncateSql($this->Clubs->getConnection());
             foreach ($sqls as $sql) {
-                $this->Clubs->connection()->execute($sql)->execute();
+                $this->Clubs->getConnection()->execute($sql)->execute();
             }
         });
 
         // ----------------------------------- Categorycodes ---------------------------------------------------------
-        $this->Categorycodes->connection()->transactional(function ($conn) {
-            $sqls = $this->Categorycodes->schema()->truncateSql($this->Categorycodes->connection());
+        $this->Categorycodes->getConnection()->transactional(function ($conn) {
+            $sqls = $this->Categorycodes->getSchema()->truncateSql($this->Categorycodes->getConnection());
             foreach ($sqls as $sql) {
-                $this->Categorycodes->connection()->execute($sql)->execute();
+                $this->Categorycodes->getConnection()->execute($sql)->execute();
             }
         });
 
         // ----------------------------------- Scores ---------------------------------------------------------
-        $this->Scores->connection()->transactional(function ($conn) {
-            $sqls = $this->Scores->schema()->truncateSql($this->Scores->connection());
+        $this->Scores->getConnection()->transactional(function ($conn) {
+            $sqls = $this->Scores->getSchema()->truncateSql($this->Scores->getConnection());
             foreach ($sqls as $sql) {
-                $this->Scores->connection()->execute($sql)->execute();
+                $this->Scores->getConnection()->execute($sql)->execute();
             }
         });
 
         // ----------------------------------- UsersCategorycodes ---------------------------------------------------------
-        $this->UsersCategorycodes->connection()->transactional(function ($conn) {
-            $sqls = $this->UsersCategorycodes->schema()->truncateSql($this->UsersCategorycodes->connection());
+        $this->UsersCategorycodes->getConnection()->transactional(function ($conn) {
+            $sqls = $this->UsersCategorycodes->getSchema()->truncateSql($this->UsersCategorycodes->getConnection());
             foreach ($sqls as $sql) {
-                $this->UsersCategorycodes->connection()->execute($sql)->execute();
+                $this->UsersCategorycodes->getConnection()->execute($sql)->execute();
             }
         });
 
@@ -236,7 +236,8 @@ class CompetitionsController extends ApiController
         //----------------------------------- CLUBS ----------------------------------------------------
 
         foreach ($clubs as $entity) {
-            $newEntity = $this->Clubs->newEmptyEntity($entity);
+            $newEntity = $this->Clubs->newEmptyEntity();
+            $newEntity = $this->Clubs->patchEntity($newEntity, $entity);
             $newEntity->id = $entity['id'];
             $this->Clubs->save($newEntity);
         }
@@ -244,7 +245,8 @@ class CompetitionsController extends ApiController
         //----------------------------------- ATHETES ----------------------------------------------------
 
         foreach ($athletes as $entity) {
-            $newEntity = $this->Athletes->newEmptyEntity($entity);
+            $newEntity = $this->Athletes->newEmptyEntity();
+            $newEntity = $this->Athletes->patchEntity($newEntity, $entity);
             $newEntity->id = $entity['id'];
             $this->Athletes->save($newEntity);
         }
@@ -252,7 +254,8 @@ class CompetitionsController extends ApiController
         //----------------------------------- CATEGORYCODES ----------------------------------------------------
 
         foreach ($categoryCodes as $entity) {
-            $newEntity = $this->Categorycodes->newEmptyEntity($entity);
+            $newEntity = $this->Categorycodes->newEmptyEntity();
+            $newEntity = $this->Categorycodes->patchEntity($newEntity, $entity);
             $newEntity->id = $entity['id'];
             $this->Categorycodes->save($newEntity);
         }
@@ -260,7 +263,8 @@ class CompetitionsController extends ApiController
         //----------------------------------- CLUB INSCRIPTION ----------------------------------------------------
 
         foreach ($clubInscirption as $entity) {
-            $newEntity = $this->ClubInscriptions->newEmptyEntity($entity);
+            $newEntity = $this->ClubInscriptions->newEmptyEntity();
+            $newEntity = $this->ClubInscriptions->patchEntity($newEntity, $entity);
             $newEntity->id = $entity['id'];
             $this->ClubInscriptions->save($newEntity);
         }
