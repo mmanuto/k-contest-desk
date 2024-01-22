@@ -158,10 +158,30 @@ class UsersCategorycodesController extends ApiController
         }
     }
 
-    // Assegno categoria a Tatami
+    /**
+     * Assegno categoria a tatami
+     */
     public function saveUserCategories(){
-        $userCategory = $this->UsersCategorycodes->newEmptyEntity();
-        if ($this->request->is('post')) {
+        
+        $itemToSave = $this->request->getData();
+
+        //controllo che non sia già assegnata ad un altro tatami
+        $categoryStatus = $this->UsersCategorycodes->find()
+         ->where([
+            'categorycode_id' => $itemToSave['categorycode_id']
+         ])->first();
+
+         //se è già su un altro tatami la sposto mantenendo lo stato
+        if ($categoryStatus){
+            $categoryStatus->user_id =  $itemToSave['user_id'];
+            if ($this->UsersCategorycodes->save($categoryStatus)) {
+                $this->apiResponse['success'] = true;
+            }else{
+                $this->apiResponse['message'] = 'The user category could not be saved. Please, try again.';
+                $this->apiResponse['success'] = false;
+            }
+        }else{ //Altrimenti creo un nunovo record
+            $userCategory = $this->UsersCategorycodes->newEmptyEntity();
             $userCategory = $this->UsersCategorycodes->patchEntity($userCategory, $this->request->getData());
             if ($this->UsersCategorycodes->save($userCategory)) {
                 $this->apiResponse['success'] = true;
@@ -169,7 +189,6 @@ class UsersCategorycodesController extends ApiController
                 $this->apiResponse['message'] = 'The user category could not be saved. Please, try again.';
                 $this->apiResponse['success'] = false;
             }
-            
         }
     }
     public function getKataList(){

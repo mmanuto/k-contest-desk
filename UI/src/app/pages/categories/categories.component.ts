@@ -100,25 +100,28 @@ export class CategoriesComponent implements OnInit {
 
   //--------------------------------------------- Assegna a tatami --------------------------------------------------------------------
   openTatamiModal(category_id){
-    console.log(category_id);
     this.message = '';
     this.getTatamiStatus();
-
-    console.log(this.tatamiStatus);
-
-    this.tatamiStatus.forEach(tatami => {
-      tatami.userCategories.forEach(category => {
-          if(category.id == this.tatamiForm.value.categorycode_id){
-            this.message = 'La categoria selezionata è già assegnata al ' + tatami.name;
-            
-          }
-      });
-    });
 
     this.tatamiForm = this.fb.group({
       'user_id': [''],
       'categorycode_id': [category_id]
     });
+
+    this.tatamiStatus.forEach(tatami => {
+      tatami.userCategories.forEach(category => {
+          if(category.id == this.tatamiForm.value.categorycode_id){
+            this.message = 'La categoria selezionata è già assegnata al ' + tatami.name;
+            if(category.status == Constants.STATUS_DOING){
+              this.message += ' ed è già in corso! Proseguendo la categoria verrà spostata sul tatami selezionato.';
+            }else{
+              this.message += '. Proseguendo la categoria verrà spostata sul tatami selezionato.';
+            }
+          }
+      });
+    });
+
+    
     this.primaryModal.show();
   }
 
