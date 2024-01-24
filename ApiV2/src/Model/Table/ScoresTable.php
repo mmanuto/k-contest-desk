@@ -214,6 +214,9 @@ class ScoresTable extends Table
             ->integer('cl_position')
             ->allowEmptyString('cl_position');
 
+        $validator
+            ->notEmptyString('deleted');
+
         return $validator;
     }
 

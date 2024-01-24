@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 use RestApi\Controller\ApiController;
+use Cake\Core\Configure;
 
 /**
  * UsersCategorycodes Controller
@@ -191,6 +192,68 @@ class UsersCategorycodesController extends ApiController
             }
         }
     }
+
+        
+    /** =========================================================================================================
+     * Controllo stato categorie
+     * ==========================================================================================================
+     */
+
+    public function checkCategoryStatus(){
+        Configure::load('constants');
+        $categoryList = $this->request->getData();
+        $response = [
+            'safety' => false,
+            'message' => 'Una o più categorie coninvolte sono già in corso sul tatami a cui sono state assegnate. non è possibile proseguire con l\'operazione.'
+        ];
+        
+        $categoryStatus = $this->UsersCategorycodes->find()
+            ->where([
+                'categorycode_id IN' => $categoryList
+            ])->toArray();
+        
+        if(sizeof($categoryStatus) == 0){
+            $response['safety'] = true;
+            $response['message'] = 'sei sicuro di voler procedere alla cancellazione?';
+        }else{
+            
+            switch ($categoryStatus[0]['status']) {
+                case Configure::read('STATUS_BACKLOG'):
+                case Configure::read('STATUS_TODO'):
+                    $response['message'] = "sei sicuro di voler procedere alla cancellazione?";
+                    $response['safety'] = true;
+                case Configure::read('STATUS_OPEN'):
+                    $response['message'] = "La categoria è già stata aperta ma non iniziata sul tatami a cui è assegnata. Proseguendo il tabellone sarà cancellato e ricreato Sicuro di voler procedere? ";
+                    $response['safety'] = true;
+                    if(sizeof($categoryStatus) == 1){
+                        break;
+                    }else if($categoryStatus[1]['status'] == Configure::read('STATUS_BACKLOG') ||
+                        $categoryStatus[1]['status'] == Configure::read('STATUS_TODO') ||
+                        $categoryStatus[1]['status'] == Configure::read('STATUS_OPEN')){
+
+                            if($categoryStatus[1]['status'] == Configure::read('STATUS_OPEN')){
+                                $response['message'] = "La categoria di destinazione è già stata aperta ma non iniziata sul tatami a cui è assegnata. Proseguendo il tabellone sarà cancellato e ricreato Sicuro di voler procedere? ";
+                            }
+                            $response['safety'] = true;
+                    }else{
+                        $response = [
+                            'safety' => false,
+                            'messsage' => 'Una o più categorie coninvolte sono già in corso sul tatami a cui sono state assegnate. non è possibile proseguire con l\'operazione.'
+                        ];
+                    }
+                default:
+                    # code...
+                    break;
+            }
+}
+        
+        
+        $this->apiResponse['success'] = true;
+        $this->apiResponse['data'] = $response;
+        
+    } 
+
+
     public function getKataList(){
         $this->loadModel('Katas');
         $kata_list = $this->Katas->find('All')->toArray();

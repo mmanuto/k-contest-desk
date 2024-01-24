@@ -43,10 +43,11 @@
                     <td class="align-middle">
     
                     <span *ngIf="category.status == constants.STATUS_TODO" class="badge badge-success code">Attiva</span>
+                    <span *ngIf="category.status == constants.STATUS_OPEN" class="badge badge-primary code">Aperta</span>
                     <span *ngIf="category.status == constants.STATUS_DOING" class="badge badge-warning code">In corso</span>
                     <span *ngIf="category.status == constants.STATUS_BACKLOG" class="badge badge-secondary code"> Non assegnata </span>
                     <span *ngIf="category.status == constants.STATUS_DONE" class="badge badge-danger code">Chiusa</span>
-                    <span *ngIf="category.tatami" class="badge badge-success code ml-2">{{category.tatami}}</span>
+                    <span *ngIf="category.tatami" class="badge badge-info code ml-2">{{category.tatami}}</span>
                     </td>
                     <td class="align-middle">
                       <button *ngIf="category.status != -1" type="button" class="btn btn-primary mr-1" data-toggle="tooltip" data-placement="top" title="Assegna a tatami"  (click)="openTatamiModal(category.id)">

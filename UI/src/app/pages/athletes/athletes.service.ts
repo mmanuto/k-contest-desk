@@ -54,4 +54,8 @@ export class AthletesService {
     updateCategory(request){
         return this.http.post(Constants.BASEAPPURL + "athleteInscriptions/updateCategory", request);
     }
+
+    checkCategoryStatus(request){
+        return this.http.post(Constants.BASEAPPURL + 'usersCategorycodes/checkCategoryStatus', request);
+    }
 } 

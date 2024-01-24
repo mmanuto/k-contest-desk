@@ -155,7 +155,7 @@ export class TatamiComponent {
 
   saveScoresAndGetTotals(form: FormGroup, athleteId, type = null){
 
-    this.checkCategoryStatus();
+    this.checkCategoryStatus(Constants.STATUS_DOING);
     switch (type) {
       case 'kiken':
         if(this.typeForm == 'KIA'){
@@ -192,35 +192,27 @@ export class TatamiComponent {
     }
   }
   
-  checkCategoryStatus(){
+  checkCategoryStatus(status){
+
+    if(this.selectedCategory.status == status)
+    return;
+
+    if(this.selectedCategory.status == Constants.STATUS_TODO && status == Constants.STATUS_OPEN ||
+      this.selectedCategory.status == Constants.STATUS_OPEN && status == Constants.STATUS_DOING){
+        this.selectedCategory.status = status;
     
-    if(this.selectedCategory.status == Constants.STATUS_TODO){
-
-      this.selectedCategory.status = Constants.STATUS_OPEN;
-      let request = {
-        categorycode_id: this.selectedCategory.categorycode_id,
-        id: this.selectedCategory.id,
-        status: Constants.STATUS_OPEN,
-        user_id: this.selectedCategory.user_id
+        let request = {
+          categorycode_id: this.selectedCategory.categorycode_id,
+          id: this.selectedCategory.id,
+          status: status,
+          user_id: this.selectedCategory.user_id
+        }
+        
+        this.tatamiService.updateCategoryStatus(request).subscribe((response: any) => {
+    
+        })
       }
-      this.tatamiService.updateCategoryStatus(request).subscribe((response: any) => {
-
-      })
-    }
-
-    if(this.selectedCategory.status == Constants.STATUS_OPEN){
-
-      this.selectedCategory.status = Constants.STATUS_DOING;
-      let request = {
-        categorycode_id: this.selectedCategory.categorycode_id,
-        id: this.selectedCategory.id,
-        status: Constants.STATUS_DOING,
-        user_id: this.selectedCategory.user_id
-      }
-      this.tatamiService.updateCategoryStatus(request).subscribe((response: any) => {
-
-      })
-    }
+    
   }
 
   closeCategory(){
@@ -447,7 +439,7 @@ export class TatamiComponent {
     this.kumiteAthleteList = [];
     this.kumiteMatches = [];
 
-    this.checkCategoryStatus();
+    this.checkCategoryStatus(Constants.STATUS_OPEN);
     
     this.getAtlheteList();
   }
@@ -1691,7 +1683,7 @@ export class TatamiComponent {
 
   saveMatch(){
     console.log(this.currentMatch);
-    this.checkCategoryStatus();
+    this.checkCategoryStatus(Constants.STATUS_DOING);
     this.tatamiService.saveAthleteScores(this.currentMatch).subscribe((response: any) => {
       if(response.result.success){
         if(this.selectedCategory.categorycode.categoria == 'ESORDIENTI'){

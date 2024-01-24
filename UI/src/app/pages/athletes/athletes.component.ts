@@ -2,6 +2,7 @@ import { Component, ViewEncapsulation } from '@angular/core';
 import { AthletesService } from './athletes.service';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import * as Constants from '../../constants';
 
 @Component({
   selector: 'app-smart',
@@ -72,7 +73,6 @@ export class AthletesComponent {
     },
     noDataMessage: 'No data found',
     rowClassFunction: (row) =>{
-      console.log(row);
       if(row.data.deleted){
         return 'red-background';
       }else if(row.data.modified){
@@ -203,19 +203,27 @@ export class AthletesComponent {
   }
 
    public onDeleteConfirm(event): void {
-    if (window.confirm('Are you sure you want to delete?')) {
-      console.log(event);
-      this.athletesService.deteleAtletaInscription({ 'id': event.data.id, 'code': event.data.codes, 'categorycode_id':event.data.categorycode_id}).subscribe((response: any) => {
-        console.log(response);
-        if (response.result.success) {
-          location.reload();
+
+    this.athletesService.checkCategoryStatus([event.data.categorycode_id]).subscribe((response: any) =>{
+      console.log(response.result.data);
+      if(!response.result.data.safety){
+        window.alert(response.result.data.message);
+      }else{
+        if (window.confirm(response.result.data.message)) {
+          console.log(event);
+          this.athletesService.deteleAtletaInscription({ 'id': event.data.id, 'code': event.data.codes, 'categorycode_id':event.data.categorycode_id}).subscribe((response: any) => {
+            console.log(response);
+            if (response.result.success) {
+              location.reload();
+            }
+      
+          });
+          event.confirm.resolve();
+        } else {
+          event.confirm.reject();
         }
-  
-      });
-      event.confirm.resolve();
-    } else {
-      event.confirm.reject();
-    }
+      }
+    });
   }
 
   public onCustom(event, editCategory) {
@@ -227,15 +235,30 @@ export class AthletesComponent {
 
   public updateCategory(){
 
-    let request = {
-      id: this.selectedInscription.id,
-      categorycode_id: this.categoryForm.value.categorycode_id,
-      accorpamento: this.categoryForm.value.accorpamento
-    }
+    console.log(this.selectedInscription);
 
-    this.athletesService.updateCategory(request).subscribe((response: any) => {
-      this.closeModal();
+    this.athletesService.checkCategoryStatus([this.selectedInscription.categorycode_id, this.categoryForm.value.categorycode_id]).subscribe((response: any) =>{
+      console.log(response.result.data);
+      if(!response.result.data.safety){
+        window.alert(response.result.data.message);
+      }else{
+        if (window.confirm(response.result.data.message)) {
+          
+          let request = {
+            id: this.selectedInscription.id,
+            categorycode_id: this.categoryForm.value.categorycode_id,
+            accorpamento: this.categoryForm.value.accorpamento
+          }
+      
+          this.athletesService.updateCategory(request).subscribe((response: any) => {
+            this.closeModal();
+          });
+          
+        }
+      }
     });
+
+    
   }
 
   public next() {

@@ -1,10 +1,11 @@
 <?php
 
 return [
-    "REG_OPEN" => 'OPEN',
-    "REG_NOT_YET_OPEN" => 'NOT_YET_OPEN',
-    "REG_CLOSED_TIIME" => 'CLOSED_TIME',
-    "REG_CLOSED_FULL" => 'CLOSED_FULL'
+    "STATUS_BACKLOG" => 'CAT_BACKLOG',
+    "STATUS_TODO" => 'CAT_TODO',
+    "STATUS_OPEN" => 'CAT_OPEN',
+    "STATUS_DOING" => 'CAT_DOING',
+    "STATUS_DONE" => 'CAT_DONE',
+    "STATUS_AWARD" => 'CAT_AWARD'
 ];
 
-?>

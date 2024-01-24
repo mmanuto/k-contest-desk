@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 use RestApi\Controller\ApiController;
+use Cake\Core\Configure;
 
 /**
  * AthleteInscriptions Controller
@@ -150,7 +151,8 @@ class AthleteInscriptionsController extends ApiController
             // Recupero righe punteggi
             $scores = $this->Scores->find()
             ->where([
-                'athlete_inscription_id' => $athleteItem->id
+                'athlete_inscription_id' => $athleteItem->id,
+                'deleted' => 0
             ])
             ->toArray();
 
@@ -250,21 +252,50 @@ class AthleteInscriptionsController extends ApiController
     * ELIMINA ISCRIZIONE
     *=====================================================================================================================================
     */
+
+    //TODO: controllare se va gestitita la divisione maschile/Femminile
     public function deleteInscription()
     {
+        Configure::load('constants');
+        $this->loadModel('UsersCategorycodes');
         $this->loadModel('Scores');
-        $data = $this->request->getData();
+        $request = $this->request->getData();
 
-        $athleteInscription = $this->AthleteInscriptions->get($data['id']);
-        $athleteInscription->deleted = 1;
+        $categoryStatus = $this->UsersCategorycodes->find()
+            ->where([
+                'categorycode_id' => $request['categorycode_id']
+            ])->first();
 
-        if ($this->AthleteInscriptions->save($athleteInscription)) {
+        
+        if(!$categoryStatus || $categoryStatus['status'] == Configure::read('STATUS_TODO') ||
+        $categoryStatus['status'] == Configure::read('STATUS_OPEN')){
 
+            $scoreList = $this->Scores->find()
+                ->where([
+                    'category_code' =>$request['code'],
+                    'deleted' => 0
+                ])->toArray();
             
-            $this->apiResponse['success'] = true;
-        } else {
+            foreach ($scoreList as $scoreItem) {
+                $scoreItem->deleted = 1;
+                $this->Scores->save($scoreItem);
+            }
+            $athleteInscription = $this->AthleteInscriptions->get($request['id']);
+            $athleteInscription->deleted = 1;
+    
+            if ($this->AthleteInscriptions->save($athleteInscription)) {
+    
+                $this->apiResponse['success'] = true;
+            } else {
+                $this->apiResponse['success'] = false;
+            }
+
+        }else{
             $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] = 'La categoria è in uno stato per cui non sono permesse modifiche';
         }
+
+        
     }
 
     /**

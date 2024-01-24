@@ -59,6 +59,7 @@ class ScoresFixture extends TestFixture
                 'color' => 'Lorem ip',
                 'kiken' => 1,
                 'cl_position' => 1,
+                'deleted' => 1,
             ],
         ];
         parent::init();

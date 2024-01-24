@@ -235,7 +235,8 @@ class ScoresController extends ApiController
             $classification = $this->Scores->find('All')
             ->where([
                 'category_code' => $category,
-                'total_time_seconds >' => 0
+                'total_time_seconds >' => 0,
+                'deleted' => 0
             ])
             ->order(['total_time_seconds' => 'ASC'])
             ->toArray();
@@ -244,7 +245,8 @@ class ScoresController extends ApiController
             ->where([
                 'category_code' => $category,
                 'n_prova' => $n_prova,
-                'total >' => 0
+                'total >' => 0,
+                'deleted' => 0
             ])
             ->order([
                 'total' => 'DESC', 
@@ -577,7 +579,8 @@ class ScoresController extends ApiController
         $matches = $this->Scores->find('All')
             ->where([
                 'category_code' => $data['category_code'],
-                'athlete_inscription_id' => $data['athlete_inscription_id']
+                'athlete_inscription_id' => $data['athlete_inscription_id'],
+                'deleted' => 0
             ])
             ->contain(['Katas'])
             ->order(['n_prova' => 'ASC'])

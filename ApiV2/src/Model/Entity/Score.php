@@ -48,6 +48,7 @@ use Cake\ORM\Entity;
  * @property string|null $color
  * @property int|null $kiken
  * @property int|null $cl_position
+ * @property int $deleted
  *
  * @property \App\Model\Entity\AthleteInscription $athlete_inscription
  * @property \App\Model\Entity\User $user
@@ -104,6 +105,7 @@ class Score extends Entity
         'color' => true,
         'kiken' => true,
         'cl_position' => true,
+        'deleted' => true,
         'athlete_inscription' => true,
         'user' => true,
         'kata' => true,

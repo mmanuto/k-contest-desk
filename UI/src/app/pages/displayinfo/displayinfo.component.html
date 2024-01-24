@@ -4,13 +4,19 @@
     <div *ngIf="athlete_1 || athleteList" class="row">
       <h1 class="display-1 title">{{currentUser.name}}</h1>
     </div>
-    <div *ngIf="currentMatch" class="row">
+    <div *ngIf="currentMatch" class="row mt-4">
+      <div class="col-md-6">
       <h1 class="display-1 title-kumite">{{currentUser.name}}</h1>
+      </div>
+
+      <div class="col-md-6 text-right mb-4">
+        <h5 *ngIf="currentMatch" class="display-3 category-kumite">{{currentMatch.aka.categorycode.specialita}} {{currentMatch.aka.categorycode.categoria}} <br> {{currentMatch.aka.categorycode.grado}} {{currentMatch.aka.categorycode.sesso}} {{currentMatch.aka.categorycode.cat_peso}}</h5>
+      </div>
     </div>
     <div class="flex-row displayinfo-content align-items-center">
       <div class="column justify-content-center">
           <h2 *ngIf="athlete_1" class="display-1 category">{{athlete_1.categorycode.specialita}} {{athlete_1.categorycode.categoria}} <br> {{athlete_1.categorycode.grado}} {{athlete_1.categorycode.sesso}}</h2>
-          <h5 *ngIf="currentMatch" class="display-3 category">{{currentMatch.aka.categorycode.specialita}} {{currentMatch.aka.categorycode.categoria}} <br> {{currentMatch.aka.categorycode.grado}} {{currentMatch.aka.categorycode.sesso}} {{currentMatch.aka.categorycode.cat_peso}}</h5>
+          
           <div class="card_body">
             <div class="card_body-gradient"></div>
             <div class="description">
@@ -26,6 +32,7 @@
       </div>
 
       <div *ngIf="currentMatch" class="row mt-5">
+        <div class="row col-12 mt-4 mb-4"></div>
         <div class="col-md-5 text-center">
           <i *ngIf="currentMatch.aka.scores.win == 1" class="fa fa-square fa-lg float-right" style="font-size: 3em; color:crimson"></i> 
           <i *ngIf="currentMatch.aka.scores.win == 0" class="fa fa-remove fa-lg float-right" style="font-size: 3em; color:crimson"></i> 
@@ -34,12 +41,12 @@
           <p class="display-3 mt-5" style="color: crimson !important; font-weight: bold;">C: {{currentMatch.aka.scores.chui_1 ? '1C' : '--'}} {{currentMatch.aka.scores.chui_2 ? '2C' : '--'}} {{currentMatch.aka.scores.chui_3 ? '3C' : '--'}} {{currentMatch.aka.scores.hans_chui ? 'HC' : '--'}} {{currentMatch.aka.scores.hansoku ? 'H' : '--'}}</p>
           
         </div>
-        <div class="col-md-2 text-center" style="margin-top: 7%;">
+        <div class="col-md-2 text-center mt-4">
         
           
-          <i *ngIf="currentMatch.aka.scores.senshu" class="fa fa-flag fa-lg mt-4 float-left" style="font-size: 3em; color:crimson"></i> 
-          <i *ngIf="currentMatch.ao.scores.senshu" class="fa fa-flag fa-lg mt-4 float-right" style="font-size: 3em; color:dodgerblue"></i> 
-          <h1 class="classification mt-5" style="font-size: 8em;"> <b>{{countdown | formatTime}} </b></h1>         
+          <i *ngIf="currentMatch.aka.scores.senshu" class="fa fa-flag fa-lg float-left" style="font-size: 3em; color:crimson"></i> 
+          <i *ngIf="currentMatch.ao.scores.senshu" class="fa fa-flag fa-lg float-right" style="font-size: 3em; color:dodgerblue"></i> 
+          <h1 class="classification mt-5" style="font-size: 8em; margin-top: 45% !important"> <b>{{countdown | formatTime}} </b></h1>         
           
         </div>
         <div class="col-md-5 text-center">
