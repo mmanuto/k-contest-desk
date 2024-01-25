@@ -145,105 +145,112 @@ class AthleteInscriptionsController extends ApiController
         $count = 0;
         $athlete_second_match = [];
 
-        
-        foreach ($athleteList as $athleteItem) {
+        if($request['readonly'] == true){
+            $this->apiResponse['data'] = $athleteList;
+	        $this->apiResponse['success'] = true;
+        }else{
+            foreach ($athleteList as $athleteItem) {
 
-            // Recupero righe punteggi
-            $scores = $this->Scores->find()
-            ->where([
-                'athlete_inscription_id' => $athleteItem->id,
-                'deleted' => 0
-            ])
-            ->toArray();
-
-            //Sono già presenti --> Le associo all'atleta
-            if($scores){
-                $category = substr($athleteItem->categorycode->codice, 0, 3);
-                if(count($scores) > 1){
-                    if($category == 'KIA'){
-                        $max_nprova = 0;
-
-                        foreach ($scores as $score_item) {
-                            if($score_item->n_prova > $max_nprova){
-                                $athleteItem->scores = $score_item;
-                                $max_nprova = $score_item->n_prova;
+                // Recupero righe punteggi
+                $scores = $this->Scores->find()
+                ->where([
+                    'athlete_inscription_id' => $athleteItem->id,
+                    'deleted' => 0
+                ])
+                ->toArray();
+    
+                //Sono già presenti --> Le associo all'atleta
+                if($scores){
+                    $category = substr($athleteItem->categorycode->codice, 0, 3);
+                    if(count($scores) > 1){
+                        if($category == 'KIA'){
+                            $max_nprova = 0;
+    
+                            foreach ($scores as $score_item) {
+                                if($score_item->n_prova > $max_nprova){
+                                    $athleteItem->scores = $score_item;
+                                    $max_nprova = $score_item->n_prova;
+                                }
+                            }
+                            array_push($athlete_second_match, $athleteItem);
+                        }else{
+                            $first_match_close = true;
+                            $athleteItem->old_scores = [];
+                            foreach ($scores as $score_item) {
+                                if($score_item->type == 'C'){
+                                    $athleteItem->scores = $score_item;
+                                }else{
+                                    array_push($athleteItem->old_scores, $score_item);
+                                }
                             }
                         }
-                        array_push($athlete_second_match, $athleteItem);
+                        
                     }else{
-                        $first_match_close = true;
-                        $athleteItem->old_scores = [];
-                        foreach ($scores as $score_item) {
-                            if($score_item->type == 'C'){
-                                $athleteItem->scores = $score_item;
-                            }else{
-                                array_push($athleteItem->old_scores, $score_item);
-                            }
-                        }
+                        $athleteItem->scores = $scores[0];
                     }
                     
                 }else{
-                    $athleteItem->scores = $scores[0];
-                }
-                
-            }else{
-
-                //Non ci sono --> le creo e le associo all'atleta.
-                $score_record = $this->Scores->newEmptyEntity();
-                $score_record->athlete_inscription_id = $athleteItem->id;
-                $score_record->category_code = $athleteItem->categorycode->codice;
-                $score_record->n_prova = 1;
-
-                $category = substr($athleteItem->categorycode->codice, 0, 3);
-                if($category == 'KIA'){
-                    $count++;
-
-                    if($count % 2 == 0){
-                        $score_record->color = 'AO';
-                        
+    
+                    //Non ci sono --> le creo e le associo all'atleta.
+                    $score_record = $this->Scores->newEmptyEntity();
+                    $score_record->athlete_inscription_id = $athleteItem->id;
+                    $score_record->category_code = $athleteItem->categorycode->codice;
+                    $score_record->n_prova = 1;
+    
+                    $category = substr($athleteItem->categorycode->codice, 0, 3);
+                    if($category == 'KIA'){
+                        $count++;
+    
+                        if($count % 2 == 0){
+                            $score_record->color = 'AO';
+                            
+                        }else{
+                            $score_record->color = 'AKA';
+                        }
                     }else{
-                        $score_record->color = 'AKA';
-                    }
-                }else{
-                    $score_record->color = $category;
-                    if($category == 'KUA' || $category == 'KUG'){
-                        $score_record->total = 0;
-                        $score_record->yuko = 0;
-                        $score_record->wazaari = 0;
-                        $score_record->ippon = 0;
-                        $score_record->type = 'C';
-                    }
-                }   
-                
-                $newScore = $this->Scores->save($score_record);
-                $athleteItem->scores = $newScore;
+                        $score_record->color = $category;
+                        if($category == 'KUA' || $category == 'KUG'){
+                            $score_record->total = 0;
+                            $score_record->yuko = 0;
+                            $score_record->wazaari = 0;
+                            $score_record->ippon = 0;
+                            $score_record->type = 'C';
+                        }
+                    }   
+                    
+                    $newScore = $this->Scores->save($score_record);
+                    $athleteItem->scores = $newScore;
+                    
+                }
                 
             }
-            
-        }
-
-        if(count($athlete_second_match) > 0){
-            $max_nprova = 0;
-
-            foreach ($athlete_second_match as $item) {
-                if($item->scores->n_prova > $max_nprova){
-                    $max_nprova = $item->scores->n_prova;
+    
+            if(count($athlete_second_match) > 0){
+                $max_nprova = 0;
+    
+                foreach ($athlete_second_match as $item) {
+                    if($item->scores->n_prova > $max_nprova){
+                        $max_nprova = $item->scores->n_prova;
+                    }
+                }
+    
+                for($i = 0; $i< count($athlete_second_match); $i++){
+                    if($athlete_second_match[$i]->scores->n_prova != $max_nprova){
+                        array_splice($athlete_second_match, $i, 1);
+                        $i--;
+                    }
                 }
             }
-
-            for($i = 0; $i< count($athlete_second_match); $i++){
-                if($athlete_second_match[$i]->scores->n_prova != $max_nprova){
-                    array_splice($athlete_second_match, $i, 1);
-                    $i--;
-                }
-            }
+    
+            /*if(substr($athleteList[0]->categorycode->codice, 0, 3) == 'KUA'){
+                $this->generateKumiteMatch(count($athlete_second_match) > 0 ? $athlete_second_match : $athleteList);
+            }*/
+            $this->apiResponse['data'] = count($athlete_second_match) > 0 ? $athlete_second_match : $athleteList;
+            $this->apiResponse['success'] = true;
         }
 
-        /*if(substr($athleteList[0]->categorycode->codice, 0, 3) == 'KUA'){
-            $this->generateKumiteMatch(count($athlete_second_match) > 0 ? $athlete_second_match : $athleteList);
-        }*/
-        $this->apiResponse['data'] = count($athlete_second_match) > 0 ? $athlete_second_match : $athleteList;
-	    $this->apiResponse['success'] = true;
+        
+        
     }
 
 
@@ -305,7 +312,10 @@ class AthleteInscriptionsController extends ApiController
     public function updateCategory(){
         $data = $this->request->getData();
         $athleteInscription = $this->AthleteInscriptions->get($data['id']);
+        $athleteInscription['old_category'] = $athleteInscription['categorycode_id'];
         $athleteInscription['categorycode_id'] = $data['categorycode_id'];
+        $athleteInscription['accorpamento'] = $data['accorpamento'] ? 1 : 0;
+        $athleteInscription['modificato'] = 1;
 
         if ($this->AthleteInscriptions->save($athleteInscription)) {
 
@@ -313,7 +323,68 @@ class AthleteInscriptionsController extends ApiController
         } else {
             $this->apiResponse['success'] = false;
         }
+    }
 
+    public function splitCategory(){
+        
+        $this->loadModel('Categorycodes');
+        $data = $this->request->getData();
+
+
+        $splittedCategories = $this->Categorycodes->find()
+            ->where([
+                'OR' => [['codice' => $data['codice'].'-M'], ['codice' => $data['codice'].'-F']]
+            ])->toArray();
+
+        
+        if(sizeof($splittedCategories) >0){
+
+            foreach ($splittedCategories as $categoryItem) {
+                if($categoryItem->sesso == 'M'){
+                    $categoryMale = $categoryItem;
+                }else if($categoryItem->sesso == 'F'){
+                    $categoryFemale = $categoryItem;
+                }
+            }
+
+        }else{
+            $categoryMale = $this->Categorycodes->newEmptyEntity();
+            $categoryMale = $this->Categorycodes->patchEntity($categoryMale, $data);
+    
+            $categoryFemale = $this->Categorycodes->newEmptyEntity();
+            $categoryFemale = $this->Categorycodes->patchEntity($categoryFemale, $data);
+    
+            $categoryMale->codice = $data['codice'].'-M';
+            $categoryMale->sesso = 'M';
+            $categoryMale = $this->Categorycodes->save($categoryMale);
+
+            print_r($categoryMale);
+            
+            $categoryFemale->codice = $data['codice'].'-F';
+            $categoryFemale->sesso = 'F';
+            $categoryFemale = $this->Categorycodes->save($categoryFemale);
+        }
+
+        $athleteList = $this->AthleteInscriptions->find()
+            ->where([
+                'categorycode_id' => $data['id']
+            ])
+            ->contain(['Athletes'])->toArray();
+
+        print_r($athleteList);
+
+        foreach ($athleteList as $athlete) {
+            if($athlete->Athlete->sesso == 'F'){
+                $athlete->old_category = $athlete->categorycode_id;
+                $athlete->categorycode_id = $categoryFemale->id;
+            }else if($athlete->Athlete->sesso == 'M'){
+                $athlete->old_category = $athlete->categorycode_id;
+                $athlete->categorycode_id = $categoryMale->id;             
+            }
+
+            $this->AthleteInscriptions->save($athlete);
+        }
+        
 
     }
 

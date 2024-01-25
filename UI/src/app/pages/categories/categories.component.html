@@ -18,7 +18,7 @@
   </div>
 </div>
 
-<div *ngIf="type=='list'" class="row">
+<div *ngIf="type=='list'  && !dettaglio" class="row">
   <div class="col-12">
 
           <table class="table table-sm table-hover">
@@ -50,17 +50,21 @@
                     <span *ngIf="category.tatami" class="badge badge-info code ml-2">{{category.tatami}}</span>
                     </td>
                     <td class="align-middle">
-                      <button *ngIf="category.status != -1" type="button" class="btn btn-primary mr-1" data-toggle="tooltip" data-placement="top" title="Assegna a tatami"  (click)="openTatamiModal(category.id)">
+                      <button *ngIf="category.status != constants.STATUS_DONE" type="button" class="btn btn-outline mr-1" data-toggle="tooltip" data-placement="top" title="Assegna a tatami"  (click)="openTatamiModal(category.id)">
                         <i class="fa fa-upload"></i>
                       </button>
-                      <button type="button" data-toggle="tooltip" data-placement="top" title="Visualizza categoria" class="btn btn-primary tt mr-1" data-animation="false" (click)="openCategory(category)">
-                        <i class="fa fa-tv"></i>
+                      <button type="button" data-toggle="tooltip" data-placement="top" title="Visualizza categoria" class="btn btn-outline tt mr-1" data-animation="false" (click)="openCategory(category)">
+                        <i class="fa fa-file-text"></i>
                       </button>
-                      <button *ngIf="category.status == -1" type="button" class="btn btn-primary mr-1" data-toggle="modal" (click)="openClassification(category.id)">
+                      <button type="button" data-toggle="tooltip"  class="btn btn-primary btn-sm tt mr-1" 
+                      *ngIf="category.codice.includes('KU')" (click)="openKumiteBrackets(category)">
+                        Tabellone
+                      </button>
+                      <button *ngIf="category.status == constants.STATUS_DONE" type="button" class="btn btn-outline mr-1" data-toggle="modal" (click)="openClassification(category.id)">
                         <i class="fa fa-upload" tooltip="Visualizza classifica"></i>
                       </button>
-                      <button type="button" class="btn btn-primary mr-1" data-toggle="modal" (click)="generatePdf(category.id)">
-                        <i class="fa fa-tv" tooltip="Stampa tabellone"></i>
+                      <button *ngIf="category.status == constants.STATUS_BACKLOG && category.sesso == 'M/F'" type="button" class="btn btn-outline mr-1" data-toggle="tooltip" data-placement="top" title="Dividi categoria"  (click)="splitCategory(category)">
+                        <i class="fa fa-files-o"></i>
                       </button>
                     </td>
                   </tr>
@@ -70,7 +74,7 @@
   </div>
 </div>
 
-<div *ngIf="type=='grid'" class="row">
+<div *ngIf="type=='grid'  && !dettaglio" class="row">
   <div *ngFor="let tatami of tatamiStatus; let i = index;" class="col-xl-4 col-lg-6 mb-4">
       <div class="flip">
           <div class="content">
@@ -92,14 +96,16 @@
                               <div class="media-body">
                                   <div class="row" *ngFor="let category of tatami.userCategories">  
                                       <div class="col-2 text-gray text-right pr-0 font-italic">
-                                        <span *ngIf="category.status == 1" class="badge badge-success code">{{category.categorycode.codice}}</span>
-                                        <span *ngIf="category.status == 2" class="badge badge-warning code">{{category.categorycode.codice}}</span>
-                                        <span *ngIf="category.status == 3" class="badge badge-secondary code">{{category.categorycode.codice}}</span>
+                                        <span *ngIf="category.status == constants.STATUS_TODO" class="badge badge-success code">{{category.categorycode.codice}}</span>
+                                        <span *ngIf="category.status == constants.STATUS_OPEN" class="badge badge-primary code">{{category.categorycode.codice}}</span>
+                                        <span *ngIf="category.status == constants.STATUS_DOING" class="badge badge-warning code">{{category.categorycode.codice}}</span>
+                                        <span *ngIf="category.status == constants.STATUS_BACKLOG" class="badge badge-secondary code">{{category.categorycode.codice}}</span>
                                       </div>
                                       <div class="col-10 pl-2">
-                                        <span *ngIf="category.status == 1">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
-                                        <span *ngIf="category.status == 2">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
-                                        <span *ngIf="category.status == 3">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
+                                        <span *ngIf="category.status == constants.STATUS_TODO">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
+                                        <span *ngIf="category.status == constants.STATUS_OPEN">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
+                                        <span *ngIf="category.status == constants.STATUS_DOING">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
+                                        <span *ngIf="category.status == constants.STATUS_BACKLOG">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
                                       </div>                          
                                   </div>
                               </div>
@@ -121,10 +127,10 @@
                       <div class="card-body pt-3"> 
                         <div class="row" *ngFor="let category of tatami.userCategories">  
                           <div class="col-2 text-gray text-right pr-0 font-italic">
-                            <span *ngIf="category.status == -1" class="badge badge-danger code">{{category.categorycode.codice}}</span>
+                            <span *ngIf="category.status == constants.STATUS_DONE" class="badge badge-danger code">{{category.categorycode.codice}}</span>
                           </div>
                           <div class="col-10 pl-2">
-                            <span *ngIf="category.status == -1">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}}</span>
+                            <span *ngIf="category.status == constants.STATUS_DONE">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}}</span>
                           </div>                          
                       </div>                             
                       </div>
@@ -135,12 +141,38 @@
   </div>
 </div>
 
-<div class="row" *ngIf="type=='list'">
+<div class="row" *ngIf="type=='list' && !dettaglio">
   <div class="col-12">
       <div class="bg-white text-center">
           <pagination-controls autoHide="true" (pageChange)="p = $event" maxSize="3"></pagination-controls>
       </div>        
   </div>
+</div>
+
+<div *ngIf="dettaglio">
+  <div class="col-lg-12 text-center">
+    <h2>{{selectedCategory.specialita}} {{selectedCategory.categoria}} - {{selectedCategory.grado}} {{selectedCategory.cat_peso}} {{selectedCategory.sesso}}</h2>
+    
+    <button type="button" data-toggle="tooltip" data-placement="top" class="btn btn-outline-primary tt mt-4" data-animation="false" (click)="backTocategory()">
+      Torna all'elenco categorie
+    </button>
+    <button type="button" class="btn btn-outline-primary mr-1" data-toggle="modal" (click)="generatePdf(selectedCategory)">
+      <i class="fa fa-print mr-3" tooltip="Stampa tabellone"> Stampa</i>
+    </button>
+
+    </div>
+  
+
+<div class="row">
+
+<div id="kumite" style="margin: 0 auto;">
+  <div id="minimal"></div>
+
+  <div id="girone-2"></div>
+
+  <div id="girone-3"></div>
+</div>
+</div>
 </div>
 
 <div bsModal #primaryModal="bs-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">

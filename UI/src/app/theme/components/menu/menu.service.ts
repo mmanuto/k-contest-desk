@@ -5,14 +5,21 @@ import { Menu } from './menu.model';
 import { verticalMenuItems } from './menu';
 import { horizontalMenuItems } from './menu';
 import { TranslateService } from '@ngx-translate/core';
+import { LocalStorageService } from 'angular-2-local-storage';
 
 @Injectable()
 export class MenuService {
 
+  userType: number;
+  
   constructor(private location:Location, 
               private renderer2:Renderer2,
               private router:Router,
-              public translateService: TranslateService){ } 
+              private localStorage: LocalStorageService,
+              public translateService: TranslateService){ 
+  
+                this.userType = this.localStorage.get('userType');
+              } 
 
 
   public getVerticalMenuItems():Array<Menu> {
@@ -51,7 +58,7 @@ export class MenuService {
     this.renderer2.addClass(ul, 'menu');
     this.renderer2.appendChild(nav, ul);
     menu.forEach((menuItem) => {
-        if(menuItem.parentId == 0){
+        if(menuItem.parentId == 0 && menuItem.typeUser == this.userType){
           let subMenu = this.createHorizontalMenuItem(menu, menuItem);
           this.renderer2.appendChild(ul, subMenu);
         }

@@ -72,3 +72,21 @@ $card-height: 220px;
 .modal-dialog {
     max-width: 1000px;
   }
+
+.team{
+    height: 45px !important;
+    .label{
+        height: 45px !important;
+    }
+}
+
+.team.na {
+    background-color: #ccc !important;
+}
+
+.jQBracket{
+    .tools{
+      display: none;
+    }
+  }
+

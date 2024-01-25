@@ -42,4 +42,8 @@ export class CategoriesService {
     getTotaleIscrizioni(){
         return this.http.post(Constants.BASEAPPURL + 'competitions/getTotaleIscrizioni', {});
     }
+
+    splitCategory(request){
+        return this.http.post(Constants.BASEAPPURL + 'athleteInscriptions/splitCategory', request);
+    }
 } 

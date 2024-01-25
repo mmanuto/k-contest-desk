@@ -452,7 +452,7 @@ export class TatamiComponent {
 
   getAtlheteList(athleteId = null, athleteId_info = null){
 
-    this.tatamiService.getAthleteList({categorycode_id: this.selectedCategory.categorycode_id}).subscribe((response: any) => {
+    this.tatamiService.getAthleteList({categorycode_id: this.selectedCategory.categorycode_id, readonly: false}).subscribe((response: any) => {
 
       //==================================================== KUMITE ==========================================================
   
