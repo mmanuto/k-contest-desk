@@ -1,12 +1,9 @@
  
   
   export const IMAGES_WEBROOT = "http://localhost:4200/aemserver/webroot/resources/";
-  //export const IMAGES_WEBROOT = "http://www.iscrizionicsenveneto.it/iscrizioniCsenServer/webroot/resources/";
+  //export const IMAGES_WEBROOT = "http://www.iscrizionicsenveneto.it/apiV2/webroot/resources/";
   
- //export const BASEAPPURL = "http://www.iscrizionicsenveneto.it/iscrizioniCsenServer/";
- //export const BASEAPPURL = "http://" + document.location.hostname + "/csenveneto/aemserver/";
-
-  //export const ISCRIZIONI_URL = "https://www.iscrizionicsenveneto.it/iscrizioniCsenServer/"
+   //export const ISCRIZIONI_URL = "https://www.iscrizionicsenveneto.it/apiV2/"
   export const ISCRIZIONI_URL = "http://localhost:4200/backend/"
   
   //export const BASEAPPURL = "http://" + document.location.hostname + "/csenveneto/aemserver/";
