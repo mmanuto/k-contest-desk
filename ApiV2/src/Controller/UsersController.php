@@ -189,4 +189,22 @@ class UsersController extends ApiController
         
     }
 
+    public function addAdmin()
+    {
+
+
+            $user = $this->Users->newEmptyEntity();
+            $user->name = 'Admin';
+            $user->username = 'Admin';
+            $user->password = md5('CsenVeneto!');
+            $this->Users->save($user);
+
+            $this->set(compact('user'));
+            $this->set('_serialize', ['user']);
+
+        
+
+        
+    }
+
 }

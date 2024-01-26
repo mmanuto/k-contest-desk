@@ -40,7 +40,7 @@ export class LoginComponent {
                 //Salvo in sessione l'utente e il token
                 this.localStorageService.set('authToken', response.result.token);
                 this.localStorageService.set('currentUser', response.result.data);
-              if(response.result.data.username == 'Andmin'){
+              if(response.result.data.username == 'Admin'){
                 this.router.navigate(['adminpanel']);
                 this.localStorageService.set('userType', 1);
               }else{
