@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-3 col-md-5">
+    <div class="col-lg-4 col-md-4">
         <div class="card border-0 box-shadow mb-4">
           <div class="card-body"> 
               <h4 class="card-title text-center">Elenco Categorie</h4>
@@ -20,7 +20,7 @@
           </div>
         </div>
     </div>
-    <div class="col-lg-9 col-md-7">
+    <div class="col-lg-8 col-md-8">
 
         <div class="card">                        
             <div class="card-body">
@@ -39,21 +39,24 @@
                     </div>
                 </div>
                 <div class="card border-0" *ngFor="let athlete of athleteList | CategorySearchPipe : searchText; index as i ">
-                  <div class="card-header" role="tab" id="headingOne">
+                  <div class="card-header" [ngStyle]="{'background-color': athlete.scores.type == 'CL' ? 'lightgreen' : '' }" role="tab" id="headingOne">
                     <h6 class="ml-4 mb-0">
                       <a class="text-primary row" data-toggle="collapse" href="#" aria-expanded="false" aria-controls="collapseOne" (click)="displayAthlete(athlete)">
                         
-                        <div class="mr-2" style="font-weight: bold; font-size: large;">{{athlete.scores.cl_position && athlete.scores.type == 'CL'? athlete.scores.cl_position + ' - ' : ''}}</div>
-                        <i *ngIf="athlete.scores.type == 'FI'" class="fa fa-trophy fa-lg mt-4" style="color:goldenrod"></i> 
-                        <i *ngIf="athlete.scores.type == 'FI'" class="fa fa-trophy fa-lg mt-4" style="color:grey"></i> 
-      
-                        <i *ngIf="athlete.scores.type == 'SF_1'" class="fa fa-trophy fa-lg mt-4" style="color:brown"></i> 
-                        <i *ngIf="athlete.scores.type == 'SF_2'" class="fa fa-trophy fa-lg mt-4" style="color:orange"></i> 
                         
+                        <div class="mr-2" style="font-weight: bold; font-size: large;">{{athlete.scores.cl_position && athlete.scores.type == 'CL'? athlete.scores.cl_position + ' - ' : ''}}</div>
+                        <i *ngIf="athlete.scores.type == 'FI'" class="fa fa-trophy fa-lg " style="color:goldenrod"> </i> 
+                        <i *ngIf="athlete.scores.type == 'FI'" class="fa fa-trophy fa-lg " style="color:grey"></i> 
+                        <div *ngIf="athlete.scores.type == 'FI'" class="ml-3 mr-3 finals-label"> Finale</div> 
+      
+                        <i *ngIf="athlete.scores.type == 'SF_1'" class="fa fa-trophy fa-lg " style="color:brown"></i> 
+                        <div *ngIf="athlete.scores.type == 'SF_1'" class="ml-3 mr-3 finals-label"> Semifinale 1</div> 
+                        <i *ngIf="athlete.scores.type == 'SF_2'" class="fa fa-trophy fa-lg " style="color: brown"></i> 
+                        <div *ngIf="athlete.scores.type == 'SF_2'" class="ml-3 mr-3 finals-label"> Semifinale 2</div>                         
                         <i class="fa fa-user-circle-o fa-lg mr-2" [ngStyle]="{'color': colorMapping[athlete.scores.color]}"></i> 
                         
                         {{athlete.athlete.cognome}} {{athlete.athlete.nome}} - {{athlete.athlete.data_nascita}} -  {{athlete.athlete.club.nome_societa}}
-      
+                        <div *ngIf="athlete.scores.type == 'CL'" class="ml-3 mr-3 finals-label"> CLASSIFICA FINALE</div> 
                         <i *ngIf="athlete.scores.total != null || athlete.scores.total_time_seconds != null" class="fa fa-check fa-lg" style="color:green"></i>
                  
                         

@@ -357,8 +357,6 @@ class AthleteInscriptionsController extends ApiController
             $categoryMale->codice = $data['codice'].'-M';
             $categoryMale->sesso = 'M';
             $categoryMale = $this->Categorycodes->save($categoryMale);
-
-            print_r($categoryMale);
             
             $categoryFemale->codice = $data['codice'].'-F';
             $categoryFemale->sesso = 'F';
@@ -371,17 +369,17 @@ class AthleteInscriptionsController extends ApiController
             ])
             ->contain(['Athletes'])->toArray();
 
-        print_r($athleteList);
 
         foreach ($athleteList as $athlete) {
-            if($athlete->Athlete->sesso == 'F'){
+            if($athlete->athlete->sesso == 'F'){
                 $athlete->old_category = $athlete->categorycode_id;
                 $athlete->categorycode_id = $categoryFemale->id;
-            }else if($athlete->Athlete->sesso == 'M'){
+            }else if($athlete->athlete->sesso == 'M'){
                 $athlete->old_category = $athlete->categorycode_id;
                 $athlete->categorycode_id = $categoryMale->id;             
             }
 
+            print_r($athlete);
             $this->AthleteInscriptions->save($athlete);
         }
         
