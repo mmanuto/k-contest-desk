@@ -229,7 +229,7 @@ class CompetitionsController extends ApiController
         $competition->data_gara = new Date($data['competition']['data_gara']);
         $competition->apertura_iscrizioni = new Date($data['competition']['apertura_iscrizioni']);
         $competition->chiusura_iscrizioni = new Date($data['competition']['chiusura_iscrizioni']);
-
+        $competition->stato = 1;
 
         $this->Competitions->save($competition);
         
@@ -248,6 +248,7 @@ class CompetitionsController extends ApiController
             $newEntity = $this->Athletes->newEmptyEntity();
             $newEntity = $this->Athletes->patchEntity($newEntity, $entity);
             $newEntity->id = $entity['id'];
+            $newEntity->deleted = 0;
             $this->Athletes->save($newEntity);
         }
 
@@ -279,7 +280,7 @@ class CompetitionsController extends ApiController
             $inscription->athlete_id = $entity['athlete_id'];
             $inscription->categorycode_id = $entity['category_code_id'];
             $inscription->competition_id = $entity['competition_id'];
-            $inscription->flag_modificato = $entity['flag_modificato'];
+            $inscription->modificato = $entity['modificato'];
 
             $this->AthleteInscriptions->save($inscription);
         }

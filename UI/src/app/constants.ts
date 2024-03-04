@@ -1,16 +1,16 @@
  
   
-  export const IMAGES_WEBROOT = "http://localhost:4200/aemserver/webroot/resources/";
-  //export const IMAGES_WEBROOT = "http://www.iscrizionicsenveneto.it/apiV2/webroot/resources/";
+  //export const IMAGES_WEBROOT = "http://localhost:4200/aemserver/webroot/resources/";
+  export const IMAGES_WEBROOT = "http://www.iscrizionicsenveneto.it/apiV2/webroot/resources/";
   
-   //export const ISCRIZIONI_URL = "https://www.iscrizionicsenveneto.it/apiV2/"
-  export const ISCRIZIONI_URL = "http://localhost:4200/backend/"
+  //export const ISCRIZIONI_URL = "https://www.iscrizionicsenveneto.it/apiV2/"
+  export const ISCRIZIONI_URL = "http://localhost:4200/backend/" 
   
-  //export const BASEAPPURL = "http://" + document.location.hostname + "/csenveneto/aemserver/";
+  //export const BASEAPPURL = "http://" + document.location.hostname + "/csenveneto/ApiV2/";
   export const BASEAPPURL = "http://localhost:4200/ApiV2/";
   
-  //export const DISPLYINFO_URL = "http://" + document.location.hostname + "/csenveneto/displayinfo"
-  export const DISPLYINFO_URL = "http://localhost:4200/displayinfo"
+  export const DISPLYINFO_URL = "http://" + document.location.hostname + "/csenveneto/displayinfo"
+  //export const DISPLYINFO_URL = "http://localhost:4200/displayinfo"
 
   export const colorMapping = {
     AKA: 'red',

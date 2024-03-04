@@ -220,6 +220,9 @@ export class TatamiComponent {
       this.selectedCategory.status = Constants.STATUS_DONE;
       this.athleteList = [];
       this.kumiteAthleteList = [];
+      jQuery('#minimal').hide();
+      jQuery('#girone-2').hide();
+      jQuery('#girone-3').hide();
       let request = {
         categorycode_id: this.selectedCategory.categorycode_id,
         id: this.selectedCategory.id,
@@ -365,7 +368,7 @@ export class TatamiComponent {
         categorycode_id: athlete.categorycode_id,
         cintura: athlete.cintura,
         competition_id: athlete.competition_id,
-        flag_modificato: athlete.flag_modificato,
+        modificato: athlete.modificato,
         id: athlete.id,
         n_iscrizione: athlete.n_iscrizione,
         scores: athlete.scores
