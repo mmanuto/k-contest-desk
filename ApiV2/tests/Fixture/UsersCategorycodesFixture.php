@@ -20,9 +20,9 @@ class UsersCategorycodesFixture extends TestFixture
         $this->records = [
             [
                 'id' => 1,
-                'user_id' => 1,
+                'user_id' => 'Lore',
                 'categorycode_id' => 1,
-                'status' => 1,
+                'status' => 'Lorem ipsum dolor ',
             ],
         ];
         parent::init();

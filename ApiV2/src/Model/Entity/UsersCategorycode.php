@@ -9,9 +9,9 @@ use Cake\ORM\Entity;
  * UsersCategorycode Entity
  *
  * @property int $id
- * @property int $user_id
+ * @property string $user_id
  * @property int $categorycode_id
- * @property int $status
+ * @property string $status
  *
  * @property \App\Model\Entity\User $user
  * @property \App\Model\Entity\Categorycode $categorycode

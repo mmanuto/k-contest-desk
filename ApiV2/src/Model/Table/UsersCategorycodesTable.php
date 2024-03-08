@@ -63,12 +63,17 @@ class UsersCategorycodesTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
+            ->scalar('user_id')
+            ->maxLength('user_id', 6)
             ->notEmptyString('user_id');
 
         $validator
             ->notEmptyString('categorycode_id');
 
         $validator
+            ->scalar('status')
+            ->maxLength('status', 20)
+            ->requirePresence('status', 'create')
             ->notEmptyString('status');
 
         return $validator;
