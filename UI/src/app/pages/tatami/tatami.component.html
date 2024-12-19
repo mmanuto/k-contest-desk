@@ -45,14 +45,14 @@
                         
                         
                         <div class="mr-2" style="font-weight: bold; font-size: large;">{{athlete.scores.cl_position && athlete.scores.type == 'CL'? athlete.scores.cl_position + ' - ' : ''}}</div>
-                        <i *ngIf="athlete.scores.type == 'FI'" class="fa fa-trophy fa-lg " style="color:goldenrod"> </i> 
+                        <!-- <i *ngIf="athlete.scores.type == 'FI'" class="fa fa-trophy fa-lg " style="color:goldenrod"> </i> 
                         <i *ngIf="athlete.scores.type == 'FI'" class="fa fa-trophy fa-lg " style="color:grey"></i> 
                         <div *ngIf="athlete.scores.type == 'FI'" class="ml-3 mr-3 finals-label"> Finale</div> 
       
                         <i *ngIf="athlete.scores.type == 'SF_1'" class="fa fa-trophy fa-lg " style="color:brown"></i> 
                         <div *ngIf="athlete.scores.type == 'SF_1'" class="ml-3 mr-3 finals-label"> Semifinale 1</div> 
                         <i *ngIf="athlete.scores.type == 'SF_2'" class="fa fa-trophy fa-lg " style="color: brown"></i> 
-                        <div *ngIf="athlete.scores.type == 'SF_2'" class="ml-3 mr-3 finals-label"> Semifinale 2</div>                         
+                        <div *ngIf="athlete.scores.type == 'SF_2'" class="ml-3 mr-3 finals-label"> Semifinale 2</div>   -->                       
                         <i class="fa fa-user-circle-o fa-lg mr-2" [ngStyle]="{'color': colorMapping[athlete.scores.color]}"></i> 
                         
                         {{athlete.athlete.cognome}} {{athlete.athlete.nome}} - {{athlete.athlete.data_nascita}} -  {{athlete.athlete.club.nome_societa}}

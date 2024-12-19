@@ -262,9 +262,11 @@ export class TatamiComponent {
   // ================================================================ ELABORAZIONE PUNTEGGI CATEGORIA ==========================================
 
   elaboraPunteggi(nprova){
-    //console.log(this.selectedCategory);
+    console.log(this.selectedCategory);
+
     let request = {
       category: this.selectedCategory.categorycode.codice,
+      grado: this.selectedCategory.categorycode.grado,
       nprova: nprova
     };
 
@@ -434,7 +436,9 @@ export class TatamiComponent {
 
   // ELENCO ATLETI NELLA CATEGORIA SELEZIONATA
   onSelect(category){
+    
     this.selectedCategory = category;
+    console.log(this.selectedCategory)
 
     this.typeForm = category.categorycode.codice.substring(0, 3);
     this.labelCategory = `${category.categorycode.specialita} - ${category.categorycode.categoria} ${category.categorycode.grado} - ${category.categorycode.sesso} ${category.categorycode.cat_peso}`

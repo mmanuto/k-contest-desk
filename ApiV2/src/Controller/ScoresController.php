@@ -254,7 +254,7 @@ class ScoresController extends ApiController
                 'valid_3' => 'DESC'])
             ->toArray();
 
-
+                //TODO: gestione spareggi
             /*$spareggi = $this->checkSpareggi($classification, 'total');
             if(count($spareggi)){
 
@@ -288,16 +288,8 @@ class ScoresController extends ApiController
 
         }
 
-        if($n_prova == 1){
-            $this->manageElimintorie($category, $classification);
-        }else{
-            if($n_prova == 2 && $classification[0]->type == 'E_2'){
-                $this->manageElimintorie($category, $classification);                
-            }else{
-                $this->manageFinali($classification);
-            }
-            
-        }
+        $this->manageElimintorie($category, $data['grado'], $classification);
+
 
     }
 
@@ -319,7 +311,7 @@ class ScoresController extends ApiController
         return $temp_array;
     }*/
 
-    public function manageElimintorie($category, $classification){
+    public function manageElimintorie($category, $grado, $classification){
         if(substr($category, 0, 3) == 'PER' || substr($category, 0, 3) == 'KAG' || substr($category, 0, 3) == 'PAL' || substr($category, 0, 3) == 'KAS' || (substr($category, 0, 3) == 'KIA' && count($classification) <=3)){
             $position = 1;
 
@@ -339,153 +331,53 @@ class ScoresController extends ApiController
             return;
             
         }else{
-            $aka = [];
-            $ao = [];
-            $count_aka = 1;
-            $count_ao = 1;
 
-            //divido le due squadre in ordine
-            foreach ($classification as $item) {
-                if($item->color == 'AKA'){
-                    array_push($aka, $item);
-                    $item->cl_position = $count_aka;
-                    $count_aka++;
-                    $this->Scores->save($item);
-                }else{
-                    array_push($ao, $item);
-                    $item->cl_position = $count_ao;
-                    $count_ao++;
-                    $this->Scores->save($item);
-                }
-            }    
-
-            //se meno di 10 atleti tiro fuori i 6 per la finale
-            if(count($classification)<= 10){
-                $aka[0]->type = 'FI';
-                $aka[0]->opponentid = $ao[0]->athlete_inscription_id;
-                $aka[0]->cl_position = 1;
-                $ao[0]->type = 'FI';
-                $ao[0]->opponentid = $aka[0]->athlete_inscription_id;
-                $ao[0]->cl_position = 1;
-
-    
-                $this->saveAthlete($aka[0]);
-                $this->saveAthlete($ao[0]);
-
-                if(count($aka) == 2 && count($ao) == 2){
-                    
-                    $aka[1]->type = 'CL';
-                    $aka[1]->cl_position = 3;
-                    $aka[1]->opponentid = -1;
-                    $ao[1]->type = 'CL';
-                    $ao[1]->cl_position = 3;
-                    $ao[1]->opponentid = -1;
-
-                    $this->saveAthlete($aka[1]);
-                    $this->saveAthlete($ao[1]);
-                }else{
-                    $aka[1]->opponentid = $ao[2] ? $ao[2]->athlete_inscription_id : -1;
-                    $aka[1]->type = $aka[1]->opponentid == -1 ? 'CL' : 'SF_1';
-                    $aka[1]->cl_position = 3;
-
-                    $ao[1]->opponentid = $aka[2] ? $aka[2]->athlete_inscription_id : -1;
-                    $ao[1]->type = $ao[1]->opponentid == -1 ? 'CL' : 'SF_2';
-                    $ao[1]->cl_position = 4;
-        
-                    $this->saveAthlete($aka[1]);
-                    $this->saveAthlete($ao[1]);
-
-                    if($aka[2]){
-                        $aka[2]->type = 'SF_2';
-                        $aka[2]->opponentid = $ao[1]->athlete_inscription_id;
-                        $aka[2]->cl_position = 4;
-                        $this->saveAthlete($aka[2]);
-                    }
-                    
-                    if($ao[2]){
-                        $ao[2]->type = 'SF_1';
-                        $ao[2]->opponentid = $aka[1]->athlete_inscription_id;
-                        $ao[2]->cl_position = 3;
-                        $this->saveAthlete($ao[2]);
-                    }
-
-                } 
-            }else{ // altrimenti tiro fuori gli otto per il secondo giro di eliminazioni
-                foreach ($aka as $aka_item) {
-                    if($aka_item->cl_position<=4){
-                        $aka_item->type = 'E_2';
-                        $this->saveAthlete($aka_item);
-                    }
-                    
-                }
-
-                foreach ($ao as $ao_item) {
-                    if($ao_item->cl_position<=4){
-                        $ao_item->type = 'E_2';
-                        $this->saveAthlete($ao_item);
-                    }
-                    
-                }
-            }                      
-
-        }
-        $this->apiResponse['success'] = true;
-    }
-
-    public function manageFinali($classification){
-
-        $athlete_fi = [];
-        $athlete_sf1 = [];
-        $athlete_sf2 = [];
-
-        foreach ($classification as $item) {
-
-            switch ($item->type) {
-                case 'FI':
-                   array_push($athlete_fi, $item);
-                    break;
-                case 'SF_1':
-                   array_push($athlete_sf1, $item);
-                    break;
-                case 'SF_2':
-                   array_push($athlete_sf2, $item);
-                    break;
+            
+            //se numero atleti minore di 4 stilo classifica
+            if(count($classification) <= 4){
                 
-                default:
+                $count = 1;
+                foreach ($classification as $item) {
+                    $item->cl_position = $count;
+                    $item->type = 'CL';
+                    $count++;
+                    $this->Scores->save($item);
+                }
 
-                    break;
-            }
-        }
+            }else{
+                //per le cinture colorate o nere fino a 8 atleti tiro fuori i primi 4
+                if($grado != 'Marrone/Nera' || count($classification) <= 8){
 
-        if($athlete_fi && count($athlete_fi) == 2){
-            $athlete_fi[0]->type = 'CL';
-            $athlete_fi[0]->cl_position = $athlete_fi[0]->total > $athlete_fi[1]->total ? 1 : 2;
-            $athlete_fi[1]->type = 'CL';
-            $athlete_fi[1]->cl_position = $athlete_fi[1]->total > $athlete_fi[0]->total ? 1 : 2;
-            foreach ($athlete_fi as $athlete) {
-                $this->Scores->save($athlete);
-            }
-        }
-        if($athlete_sf1 && count($athlete_sf1) == 2){
-            $athlete_sf1[0]->type = 'CL';
-            $athlete_sf1[0]->cl_position = $athlete_sf1[0]->total > $athlete_sf1[1]->total ? 3 : 4;
-            $athlete_sf1[1]->type = 'CL';
-            $athlete_sf1[1]->cl_position = $athlete_sf1[1]->total > $athlete_sf1[0]->total ? 3 : 4;
-            foreach ($athlete_sf1 as $athlete) {
-                $this->Scores->save($athlete);
-            }
-        }
-        if($athlete_sf2 && count($athlete_sf2) == 2){
-            $athlete_sf2[0]->type = 'CL';
-            $athlete_sf2[0]->cl_position = $athlete_sf2[0]->total > $athlete_sf2[1]->total ? 3 : 4;
-            $athlete_sf2[1]->type = 'CL';
-            $athlete_sf2[1]->cl_position = $athlete_sf2[1]->total > $athlete_sf2[0]->total ? 3 : 4;
-            foreach ($athlete_sf2 as $athlete) {
-                $this->Scores->save($athlete);
-            }
-        }
+                    $count = 1;
+                    foreach ($classification as $item) {
+                        $item->cl_position = $count;
+                        $this->Scores->save($item);
 
-        
+                        if($count <= 4){
+                            $item->type = $item->type == 'E' ? 'E_2' : 'E_3';
+                            $this->saveAthlete($item);
+                        }
+                        $count++;
+                    }
+
+                }else{
+                    //pre le centure nere oltre gli 8 atleti tiro fuori i prmi 8
+                    
+                    $count = 1;
+                    foreach ($classification as $item) {
+                        $item->cl_position = $count;
+                        $this->Scores->save($item);
+
+                        if($count <= 8){
+                            $item->type = $item->type == 'E' ? 'E_2' : 'E_3';
+                            $this->saveAthlete($item);
+                        }
+                        $count++;
+                    }
+                }
+            }                    
+
+        }
         $this->apiResponse['success'] = true;
     }
 
@@ -497,7 +389,6 @@ class ScoresController extends ApiController
         $newAthlete['category_code'] = $athlete->category_code;
         $newAthlete['type'] = $athlete->type;
         $newAthlete['n_prova'] = $athlete->n_prova + 1;
-        $newAthlete['opponentid'] = $athlete->opponentid;
         $newAthlete['color'] = $athlete->color;
         $newAthlete['cl_position'] =  $athlete->cl_position;
 

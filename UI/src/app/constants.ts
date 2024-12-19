@@ -6,8 +6,8 @@
   //export const ISCRIZIONI_URL = "https://www.iscrizionicsenveneto.it/apiV2/"
   export const ISCRIZIONI_URL = "http://localhost:4200/backend/" 
   
-  export const BASEAPPURL = "http://" + document.location.hostname + "/csenveneto/ApiV2/";
-  //export const BASEAPPURL = "http://localhost:4200/ApiV2/";
+  //export const BASEAPPURL = "http://" + document.location.hostname + "/csenveneto/ApiV2/";
+  export const BASEAPPURL = "http://localhost:4200/ApiV2/";
   
   export const DISPLYINFO_URL = "http://" + document.location.hostname + "/csenveneto/displayinfo"
   //export const DISPLYINFO_URL = "http://localhost:4200/displayinfo"
@@ -17,7 +17,8 @@
     AO: 'blue',
     PAL: 'teal',
     PER: 'teal',
-    KAG: 'teal'    
+    KAG: 'teal',
+    KIA: 'teal'    
   }
 
   export const PROVA_PERCORSO = 'PER';

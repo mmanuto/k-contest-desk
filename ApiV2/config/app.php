@@ -310,7 +310,7 @@ return [
              */
             'username' => 'root',
             'password' => '',
-            'database' => 'aem',
+            'database' => 'kcontest-desk',
             'encoding' => 'utf8',
 	        'flags' => [],
             'cacheMetadata' => true,

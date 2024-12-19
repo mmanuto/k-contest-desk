@@ -198,25 +198,15 @@ class AthleteInscriptionsController extends ApiController
                     $score_record->n_prova = 1;
     
                     $category = substr($athleteItem->categorycode->codice, 0, 3);
-                    if($category == 'KIA'){
-                        $count++;
-    
-                        if($count % 2 == 0){
-                            $score_record->color = 'AO';
-                            
-                        }else{
-                            $score_record->color = 'AKA';
-                        }
-                    }else{
-                        $score_record->color = $category;
-                        if($category == 'KUA' || $category == 'KUG'){
-                            $score_record->total = 0;
-                            $score_record->yuko = 0;
-                            $score_record->wazaari = 0;
-                            $score_record->ippon = 0;
-                            $score_record->type = 'C';
-                        }
-                    }   
+  
+                    $score_record->color = $category;
+                    if($category == 'KUA' || $category == 'KUG'){
+                        $score_record->total = 0;
+                        $score_record->yuko = 0;
+                        $score_record->wazaari = 0;
+                        $score_record->ippon = 0;
+                        $score_record->type = 'C';
+                    }
                     
                     $newScore = $this->Scores->save($score_record);
                     $athleteItem->scores = $newScore;
