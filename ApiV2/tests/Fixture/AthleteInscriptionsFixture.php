@@ -20,9 +20,9 @@ class AthleteInscriptionsFixture extends TestFixture
         $this->records = [
             [
                 'id' => 1,
-                'athlete_id' => 1,
-                'categorycode_id' => 1,
-                'competition_id' => 1,
+                'athlete_id' => 'Lorem ipsum dolor s',
+                'categorycode_id' => 'Lorem ip',
+                'competition_id' => 'Lorem ipsum dolor ',
                 'cintura' => 'Lorem ipsum dolor sit amet',
                 'n_iscrizione' => 1,
                 'inviato' => 1,
@@ -30,6 +30,8 @@ class AthleteInscriptionsFixture extends TestFixture
                 'accorpamento' => 1,
                 'deleted' => 1,
                 'old_category' => 'Lorem ipsum d',
+                'created_date' => 1736249908,
+                'modified_date' => 1736249908,
             ],
         ];
         parent::init();

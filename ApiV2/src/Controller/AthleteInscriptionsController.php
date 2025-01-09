@@ -161,7 +161,7 @@ class AthleteInscriptionsController extends ApiController
     
                 //Sono già presenti --> Le associo all'atleta
                 if($scores){
-                    $category = substr($athleteItem->categorycode->codice, 0, 3);
+                    $category = substr($athleteItem->categorycode->id, 0, 3);
                     if(count($scores) > 1){
                         if($category == 'KIA'){
                             $max_nprova = 0;
@@ -194,10 +194,10 @@ class AthleteInscriptionsController extends ApiController
                     //Non ci sono --> le creo e le associo all'atleta.
                     $score_record = $this->Scores->newEmptyEntity();
                     $score_record->athlete_inscription_id = $athleteItem->id;
-                    $score_record->category_code = $athleteItem->categorycode->codice;
+                    $score_record->categorycode_id = $athleteItem->categorycode->id;
                     $score_record->n_prova = 1;
     
-                    $category = substr($athleteItem->categorycode->codice, 0, 3);
+                    $category = substr($athleteItem->categorycode->id, 0, 3);
   
                     $score_record->color = $category;
                     if($category == 'KUA' || $category == 'KUG'){
@@ -232,7 +232,7 @@ class AthleteInscriptionsController extends ApiController
                 }
             }
     
-            /*if(substr($athleteList[0]->categorycode->codice, 0, 3) == 'KUA'){
+            /*if(substr($athleteList[0]->categorycode->id, 0, 3) == 'KUA'){
                 $this->generateKumiteMatch(count($athlete_second_match) > 0 ? $athlete_second_match : $athleteList);
             }*/
             $this->apiResponse['data'] = count($athlete_second_match) > 0 ? $athlete_second_match : $athleteList;
@@ -269,7 +269,7 @@ class AthleteInscriptionsController extends ApiController
 
             $scoreList = $this->Scores->find()
                 ->where([
-                    'category_code' =>$request['code'],
+                    'categorycode_id' =>$request['categorycode_id'],
                     'deleted' => 0
                 ])->toArray();
             
@@ -323,7 +323,7 @@ class AthleteInscriptionsController extends ApiController
 
         $splittedCategories = $this->Categorycodes->find()
             ->where([
-                'OR' => [['codice' => $data['codice'].'-M'], ['codice' => $data['codice'].'-F']]
+                'OR' => [['id' => $data['categorycode'].'-M'], ['id' => $data['categorycode'].'-F']]
             ])->toArray();
 
         
@@ -344,11 +344,11 @@ class AthleteInscriptionsController extends ApiController
             $categoryFemale = $this->Categorycodes->newEmptyEntity();
             $categoryFemale = $this->Categorycodes->patchEntity($categoryFemale, $data);
     
-            $categoryMale->codice = $data['codice'].'-M';
+            $categoryMale->id = $data['categorycode'].'-M';
             $categoryMale->sesso = 'M';
             $categoryMale = $this->Categorycodes->save($categoryMale);
             
-            $categoryFemale->codice = $data['codice'].'-F';
+            $categoryFemale->id = $data['categorycode'].'-F';
             $categoryFemale->sesso = 'F';
             $categoryFemale = $this->Categorycodes->save($categoryFemale);
         }

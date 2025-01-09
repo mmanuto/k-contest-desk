@@ -13,6 +13,7 @@ use Cake\Validation\Validator;
  *
  * @property \App\Model\Table\AthleteInscriptionsTable&\Cake\ORM\Association\BelongsTo $AthleteInscriptions
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
+ * @property \App\Model\Table\CategorycodesTable&\Cake\ORM\Association\BelongsTo $Categorycodes
  * @property \App\Model\Table\KatasTable&\Cake\ORM\Association\BelongsTo $Katas
  *
  * @method \App\Model\Entity\Score newEmptyEntity()
@@ -51,6 +52,9 @@ class ScoresTable extends Table
         $this->belongsTo('Users', [
             'foreignKey' => 'user_id',
         ]);
+        $this->belongsTo('Categorycodes', [
+            'foreignKey' => 'categorycode_id',
+        ]);
         $this->belongsTo('Katas', [
             'foreignKey' => 'kata_id',
         ]);
@@ -69,12 +73,14 @@ class ScoresTable extends Table
             ->allowEmptyString('athlete_inscription_id');
 
         $validator
+            ->scalar('user_id')
+            ->maxLength('user_id', 10)
             ->allowEmptyString('user_id');
 
         $validator
-            ->scalar('category_code')
-            ->maxLength('category_code', 10)
-            ->allowEmptyString('category_code');
+            ->scalar('categorycode_id')
+            ->maxLength('categorycode_id', 10)
+            ->allowEmptyString('categorycode_id');
 
         $validator
             ->scalar('type')
@@ -232,6 +238,7 @@ class ScoresTable extends Table
         $rules->add($rules->isUnique(['id']), ['errorField' => 'id']);
         $rules->add($rules->existsIn('athlete_inscription_id', 'AthleteInscriptions'), ['errorField' => 'athlete_inscription_id']);
         $rules->add($rules->existsIn('user_id', 'Users'), ['errorField' => 'user_id']);
+        $rules->add($rules->existsIn('categorycode_id', 'Categorycodes'), ['errorField' => 'categorycode_id']);
         $rules->add($rules->existsIn('kata_id', 'Katas'), ['errorField' => 'kata_id']);
 
         return $rules;

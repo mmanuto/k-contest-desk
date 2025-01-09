@@ -149,7 +149,7 @@ export class AdminPanleComponent implements OnInit {
 
       categories.forEach(category => {
 
-        if(kumite && (category.codice.substring(0, 3) == 'KUA' || category.codice.substring(0, 3) == 'KUG')){
+        if(kumite && (category.id.substring(0, 3) == 'KUA' || category.id.substring(0, 3) == 'KUG')){
           this.creaPdfIscrizioni(category);
         }else if (!kumite){
           this.creaPdfIscrizioni(category, true);
@@ -213,7 +213,7 @@ export class AdminPanleComponent implements OnInit {
       {header: "Società", dataKey: 'societa'}
     ];
  
-    if(category.codice.substring(0, 3) == 'KIA'){
+    if(category.id.substring(0, 3) == 'KIA'){
       columns = [
         {header: "Nr.", dataKey: 'nr'}, 
         {header: "Cintura", dataKey: 'nr'}, 
@@ -222,7 +222,7 @@ export class AdminPanleComponent implements OnInit {
       ];
     }
 
-    if((category.codice.substring(0, 3) == 'KUA' || category.codice.substring(0, 3) == 'KUG') && peso){
+    if((category.id.substring(0, 3) == 'KUA' || category.id.substring(0, 3) == 'KUG') && peso){
       columns = [
         {header: "Nr.", dataKey: 'nr'},  
         {header: "Atleti", dataKey: 'atleti'}, 
@@ -237,7 +237,7 @@ export class AdminPanleComponent implements OnInit {
 
       let record = [count, atleta.athlete.cognome + ' ' + atleta.athlete.nome, atleta.athlete.club.nome_societa];
 
-      if(category.codice.substring(0, 3) == 'KIA'){
+      if(category.id.substring(0, 3) == 'KIA'){
         let color = 'AKA'
         if(category.athletes.length != 3 && count % 2 == 0){
             color = 'AO';
@@ -245,7 +245,7 @@ export class AdminPanleComponent implements OnInit {
         record = [count, color, atleta.athlete.cognome + ' ' + atleta.athlete.nome, atleta.athlete.club.nome_societa];
       }
 
-      if((category.codice.substring(0, 3) == 'KUA' || category.codice.substring(0, 3) == 'KUG') && peso){
+      if((category.id.substring(0, 3) == 'KUA' || category.id.substring(0, 3) == 'KUG') && peso){
         
         record = [count, atleta.athlete.cognome + ' ' + atleta.athlete.nome, atleta.athlete.club.nome_societa, atleta.athlete.peso];
       }

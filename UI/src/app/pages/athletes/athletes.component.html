@@ -224,7 +224,7 @@
                             <label class="col-md-3 col-form-label" for="select1">Nuova categoria</label>
                             <div class="col-md-9">
                               <select class="form-control" id="selectTatami" formControlName="categorycode_id" >
-                                <option *ngFor="let category of categoryList" [value]="category.id">{{category.codice}} - {{category.specialita}} - {{category.categoria}} {{category.sesso}} {{category.grado}} {{category.cat_peso }}</option>
+                                <option *ngFor="let category of categoryList" [value]="category.id">{{category.id}} - {{category.specialita}} - {{category.categoria}} {{category.sesso}} {{category.grado}} {{category.cat_peso }}</option>
                             </select>
                             </div>
                           </div>

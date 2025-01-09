@@ -21,8 +21,8 @@ class ScoresFixture extends TestFixture
             [
                 'id' => 1,
                 'athlete_inscription_id' => 1,
-                'user_id' => 1,
-                'category_code' => 'Lorem ip',
+                'user_id' => 'Lorem ip',
+                'categorycode_id' => 'Lorem ip',
                 'type' => 'Lor',
                 'n_prova' => 1,
                 'kata_id' => 1,

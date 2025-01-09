@@ -25,7 +25,9 @@ class CategorycodesTableTest extends TestCase
      */
     protected $fixtures = [
         'app.Categorycodes',
+        'app.Agecategories',
         'app.AthleteInscriptions',
+        'app.Scores',
         'app.Users',
     ];
 
@@ -60,6 +62,17 @@ class CategorycodesTableTest extends TestCase
      * @uses \App\Model\Table\CategorycodesTable::validationDefault()
      */
     public function testValidationDefault(): void
+    {
+        $this->markTestIncomplete('Not implemented yet.');
+    }
+
+    /**
+     * Test buildRules method
+     *
+     * @return void
+     * @uses \App\Model\Table\CategorycodesTable::buildRules()
+     */
+    public function testBuildRules(): void
     {
         $this->markTestIncomplete('Not implemented yet.');
     }

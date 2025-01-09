@@ -20,8 +20,8 @@ class UsersCategorycodesFixture extends TestFixture
         $this->records = [
             [
                 'id' => 1,
-                'user_id' => 'Lore',
-                'categorycode_id' => 1,
+                'user_id' => 'Lorem ip',
+                'categorycode_id' => 'Lorem ip',
                 'status' => 'Lorem ipsum dolor ',
             ],
         ];

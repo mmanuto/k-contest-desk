@@ -3,20 +3,20 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Model\Table;
 
-use App\Model\Table\ScoresTable;
+use App\Model\Table\AgecategoriesTable;
 use Cake\TestSuite\TestCase;
 
 /**
- * App\Model\Table\ScoresTable Test Case
+ * App\Model\Table\AgecategoriesTable Test Case
  */
-class ScoresTableTest extends TestCase
+class AgecategoriesTableTest extends TestCase
 {
     /**
      * Test subject
      *
-     * @var \App\Model\Table\ScoresTable
+     * @var \App\Model\Table\AgecategoriesTable
      */
-    protected $Scores;
+    protected $Agecategories;
 
     /**
      * Fixtures
@@ -24,11 +24,8 @@ class ScoresTableTest extends TestCase
      * @var array<string>
      */
     protected $fixtures = [
-        'app.Scores',
-        'app.AthleteInscriptions',
-        'app.Users',
+        'app.Agecategories',
         'app.Categorycodes',
-        'app.Katas',
     ];
 
     /**
@@ -39,8 +36,8 @@ class ScoresTableTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $config = $this->getTableLocator()->exists('Scores') ? [] : ['className' => ScoresTable::class];
-        $this->Scores = $this->getTableLocator()->get('Scores', $config);
+        $config = $this->getTableLocator()->exists('Agecategories') ? [] : ['className' => AgecategoriesTable::class];
+        $this->Agecategories = $this->getTableLocator()->get('Agecategories', $config);
     }
 
     /**
@@ -50,7 +47,7 @@ class ScoresTableTest extends TestCase
      */
     protected function tearDown(): void
     {
-        unset($this->Scores);
+        unset($this->Agecategories);
 
         parent::tearDown();
     }
@@ -59,7 +56,7 @@ class ScoresTableTest extends TestCase
      * Test validationDefault method
      *
      * @return void
-     * @uses \App\Model\Table\ScoresTable::validationDefault()
+     * @uses \App\Model\Table\AgecategoriesTable::validationDefault()
      */
     public function testValidationDefault(): void
     {
@@ -70,7 +67,7 @@ class ScoresTableTest extends TestCase
      * Test buildRules method
      *
      * @return void
-     * @uses \App\Model\Table\ScoresTable::buildRules()
+     * @uses \App\Model\Table\AgecategoriesTable::buildRules()
      */
     public function testBuildRules(): void
     {

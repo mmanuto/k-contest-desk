@@ -76,13 +76,18 @@ class AthleteInscriptionsTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
-            ->integer('athlete_id')
+            ->scalar('athlete_id')
+            ->maxLength('athlete_id', 21)
             ->notEmptyString('athlete_id');
 
         $validator
+            ->scalar('categorycode_id')
+            ->maxLength('categorycode_id', 10)
             ->notEmptyString('categorycode_id');
 
         $validator
+            ->scalar('competition_id')
+            ->maxLength('competition_id', 20)
             ->notEmptyString('competition_id');
 
         $validator
@@ -111,6 +116,14 @@ class AthleteInscriptionsTable extends Table
             ->maxLength('old_category', 15)
             ->requirePresence('old_category', 'create')
             ->notEmptyString('old_category');
+
+        $validator
+            ->dateTime('created_date')
+            ->notEmptyDateTime('created_date');
+
+        $validator
+            ->dateTime('modified_date')
+            ->notEmptyDateTime('modified_date');
 
         return $validator;
     }

@@ -64,10 +64,12 @@ class UsersCategorycodesTable extends Table
     {
         $validator
             ->scalar('user_id')
-            ->maxLength('user_id', 6)
+            ->maxLength('user_id', 10)
             ->notEmptyString('user_id');
 
         $validator
+            ->scalar('categorycode_id')
+            ->maxLength('categorycode_id', 10)
             ->notEmptyString('categorycode_id');
 
         $validator

@@ -10,7 +10,7 @@ use Cake\ORM\Entity;
  *
  * @property int $id
  * @property string $user_id
- * @property int $categorycode_id
+ * @property string $categorycode_id
  * @property string $status
  *
  * @property \App\Model\Entity\User $user

@@ -6,17 +6,18 @@ namespace App\Model\Entity;
 use Cake\ORM\Entity;
 
 /**
- * ClubInscription Entity
+ * Agecategory Entity
  *
- * @property int $id
- * @property string $club_id
- * @property string $competition_id
- * @property \Cake\I18n\FrozenTime $created_date
+ * @property string $id
+ * @property string $description
+ * @property int $age_min
+ * @property int $age_max
+ * @property bool $agonist
+ * @property bool $out_category
  *
- * @property \App\Model\Entity\Club $club
- * @property \App\Model\Entity\Competition $competition
+ * @property \App\Model\Entity\Categorycode[] $categorycodes
  */
-class ClubInscription extends Entity
+class Agecategory extends Entity
 {
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
@@ -28,10 +29,11 @@ class ClubInscription extends Entity
      * @var array<string, bool>
      */
     protected $_accessible = [
-        'club_id' => true,
-        'competition_id' => true,
-        'created_date' => true,
-        'club' => true,
-        'competition' => true,
+        'description' => true,
+        'age_min' => true,
+        'age_max' => true,
+        'agonist' => true,
+        'out_category' => true,
+        'categorycodes' => true,
     ];
 }

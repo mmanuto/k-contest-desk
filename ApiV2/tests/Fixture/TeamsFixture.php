@@ -20,11 +20,13 @@ class TeamsFixture extends TestFixture
         $this->records = [
             [
                 'id' => 1,
-                'club_id' => 1,
-                'competition_id' => 1,
+                'club_id' => 'Lorem ipsum dolor s',
+                'competition_id' => 'Lorem ipsum dolor ',
                 'componenti' => 'Lorem ipsum dolor sit amet',
                 'categoria' => 'Lorem ipsum dolor sit amet',
                 'grado' => 'Lorem ipsum dolor sit amet',
+                'created_date' => 1736327159,
+                'modified_date' => 1736327159,
             ],
         ];
         parent::init();

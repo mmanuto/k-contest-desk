@@ -10,8 +10,8 @@ use Cake\ORM\Entity;
  *
  * @property int $id
  * @property int|null $athlete_inscription_id
- * @property int|null $user_id
- * @property string|null $category_code
+ * @property string|null $user_id
+ * @property string|null $categorycode_id
  * @property string|null $type
  * @property int|null $n_prova
  * @property int|null $kata_id
@@ -52,6 +52,7 @@ use Cake\ORM\Entity;
  *
  * @property \App\Model\Entity\AthleteInscription $athlete_inscription
  * @property \App\Model\Entity\User $user
+ * @property \App\Model\Entity\Categorycode $categorycode
  * @property \App\Model\Entity\Kata $kata
  */
 class Score extends Entity
@@ -68,7 +69,7 @@ class Score extends Entity
     protected $_accessible = [
         'athlete_inscription_id' => true,
         'user_id' => true,
-        'category_code' => true,
+        'categorycode_id' => true,
         'type' => true,
         'n_prova' => true,
         'kata_id' => true,
@@ -108,6 +109,7 @@ class Score extends Entity
         'deleted' => true,
         'athlete_inscription' => true,
         'user' => true,
+        'categorycode' => true,
         'kata' => true,
     ];
 }

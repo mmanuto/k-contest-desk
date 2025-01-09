@@ -9,9 +9,9 @@ use Cake\ORM\Entity;
  * AthleteInscription Entity
  *
  * @property int $id
- * @property int $athlete_id
- * @property int $categorycode_id
- * @property int $competition_id
+ * @property string $athlete_id
+ * @property string $categorycode_id
+ * @property string $competition_id
  * @property string $cintura
  * @property int|null $n_iscrizione
  * @property int $inviato
@@ -19,6 +19,8 @@ use Cake\ORM\Entity;
  * @property int $accorpamento
  * @property int $deleted
  * @property string $old_category
+ * @property \Cake\I18n\FrozenTime $created_date
+ * @property \Cake\I18n\FrozenTime $modified_date
  *
  * @property \App\Model\Entity\Athlete $athlete
  * @property \App\Model\Entity\Categorycode $categorycode
@@ -48,6 +50,8 @@ class AthleteInscription extends Entity
         'accorpamento' => true,
         'deleted' => true,
         'old_category' => true,
+        'created_date' => true,
+        'modified_date' => true,
         'athlete' => true,
         'categorycode' => true,
         'competition' => true,

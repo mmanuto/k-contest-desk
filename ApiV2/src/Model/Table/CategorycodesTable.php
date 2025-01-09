@@ -11,7 +11,9 @@ use Cake\Validation\Validator;
 /**
  * Categorycodes Model
  *
+ * @property \App\Model\Table\AgecategoriesTable&\Cake\ORM\Association\BelongsTo $Agecategories
  * @property \App\Model\Table\AthleteInscriptionsTable&\Cake\ORM\Association\HasMany $AthleteInscriptions
+ * @property \App\Model\Table\ScoresTable&\Cake\ORM\Association\HasMany $Scores
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsToMany $Users
  *
  * @method \App\Model\Entity\Categorycode newEmptyEntity()
@@ -41,10 +43,13 @@ class CategorycodesTable extends Table
         parent::initialize($config);
 
         $this->setTable('categorycodes');
-        $this->setDisplayField('codice');
+        $this->setDisplayField('id');
         $this->setPrimaryKey('id');
 
         $this->hasMany('AthleteInscriptions', [
+            'foreignKey' => 'categorycode_id',
+        ]);
+        $this->hasMany('Scores', [
             'foreignKey' => 'categorycode_id',
         ]);
         $this->belongsToMany('Users', [
@@ -63,16 +68,15 @@ class CategorycodesTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
-            ->scalar('codice')
-            ->maxLength('codice', 10)
-            ->requirePresence('codice', 'create')
-            ->notEmptyString('codice');
-
-        $validator
             ->scalar('categoria')
             ->maxLength('categoria', 50)
             ->requirePresence('categoria', 'create')
             ->notEmptyString('categoria');
+
+        $validator
+            ->scalar('agecategory_id')
+            ->maxLength('agecategory_id', 10)
+            ->allowEmptyString('agecategory_id');
 
         $validator
             ->integer('anno_min')
@@ -128,6 +132,25 @@ class CategorycodesTable extends Table
             ->requirePresence('codiceTipoCategorie', 'create')
             ->notEmptyString('codiceTipoCategorie');
 
+        $validator
+            ->integer('order_number')
+            ->requirePresence('order_number', 'create')
+            ->notEmptyString('order_number');
+
         return $validator;
+    }
+
+    /**
+     * Returns a rules checker object that will be used for validating
+     * application integrity.
+     *
+     * @param \Cake\ORM\RulesChecker $rules The rules object to be modified.
+     * @return \Cake\ORM\RulesChecker
+     */
+    public function buildRules(RulesChecker $rules): RulesChecker
+    {
+        $rules->add($rules->isUnique(['id']), ['errorField' => 'id']);
+
+        return $rules;
     }
 }

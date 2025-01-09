@@ -137,10 +137,33 @@ class CompetitionsTable extends Table
             ->allowEmptyString('codiceTipoCategorie');
 
         $validator
-            ->boolean('stato')
-            ->requirePresence('stato', 'create')
-            ->notEmptyString('stato');
+            ->scalar('comp_status')
+            ->maxLength('comp_status', 30)
+            ->notEmptyString('comp_status');
+
+        $validator
+            ->notEmptyString('flag_tabs');
+
+        $validator
+            ->notEmptyString('flag_classifications');
+
+        $validator
+            ->notEmptyString('flag_timetable');
 
         return $validator;
+    }
+
+    /**
+     * Returns a rules checker object that will be used for validating
+     * application integrity.
+     *
+     * @param \Cake\ORM\RulesChecker $rules The rules object to be modified.
+     * @return \Cake\ORM\RulesChecker
+     */
+    public function buildRules(RulesChecker $rules): RulesChecker
+    {
+        $rules->add($rules->isUnique(['id']), ['errorField' => 'id']);
+
+        return $rules;
     }
 }

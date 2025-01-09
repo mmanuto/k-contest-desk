@@ -9,11 +9,13 @@ use Cake\ORM\Entity;
  * Team Entity
  *
  * @property int $id
- * @property int $club_id
- * @property int $competition_id
+ * @property string $club_id
+ * @property string $competition_id
  * @property string $componenti
  * @property string $categoria
  * @property string $grado
+ * @property \Cake\I18n\FrozenTime $created_date
+ * @property \Cake\I18n\FrozenTime $modified_date
  *
  * @property \App\Model\Entity\Club $club
  * @property \App\Model\Entity\Competition $competition
@@ -35,6 +37,8 @@ class Team extends Entity
         'componenti' => true,
         'categoria' => true,
         'grado' => true,
+        'created_date' => true,
+        'modified_date' => true,
         'club' => true,
         'competition' => true,
     ];

@@ -7,10 +7,10 @@
                 <li *ngFor="let category of tatamiStatus;">
     
                   <button [class.selected]="selectedCategory && category.categorycode_id === selectedCategory.categorycode_id" type="button" (click)="onSelect(category)">
-                    <span *ngIf="category.status == constants.STATUS_TODO" class="badge badge-success code">{{category.categorycode.codice}}</span>
-                    <span *ngIf="category.status == constants.STATUS_OPEN" class="badge badge-primary code">{{category.categorycode.codice}}</span>
-                    <span *ngIf="category.status == constants.STATUS_DOING" class="badge badge-warning code">{{category.categorycode.codice}}</span>
-                    <span *ngIf="category.status == constants.STATUS_DONE" class="badge badge-danger code">{{category.categorycode.codice}}</span>
+                    <span *ngIf="category.status == constants.STATUS_TODO" class="badge badge-success code">{{category.categorycode.id}}</span>
+                    <span *ngIf="category.status == constants.STATUS_OPEN" class="badge badge-primary code">{{category.categorycode.id}}</span>
+                    <span *ngIf="category.status == constants.STATUS_DOING" class="badge badge-warning code">{{category.categorycode.id}}</span>
+                    <span *ngIf="category.status == constants.STATUS_DONE" class="badge badge-danger code">{{category.categorycode.id}}</span>
                     <span class="name">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} </span>
                     <span></span>
                     
@@ -55,7 +55,7 @@
                         <div *ngIf="athlete.scores.type == 'SF_2'" class="ml-3 mr-3 finals-label"> Semifinale 2</div>   -->                       
                         <i class="fa fa-user-circle-o fa-lg mr-2" [ngStyle]="{'color': colorMapping[athlete.scores.color]}"></i> 
                         
-                        {{athlete.athlete.cognome}} {{athlete.athlete.nome}} - {{athlete.athlete.data_nascita}} -  {{athlete.athlete.club.nome_societa}}
+                        {{athlete.athlete.cognome}} {{athlete.athlete.nome}} - {{athlete.athlete.data_nascita}} -  {{athlete.athlete.club.club_name}}
                         <div *ngIf="athlete.scores.type == 'CL'" class="ml-3 mr-3 finals-label"> CLASSIFICA FINALE</div> 
                         <i *ngIf="athlete.scores.total != null || athlete.scores.total_time_seconds != null" class="fa fa-check fa-lg" style="color:green"></i>
                  
@@ -445,7 +445,7 @@
                 <i *ngIf="currentMatch.ao.scores.win == 1" class="fa fa-square fa-lg float-right" style="color:blue"></i> 
                 <i *ngIf="currentMatch.ao.scores.win == 0" class="fa fa-remove fa-lg float-right" style="color:blue"></i> 
                   <h5> <b>{{currentMatch.ao.athlete.cognome}} {{currentMatch.ao.athlete.nome}}</b></h5>
-                  <p>{{currentMatch.ao.athlete.club.nome_societa}}</p>
+                  <p>{{currentMatch.ao.athlete.club.club_name}}</p>
                     <h2 style="color: blue !important; font-weight: bold;">{{currentMatch.ao.scores.total}}</h2>
                     
                   <p style="color: blue !important; font-weight: bold;">C: {{currentMatch.ao.scores.chui_1 ? '1C' : '--'}} {{currentMatch.ao.scores.chui_2 ? '2C' : '--'}} {{currentMatch.ao.scores.chui_3 ? '3C' : '--'}} {{currentMatch.ao.scores.hans_chui ? 'HC' : '--'}} {{currentMatch.ao.scores.hansoku ? 'H' : '--'}}</p>
@@ -471,7 +471,7 @@
                 <i *ngIf="currentMatch.aka.scores.win == 1" class="fa fa-square fa-lg float-left" style="color:red"></i> 
                 <i *ngIf="currentMatch.aka.scores.win == 0" class="fa fa-remove fa-lg float-left" style="color:red"></i> 
                 <h5><b>{{currentMatch.aka.athlete.cognome}} {{currentMatch.aka.athlete.nome}}</b></h5>
-                <p>{{currentMatch.aka.athlete.club.nome_societa}}</p>
+                <p>{{currentMatch.aka.athlete.club.club_name}}</p>
                 <h2 style="color: red !important; font-weight: bold;">{{currentMatch.aka.scores.total}}</h2>
                 <p style="color: red !important; font-weight: bold;">C: {{currentMatch.aka.scores.chui_1 ? '1C' : '--'}} {{currentMatch.aka.scores.chui_2 ? '2C' : '--'}} {{currentMatch.aka.scores.chui_3 ? '3C' : '--'}} {{currentMatch.aka.scores.hans_chui ? 'HC' : '--'}} {{currentMatch.aka.scores.hansoku ? 'H' : '--'}}</p>
 

@@ -263,20 +263,20 @@ export class CategoriesComponent implements OnInit {
       
 
       if(this.athleteList.length == 3){
-        let firstMatch = [this.athleteList[0]['athlete']['cognome'] + ' ' + this.athleteList[0]['athlete']['nome'] + ' - ' + this.athleteList[0]['athlete']['club']['nome_societa'],
-          this.athleteList[1]['athlete']['cognome'] + ' ' + this.athleteList[1]['athlete']['nome'] + ' - ' + this.athleteList[1]['athlete']['club']['nome_societa']
+        let firstMatch = [this.athleteList[0]['athlete']['cognome'] + ' ' + this.athleteList[0]['athlete']['nome'] + ' - ' + this.athleteList[0]['athlete']['club']['club_name'],
+          this.athleteList[1]['athlete']['cognome'] + ' ' + this.athleteList[1]['athlete']['nome'] + ' - ' + this.athleteList[1]['athlete']['club']['club_name']
         ];
         let firstResult = [null, null];
 
         let secondMatch = [
-          this.athleteList[0]['athlete']['cognome'] + ' ' + this.athleteList[0]['athlete']['nome'] + ' - ' + this.athleteList[0]['athlete']['club']['nome_societa'],
-          this.athleteList[2]['athlete']['cognome'] + ' ' + this.athleteList[2]['athlete']['nome'] + ' - ' + this.athleteList[2]['athlete']['club']['nome_societa']
+          this.athleteList[0]['athlete']['cognome'] + ' ' + this.athleteList[0]['athlete']['nome'] + ' - ' + this.athleteList[0]['athlete']['club']['club_name'],
+          this.athleteList[2]['athlete']['cognome'] + ' ' + this.athleteList[2]['athlete']['nome'] + ' - ' + this.athleteList[2]['athlete']['club']['club_name']
         ];
         let secondResult = [null, null];
 
         let thirdMatch = [
-          this.athleteList[1]['athlete']['cognome'] + ' ' + this.athleteList[1]['athlete']['nome'] + ' - ' + this.athleteList[1]['athlete']['club']['nome_societa'],
-          this.athleteList[2]['athlete']['cognome'] + ' ' + this.athleteList[2]['athlete']['nome'] + ' - ' + this.athleteList[2]['athlete']['club']['nome_societa']
+          this.athleteList[1]['athlete']['cognome'] + ' ' + this.athleteList[1]['athlete']['nome'] + ' - ' + this.athleteList[1]['athlete']['club']['club_name'],
+          this.athleteList[2]['athlete']['cognome'] + ' ' + this.athleteList[2]['athlete']['nome'] + ' - ' + this.athleteList[2]['athlete']['club']['club_name']
         ];  
         
         let thirdResult = [null, null];
@@ -391,7 +391,7 @@ export class CategoriesComponent implements OnInit {
               position: position, 
               id: this.athleteList[index].id, 
               name: this.athleteList[index].athlete.cognome + ' ' + this.athleteList[index].athlete.nome, 
-              club:this.athleteList[index].athlete.club.nome_societa
+              club:this.athleteList[index].athlete.club.club_name
             })
           }else{
             this.kumiteMatches.push({

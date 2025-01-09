@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 use RestApi\Controller\ApiController;
+use Cake\Utility\Hash;
 
 /**
  * Scores Controller
@@ -234,7 +235,7 @@ class ScoresController extends ApiController
         if(substr($category, 0, 3) == 'PER'){
             $classification = $this->Scores->find('All')
             ->where([
-                'category_code' => $category,
+                'categorycode_id' => $category,
                 'total_time_seconds >' => 0,
                 'deleted' => 0
             ])
@@ -243,7 +244,7 @@ class ScoresController extends ApiController
         }else{
             $classification = $this->Scores->find('All')
             ->where([
-                'category_code' => $category,
+                'categorycode_id' => $category,
                 'n_prova' => $n_prova,
                 'total >' => 0,
                 'deleted' => 0
@@ -254,36 +255,9 @@ class ScoresController extends ApiController
                 'valid_3' => 'DESC'])
             ->toArray();
 
-                //TODO: gestione spareggi
-            /*$spareggi = $this->checkSpareggi($classification, 'total');
-            if(count($spareggi)){
-
-                if(substr($category, 0, 3) == 'KIA'){
-                    //spareggi adulti
-                    $aka = array();
-                    $ao = array();
-
-                    foreach ($spareggi as $score) {
-                        if($score['color'] == 'AKA'){
-                            array_push($aka, $score);
-                        }else if($score['color'] == 'AO'){
-                            array_push($ao, $score);
-                        }
-                    }
-
-                    if(count($aka) > 0){
-                        //$this->resolveSpareggiAdulti($aka);
-                    }
-
-                    if(count($ao) > 0){
-                        //$this->resolveSpareggiAdulti($ao);
-                    }
-                    
-                }else{
-                    //spareggi bambini
-                }
-
-            }*/
+            foreach ($classification as $item) {
+                $item->total = (string)$item->total;
+            }
             
 
         }
@@ -292,24 +266,6 @@ class ScoresController extends ApiController
 
 
     }
-
-    /*function checkSpareggi($array, $key) {
-        $temp_array = [];
-        foreach ($array as $current_key => $current_array) {
-            foreach ($array as $search_key => $search_array) {
-                if ($search_array[$key] && $search_array[$key] == $current_array[$key]) {
-                    if ($search_key != $current_key) {
-                        if(array_search($current_array['id'], array_column($temp_array, 'id')) === FALSE){
-                            array_push($temp_array, $current_array);
-                        }
-                    
-                    }
-                }
-            }
-        
-        }
-        return $temp_array;
-    }*/
 
     public function manageElimintorie($category, $grado, $classification){
         if(substr($category, 0, 3) == 'PER' || substr($category, 0, 3) == 'KAG' || substr($category, 0, 3) == 'PAL' || substr($category, 0, 3) == 'KAS' || (substr($category, 0, 3) == 'KIA' && count($classification) <=3)){
@@ -335,14 +291,29 @@ class ScoresController extends ApiController
             
             //se numero atleti minore di 4 stilo classifica
             if(count($classification) <= 4){
-                
-                $count = 1;
-                foreach ($classification as $item) {
-                    $item->cl_position = $count;
-                    $item->type = 'CL';
-                    $count++;
-                    $this->Scores->save($item);
+
+                $spareggio = false;
+                $groupedByValue = Hash::combine($classification, '{n}.id', '{n}', '{n}.total');
+                //print_r($groupedByValue); die();
+
+                foreach ($groupedByValue as $item) {
+                    if(count($item) > 1){
+                        $spareggio = true;
+                    }
                 }
+
+                //if(!$spareggio){
+                    $count = 1;
+                    foreach ($classification as $item) {
+                        $item->cl_position = $count;
+                        $item->type = 'CL';
+                        $count++;
+                        $this->Scores->save($item);
+                    }
+                //}else{
+                    //TODO: gestire lo spareggio - invio flag + $groupedByValue
+                //}                
+                
 
             }else{
                 //per le cinture colorate o nere fino a 8 atleti tiro fuori i primi 4
@@ -386,7 +357,7 @@ class ScoresController extends ApiController
         $newAthlete = $this->Scores->newEmptyEntity();
         $newAthlete['athlete_inscription_id'] = $athlete->athlete_inscription_id;
         $newAthlete['user_id'] = $athlete->user_id;
-        $newAthlete['category_code'] = $athlete->category_code;
+        $newAthlete['categorycode_id'] = $athlete->categorycode_id;
         $newAthlete['type'] = $athlete->type;
         $newAthlete['n_prova'] = $athlete->n_prova + 1;
         $newAthlete['color'] = $athlete->color;
@@ -469,7 +440,7 @@ class ScoresController extends ApiController
 
         $matches = $this->Scores->find('All')
             ->where([
-                'category_code' => $data['category_code'],
+                'categorycode_id' => $data['categorycode_id'],
                 'athlete_inscription_id' => $data['athlete_inscription_id'],
                 'deleted' => 0
             ])
@@ -513,7 +484,7 @@ class ScoresController extends ApiController
         $newAkaMatch = $this->Scores->newEmptyEntity();
         $newAkaMatch['athlete_inscription_id'] = $akaScore->athlete_inscription_id;
         $newAkaMatch['user_id'] = $akaScore->user_id;
-        $newAkaMatch['category_code'] = $akaScore->category_code;
+        $newAkaMatch['categorycode_id'] = $akaScore->categorycode_id;
         $newAkaMatch['type'] = 'C';
         $newAkaMatch['n_prova'] = $akaScore->n_prova + 1;
         $newAkaMatch->total = 0;
@@ -544,7 +515,7 @@ class ScoresController extends ApiController
         $newAoMatch = $this->Scores->newEmptyEntity();
         $newAoMatch['athlete_inscription_id'] = $aoScore->athlete_inscription_id;
         $newAoMatch['user_id'] = $aoScore->user_id;
-        $newAoMatch['category_code'] = $aoScore->category_code;
+        $newAoMatch['categorycode_id'] = $aoScore->categorycode_id;
         $newAoMatch['type'] = 'C';
         $newAoMatch['n_prova'] = $aoScore->n_prova + 1;
         $newAoMatch['total'] = 0;

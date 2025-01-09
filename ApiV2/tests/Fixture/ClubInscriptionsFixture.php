@@ -20,8 +20,9 @@ class ClubInscriptionsFixture extends TestFixture
         $this->records = [
             [
                 'id' => 1,
-                'club_id' => 1,
-                'competition_id' => 1,
+                'club_id' => 'Lorem ipsum dolor s',
+                'competition_id' => 'Lorem ipsum dolor ',
+                'created_date' => 1736249941,
             ],
         ];
         parent::init();

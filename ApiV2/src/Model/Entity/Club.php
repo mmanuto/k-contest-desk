@@ -8,13 +8,18 @@ use Cake\ORM\Entity;
 /**
  * Club Entity
  *
- * @property int $id
- * @property string $nome_societa
- * @property string $responsabile
- * @property string $telefono
+ * @property string $id
+ * @property string|null $club_code
+ * @property string $club_name
+ * @property string $fiscal_code
+ * @property string|null $short_name
+ * @property string $club_manager
+ * @property string $telephone_n
  * @property string $mail
  * @property string $coach
- * @property string $CF
+ * @property \Cake\I18n\FrozenTime|null $last_login
+ * @property \Cake\I18n\FrozenTime $created_date
+ * @property \Cake\I18n\FrozenTime $modified_date
  *
  * @property \App\Model\Entity\Athlete[] $athletes
  * @property \App\Model\Entity\ClubInscription[] $club_inscriptions
@@ -32,12 +37,17 @@ class Club extends Entity
      * @var array<string, bool>
      */
     protected $_accessible = [
-        'nome_societa' => true,
-        'responsabile' => true,
-        'telefono' => true,
+        'club_code' => true,
+        'club_name' => true,
+        'fiscal_code' => true,
+        'short_name' => true,
+        'club_manager' => true,
+        'telephone_n' => true,
         'mail' => true,
         'coach' => true,
-        'CF' => true,
+        'last_login' => true,
+        'created_date' => true,
+        'modified_date' => true,
         'athletes' => true,
         'club_inscriptions' => true,
         'teams' => true,

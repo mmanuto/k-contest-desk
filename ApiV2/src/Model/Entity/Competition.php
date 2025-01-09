@@ -8,7 +8,7 @@ use Cake\ORM\Entity;
 /**
  * Competition Entity
  *
- * @property int $id
+ * @property string $id
  * @property string $responsabile
  * @property string $club_name
  * @property string|null $logo
@@ -23,7 +23,10 @@ use Cake\ORM\Entity;
  * @property int $nr_atleti
  * @property string $richieste
  * @property int|null $codiceTipoCategorie
- * @property bool $stato
+ * @property string $comp_status
+ * @property int $flag_tabs
+ * @property int $flag_classifications
+ * @property int $flag_timetable
  *
  * @property \App\Model\Entity\AthleteInscription[] $athlete_inscriptions
  * @property \App\Model\Entity\ClubInscription[] $club_inscriptions
@@ -55,7 +58,10 @@ class Competition extends Entity
         'nr_atleti' => true,
         'richieste' => true,
         'codiceTipoCategorie' => true,
-        'stato' => true,
+        'comp_status' => true,
+        'flag_tabs' => true,
+        'flag_classifications' => true,
+        'flag_timetable' => true,
         'athlete_inscriptions' => true,
         'club_inscriptions' => true,
         'teams' => true,

@@ -65,22 +65,38 @@ class ClubsTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
-            ->scalar('nome_societa')
-            ->maxLength('nome_societa', 500)
-            ->requirePresence('nome_societa', 'create')
-            ->notEmptyString('nome_societa');
+            ->scalar('club_code')
+            ->maxLength('club_code', 50)
+            ->allowEmptyString('club_code');
 
         $validator
-            ->scalar('responsabile')
-            ->maxLength('responsabile', 50)
-            ->requirePresence('responsabile', 'create')
-            ->notEmptyString('responsabile');
+            ->scalar('club_name')
+            ->maxLength('club_name', 500)
+            ->requirePresence('club_name', 'create')
+            ->notEmptyString('club_name');
 
         $validator
-            ->scalar('telefono')
-            ->maxLength('telefono', 20)
-            ->requirePresence('telefono', 'create')
-            ->notEmptyString('telefono');
+            ->scalar('fiscal_code')
+            ->maxLength('fiscal_code', 20)
+            ->requirePresence('fiscal_code', 'create')
+            ->notEmptyString('fiscal_code');
+
+        $validator
+            ->scalar('short_name')
+            ->maxLength('short_name', 20)
+            ->allowEmptyString('short_name');
+
+        $validator
+            ->scalar('club_manager')
+            ->maxLength('club_manager', 50)
+            ->requirePresence('club_manager', 'create')
+            ->notEmptyString('club_manager');
+
+        $validator
+            ->scalar('telephone_n')
+            ->maxLength('telephone_n', 20)
+            ->requirePresence('telephone_n', 'create')
+            ->notEmptyString('telephone_n');
 
         $validator
             ->scalar('mail')
@@ -95,11 +111,31 @@ class ClubsTable extends Table
             ->notEmptyString('coach');
 
         $validator
-            ->scalar('CF')
-            ->maxLength('CF', 20)
-            ->requirePresence('CF', 'create')
-            ->notEmptyString('CF');
+            ->dateTime('last_login')
+            ->allowEmptyDateTime('last_login');
+
+        $validator
+            ->dateTime('created_date')
+            ->notEmptyDateTime('created_date');
+
+        $validator
+            ->dateTime('modified_date')
+            ->notEmptyDateTime('modified_date');
 
         return $validator;
+    }
+
+    /**
+     * Returns a rules checker object that will be used for validating
+     * application integrity.
+     *
+     * @param \Cake\ORM\RulesChecker $rules The rules object to be modified.
+     * @return \Cake\ORM\RulesChecker
+     */
+    public function buildRules(RulesChecker $rules): RulesChecker
+    {
+        $rules->add($rules->isUnique(['id']), ['errorField' => 'id']);
+
+        return $rules;
     }
 }

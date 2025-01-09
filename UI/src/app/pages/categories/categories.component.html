@@ -35,7 +35,7 @@
               </thead>
               <tbody>
                   <tr *ngFor="let category of categories | paginate: { itemsPerPage: 25, currentPage: p }">                        
-                    <td class="align-middle">{{category.codice}}</td>
+                    <td class="align-middle">{{category.id}}</td>
                     <td class="align-middle">{{category.categoria}} - {{category.grado}} {{category.cat_peso}}</td>
                     <td class="align-middle">{{category.specialita}}</td>
                     <td class="align-middle">{{category.sesso}}</td>
@@ -57,7 +57,7 @@
                         <i class="fa fa-file-text"></i>
                       </button>
                       <button type="button" data-toggle="tooltip"  class="btn btn-primary btn-sm tt mr-1" 
-                      *ngIf="category.codice.includes('KU')" (click)="openKumiteBrackets(category)">
+                      *ngIf="category.id.includes('KU')" (click)="openKumiteBrackets(category)">
                         Tabellone
                       </button>
                       <button *ngIf="category.status == constants.STATUS_DONE" type="button" class="btn btn-outline mr-1" data-toggle="modal" (click)="openClassification(category.id)">
@@ -96,10 +96,10 @@
                               <div class="media-body">
                                   <div class="row" *ngFor="let category of tatami.userCategories">  
                                       <div class="col-2 text-gray text-right pr-0 font-italic">
-                                        <span *ngIf="category.status == constants.STATUS_TODO" class="badge badge-success code">{{category.categorycode.codice}}</span>
-                                        <span *ngIf="category.status == constants.STATUS_OPEN" class="badge badge-primary code">{{category.categorycode.codice}}</span>
-                                        <span *ngIf="category.status == constants.STATUS_DOING" class="badge badge-warning code">{{category.categorycode.codice}}</span>
-                                        <span *ngIf="category.status == constants.STATUS_BACKLOG" class="badge badge-secondary code">{{category.categorycode.codice}}</span>
+                                        <span *ngIf="category.status == constants.STATUS_TODO" class="badge badge-success code">{{category.categorycode.id}}</span>
+                                        <span *ngIf="category.status == constants.STATUS_OPEN" class="badge badge-primary code">{{category.categorycode.id}}</span>
+                                        <span *ngIf="category.status == constants.STATUS_DOING" class="badge badge-warning code">{{category.categorycode.id}}</span>
+                                        <span *ngIf="category.status == constants.STATUS_BACKLOG" class="badge badge-secondary code">{{category.categorycode.id}}</span>
                                       </div>
                                       <div class="col-10 pl-2">
                                         <span *ngIf="category.status == constants.STATUS_TODO">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
@@ -127,7 +127,7 @@
                       <div class="card-body pt-3"> 
                         <div class="row" *ngFor="let category of tatami.userCategories">  
                           <div class="col-2 text-gray text-right pr-0 font-italic">
-                            <span *ngIf="category.status == constants.STATUS_DONE" class="badge badge-danger code">{{category.categorycode.codice}}</span>
+                            <span *ngIf="category.status == constants.STATUS_DONE" class="badge badge-danger code">{{category.categorycode.id}}</span>
                           </div>
                           <div class="col-10 pl-2">
                             <span *ngIf="category.status == constants.STATUS_DONE">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}}</span>
@@ -214,7 +214,7 @@
   <div class="modal-dialog modal-primary" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h4 *ngIf="selectedCategory" class="modal-title">{{selectedCategory.codice}} - {{selectedCategory.specialita}} - {{selectedCategory.categoria}} - {{selectedCategory.grado}} {{selectedCategory.sesso}} {{selectedCategory.cat_peso}}</h4>
+        <h4 *ngIf="selectedCategory" class="modal-title">{{selectedCategory.id}} - {{selectedCategory.specialita}} - {{selectedCategory.categoria}} - {{selectedCategory.grado}} {{selectedCategory.sesso}} {{selectedCategory.cat_peso}}</h4>
         <button type="button" class="close" (click)="listModal.hide()" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -240,8 +240,8 @@
                       <td><i class="fa fa-user-circle-o fa-lg" style="color:blue"></i></td>
                       <td>{{athlete.athlete.cognome}} {{athlete.athlete.nome}}</td>
                       <td>{{athlete.athlete.data_nascita}}</td>
-                      <td>{{athlete.athlete.club.nome_societa}}</td>
-                      <td>{{athlete.athlete.club.responsabile}}</td>
+                      <td>{{athlete.athlete.club.club_name}}</td>
+                      <td>{{athlete.athlete.club.club_manager}}</td>
                   </tbody>
                 </table>
               </div>

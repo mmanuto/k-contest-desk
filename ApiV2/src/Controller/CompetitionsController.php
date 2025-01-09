@@ -2,10 +2,11 @@
 declare(strict_types=1);
 
 namespace App\Controller;
+use Cake\I18n\FrozenDate;
 use RestApi\Controller\ApiController;
 use Cake\Datasource\ConnectionManager;
 use Cake\Database\Type;
-use Cake\I18n\Date;
+use Cake\I18n\FrozenTime;
 
 Type::build('date')->setLocaleFormat('yyyy-MM-dd');
 
@@ -215,7 +216,7 @@ class CompetitionsController extends ApiController
         $clubs = $data['clubs'];
         $athletes = $data['athletes'];
         $competition = $data['competition'];
-        $categoryCodes = $data['categoryCodes'];
+        $categoryCodes = $data['categorycodes'];
         $clubInscirption = $data['clubInscirption'];
         
         //----------------------------------- COMPETITION ----------------------------------------------------
@@ -226,10 +227,10 @@ class CompetitionsController extends ApiController
         $competition = $this->Competitions->patchEntity($competition, $data['competition']);
 
         $competition->id = $data['competition']['id'];
-        $competition->data_gara = new Date($data['competition']['data_gara']);
-        $competition->apertura_iscrizioni = new Date($data['competition']['apertura_iscrizioni']);
-        $competition->chiusura_iscrizioni = new Date($data['competition']['chiusura_iscrizioni']);
-        $competition->stato = 1;
+        $competition->data_gara = new FrozenDate($data['competition']['data_gara']);
+        $competition->apertura_iscrizioni = new FrozenDate($data['competition']['apertura_iscrizioni']);
+        $competition->chiusura_iscrizioni = new FrozenDate($data['competition']['chiusura_iscrizioni']);
+        $competition->comp_status = 1;
 
         $this->Competitions->save($competition);
         
@@ -239,7 +240,16 @@ class CompetitionsController extends ApiController
             $newEntity = $this->Clubs->newEmptyEntity();
             $newEntity = $this->Clubs->patchEntity($newEntity, $entity);
             $newEntity->id = $entity['id'];
+            $newEntity->created_date = new FrozenTime($newEntity->created_date);
+            $newEntity->modified_date = new FrozenTime($newEntity->modified_date);
+             
+            
+            if($entity['last_login'] != null){
+                $newEntity->last_login = new FrozenTime($entity['last_login']); 
+            }
+
             $this->Clubs->save($newEntity);
+            
         }
 
         //----------------------------------- ATHETES ----------------------------------------------------
@@ -249,7 +259,11 @@ class CompetitionsController extends ApiController
             $newEntity = $this->Athletes->patchEntity($newEntity, $entity);
             $newEntity->id = $entity['id'];
             $newEntity->deleted = 0;
+            $newEntity->created_date = new FrozenTime($newEntity->created_date);
+            $newEntity->modified_date = new FrozenTime($newEntity->modified_date);
+            
             $this->Athletes->save($newEntity);
+
         }
 
         //----------------------------------- CATEGORYCODES ----------------------------------------------------
@@ -267,7 +281,10 @@ class CompetitionsController extends ApiController
             $newEntity = $this->ClubInscriptions->newEmptyEntity();
             $newEntity = $this->ClubInscriptions->patchEntity($newEntity, $entity);
             $newEntity->id = $entity['id'];
+            $newEntity->created_date = new FrozenTime($newEntity->created_date);
+        
             $this->ClubInscriptions->save($newEntity);
+
         }
 
         //----------------------------------- ATHLETE INSCRIPTION ----------------------------------------------------
@@ -278,10 +295,12 @@ class CompetitionsController extends ApiController
             $inscription = $this->AthleteInscriptions->newEmptyEntity();
             $inscription->id = $entity['id'];
             $inscription->athlete_id = $entity['athlete_id'];
-            $inscription->categorycode_id = $entity['category_code_id'];
+            $inscription->categorycode_id = $entity['categorycode_id'];
             $inscription->competition_id = $entity['competition_id'];
             $inscription->modificato = $entity['modificato'];
-
+            $inscription->created_date = new FrozenTime($inscription->created_date);
+            $inscription->modified_date = new FrozenTime($inscription->modified_date);
+            
             $this->AthleteInscriptions->save($inscription);
         }
 

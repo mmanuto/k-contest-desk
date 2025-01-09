@@ -265,7 +265,7 @@ export class TatamiComponent {
     console.log(this.selectedCategory);
 
     let request = {
-      category: this.selectedCategory.categorycode.codice,
+      category: this.selectedCategory.categorycode.id,
       grado: this.selectedCategory.categorycode.grado,
       nprova: nprova
     };
@@ -295,7 +295,7 @@ export class TatamiComponent {
   checkPreviousKata(athlete){
     if(this.previousMatches.length > 0 && 
       this.previousMatches[0].athlete_inscription_id == athlete.athlete_inscription_id &&
-      this.previousMatches[0].category_code == this.selectedCategory.categorycode.codice){
+      this.previousMatches[0].categorycode_id == this.selectedCategory.categorycode.id){
 
         this.previousMatches.forEach(match => {
           if(athlete.kata_id == match.kata_id){
@@ -314,13 +314,13 @@ export class TatamiComponent {
    // console.log(athlete);
     if(this.previousMatches.length > 0 && 
       this.previousMatches[0].athlete_inscription_id == athlete.athlete_inscription_id &&
-      this.previousMatches[0].category_code == this.selectedCategory.categorycode.codice){
+      this.previousMatches[0].categorycode_id == this.selectedCategory.categorycode.id){
         this.matchModal.show();
 
       }else{
         let request = {
           athlete_inscription_id: athlete.athlete_inscription_id,
-          category_code: this.selectedCategory.categorycode.codice
+          categorycode_id: this.selectedCategory.categorycode.id
         }
     
         this.tatamiService.getPreviousMatch(request).subscribe((response:any) => {
@@ -332,7 +332,7 @@ export class TatamiComponent {
             }else{
               if(this.previousMatches.length > 0 && 
                 this.previousMatches[0].athlete_inscription_id == athlete.athlete_inscription_id &&
-                this.previousMatches[0].category_code == this.selectedCategory.categorycode.codice){
+                this.previousMatches[0].categorycode_id == this.selectedCategory.categorycode.id){
           
                   this.previousMatches.forEach(match => {
                     if(athlete.kata_id == match.kata_id){
@@ -440,7 +440,7 @@ export class TatamiComponent {
     this.selectedCategory = category;
     console.log(this.selectedCategory)
 
-    this.typeForm = category.categorycode.codice.substring(0, 3);
+    this.typeForm = category.categorycode.id.substring(0, 3);
     this.labelCategory = `${category.categorycode.specialita} - ${category.categorycode.categoria} ${category.categorycode.grado} - ${category.categorycode.sesso} ${category.categorycode.cat_peso}`
     this.athleteList = [];
     this.kumiteAthleteList = [];

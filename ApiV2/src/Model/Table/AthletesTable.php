@@ -66,6 +66,8 @@ class AthletesTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
+            ->scalar('club_id')
+            ->maxLength('club_id', 21)
             ->notEmptyString('club_id');
 
         $validator
@@ -110,6 +112,14 @@ class AthletesTable extends Table
             ->maxLength('grado', 15)
             ->allowEmptyString('grado');
 
+        $validator
+            ->dateTime('created_date')
+            ->notEmptyDateTime('created_date');
+
+        $validator
+            ->dateTime('modified_date')
+            ->notEmptyDateTime('modified_date');
+
         return $validator;
     }
 
@@ -122,6 +132,7 @@ class AthletesTable extends Table
      */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
+        $rules->add($rules->isUnique(['id']), ['errorField' => 'id']);
         $rules->add($rules->existsIn('club_id', 'Clubs'), ['errorField' => 'club_id']);
         $rules->add($rules->existsIn('federation_id', 'Federations'), ['errorField' => 'federation_id']);
 

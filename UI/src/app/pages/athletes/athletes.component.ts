@@ -192,7 +192,7 @@ export class AthletesComponent {
           club: element.athlete.club.nome_societa,
           birthdate: element.athlete.data_nascita,
           belt: element.athlete.grado,
-          codes: element.categorycode.codice,
+          codes: element.categorycode.id,
           categorycode_id: element.categorycode_id,
           modified: element.modificato == 1 ? true:false,
           deleted: element.deleted == 1 ? true:false
@@ -270,7 +270,7 @@ export class AthletesComponent {
     if (this.steps[0].active) {
       if (athleteForm.valid && this.categoria != "") {
         this.erroreCategoria = false;
-        let request = { anno: this.athleteForm.value.birthdate_year, grado: this.athleteForm.value.cintura, category_code: 3 };
+        let request = { anno: this.athleteForm.value.birthdate_year, grado: this.athleteForm.value.cintura, categorycode_type: 3 };
         this.athletesService.getElencoProve(request).subscribe((response: any) => {
 
           if (response.result.success) {
@@ -366,7 +366,7 @@ export class AthletesComponent {
 
     let params = {
       'anno': this.athleteForm.value.birthdate_year,
-      'categoryCode': 3
+      'categorycode_type': 3
     }
 
     this.athletesService.getCategoria(params).subscribe((response: any) => {
@@ -452,7 +452,7 @@ export class AthletesComponent {
         this.atleta.peso = this.weightForm.value.peso;
 
         let elencoProve = {
-          'categoryCode': 3,
+          'categorycode_type': 3,
           'competition_id': this.datiGara.id,
           'specialita': []
         }
