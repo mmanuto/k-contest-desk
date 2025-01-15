@@ -75,7 +75,7 @@
                                 
                               <label class="col-form-label" for="kata">Kata</label>
       
-                              <ng-select id="kata" formControlName="kata_id" (change)="checkPreviousKata(athlete.scores)" required>
+                              <ng-select id="kata" formControlName="kata_id" required>
                                 <ng-option *ngFor="let kata of kataList" [value]="kata.id">{{kata.kata_name}}</ng-option>
                              </ng-select>
                             </div>

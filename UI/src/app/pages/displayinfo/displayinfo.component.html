@@ -28,7 +28,7 @@
         <div *ngIf="athleteList">
           <h3 class="display-3 category">Classifica</h3>
           <h3 class="display-3 classification-title">{{athleteList[0].categorycode.specialita}} {{athleteList[0].categorycode.categoria}} {{athleteList[0].categorycode.grado}} {{athleteList[0].categorycode.sesso}} {{athleteList[0].categorycode.cat_peso}}</h3>
-          <h3 *ngFor="let athlete of athleteList" class="classification display-4">{{athlete.scores.cl_position}} - {{athlete.athlete.nome}} {{athlete.athlete.cognome}} - {{athlete.athlete.club.nome_societa}}</h3>
+          <h3 *ngFor="let athlete of athleteList" class="classification display-4">{{athlete.scores.cl_position}} - {{athlete.athlete.nome}} {{athlete.athlete.cognome}} - {{athlete.athlete.club.club_name}}</h3>
       </div>
 
       <div *ngIf="currentMatch" class="row mt-5">

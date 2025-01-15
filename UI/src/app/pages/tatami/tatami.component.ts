@@ -292,27 +292,9 @@ export class TatamiComponent {
 
   // ------------------------------------------------ KATA CONTROLS ----------------------------------------------------------
 
-  checkPreviousKata(athlete){
-    if(this.previousMatches.length > 0 && 
-      this.previousMatches[0].athlete_inscription_id == athlete.athlete_inscription_id &&
-      this.previousMatches[0].categorycode_id == this.selectedCategory.categorycode.id){
-
-        this.previousMatches.forEach(match => {
-          if(athlete.kata_id == match.kata_id){
-            this.message = 'L\'atleta ha già eseguito il kata in una delle prove precedenti.';
-            this.doubleKataModal.show();
-          }
-        });
-      
-    }else{
-      this.getPreviousMatch(athlete.athlete_inscription_id,'CHECK');
-    }
-
-  }
-
   getPreviousMatch(athlete, type){
-   // console.log(athlete);
-    if(this.previousMatches.length > 0 && 
+
+    if(this.previousMatches[0] && 
       this.previousMatches[0].athlete_inscription_id == athlete.athlete_inscription_id &&
       this.previousMatches[0].categorycode_id == this.selectedCategory.categorycode.id){
         this.matchModal.show();
@@ -327,23 +309,7 @@ export class TatamiComponent {
           if(response.result.success){
             this.previousMatches = response.result.data;
             this.previousMatches.pop();
-            if(type =='SHOW'){
-              this.matchModal.show();
-            }else{
-              if(this.previousMatches.length > 0 && 
-                this.previousMatches[0].athlete_inscription_id == athlete.athlete_inscription_id &&
-                this.previousMatches[0].categorycode_id == this.selectedCategory.categorycode.id){
-          
-                  this.previousMatches.forEach(match => {
-                    if(athlete.kata_id == match.kata_id){
-                      this.message = 'L\'atleta ha già eseguito il kata in una delle prove precedenti.';
-                      this.doubleKataModal.show();
-                    }
-                  });
-                
-              }
-            }
-            
+            this.matchModal.show();
           }
         })
       }
@@ -378,7 +344,6 @@ export class TatamiComponent {
   
       this.openInfo(athleteToDisplay, 'AT');
     }
-
 
     
   }
@@ -1669,15 +1634,10 @@ export class TatamiComponent {
     if(color == 'AKA'){
       this.currentMatch.aka.scores.win = 1;
       this.currentMatch.ao.scores.win = 0;
-      if(this.currentMatch.aka.scores.total <= this.currentMatch.ao.scores.total){
-        this.currentMatch.aka.scores.total = this.currentMatch.ao.scores.total +1;
-      }
+      
     }else{
       this.currentMatch.aka.scores.win = 0;
       this.currentMatch.ao.scores.win = 1;
-      if(this.currentMatch.aka.scores.total >= this.currentMatch.ao.scores.total){
-        this.currentMatch.ao.scores.total = this.currentMatch.aka.scores.total +1;
-      }
     }
 
     console.log(this.currentMatch);
@@ -1689,6 +1649,13 @@ export class TatamiComponent {
   }
 
   saveMatch(){
+
+    if(this.currentMatch.aka.scores.win == 1 && this.currentMatch.aka.scores.total <= this.currentMatch.ao.scores.total){
+      this.currentMatch.aka.scores.total = this.currentMatch.ao.scores.total +1;
+    }
+    if(this.currentMatch.ao.scores.win == 1 && this.currentMatch.aka.scores.total >= this.currentMatch.ao.scores.total){
+      this.currentMatch.ao.scores.total = this.currentMatch.aka.scores.total +1;
+    }
     console.log(this.currentMatch);
     this.checkCategoryStatus(Constants.STATUS_DOING);
     this.tatamiService.saveAthleteScores(this.currentMatch).subscribe((response: any) => {
