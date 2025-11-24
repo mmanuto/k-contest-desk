@@ -114,7 +114,7 @@ class CompetitionsController extends ApiController
         
         $competition = $this->Competitions->find()
             ->where([
-                'stato' => 1
+                'comp_status' => 1
             ])
             ->first();
 
@@ -131,7 +131,7 @@ class CompetitionsController extends ApiController
         $this->loadModel('Clubs');
         $this->loadModel('ClubInscriptions');
         $this->loadModel('Scores');
-        $this->loadModel('UsersCategorycodes');
+        $this->loadModel('TatamiAssignments');
 
         // ----------------------------------- COMPETITIONS ---------------------------------------------------------
         $this->Competitions->getConnection()->transactional(function ($conn) {
@@ -189,11 +189,11 @@ class CompetitionsController extends ApiController
             }
         });
 
-        // ----------------------------------- UsersCategorycodes ---------------------------------------------------------
-        $this->UsersCategorycodes->getConnection()->transactional(function ($conn) {
-            $sqls = $this->UsersCategorycodes->getSchema()->truncateSql($this->UsersCategorycodes->getConnection());
+        // ----------------------------------- TatamiAssignments ---------------------------------------------------------
+        $this->TatamiAssignments->getConnection()->transactional(function ($conn) {
+            $sqls = $this->TatamiAssignments->getSchema()->truncateSql($this->TatamiAssignments->getConnection());
             foreach ($sqls as $sql) {
-                $this->UsersCategorycodes->getConnection()->execute($sql)->execute();
+                $this->TatamiAssignments->getConnection()->execute($sql)->execute();
             }
         });
 

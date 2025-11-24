@@ -3,7 +3,11 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  IMAGES_WEBROOT: "http://localhost:4200/backend/webroot/resources/",
+  ISCRIZIONI_URL: "http://localhost:4200/backend/",
+  BASEAPPURL: "http://localhost:4200/ApiV2/",
+  DISPLYINFO_URL: "http://localhost:4200/displayinfo"
 };
 
 /*

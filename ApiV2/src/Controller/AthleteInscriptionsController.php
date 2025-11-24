@@ -254,11 +254,11 @@ class AthleteInscriptionsController extends ApiController
     public function deleteInscription()
     {
         Configure::load('constants');
-        $this->loadModel('UsersCategorycodes');
+        $this->loadModel('TatamiAssignments');
         $this->loadModel('Scores');
         $request = $this->request->getData();
 
-        $categoryStatus = $this->UsersCategorycodes->find()
+        $categoryStatus = $this->TatamiAssignments->find()
             ->where([
                 'categorycode_id' => $request['categorycode_id']
             ])->first();
@@ -323,7 +323,7 @@ class AthleteInscriptionsController extends ApiController
 
         $splittedCategories = $this->Categorycodes->find()
             ->where([
-                'OR' => [['id' => $data['categorycode'].'-M'], ['id' => $data['categorycode'].'-F']]
+                'OR' => [['id' => $data['id'].'-M'], ['id' => $data['id'].'-F']]
             ])->toArray();
 
         
@@ -344,11 +344,11 @@ class AthleteInscriptionsController extends ApiController
             $categoryFemale = $this->Categorycodes->newEmptyEntity();
             $categoryFemale = $this->Categorycodes->patchEntity($categoryFemale, $data);
     
-            $categoryMale->id = $data['categorycode'].'-M';
+            $categoryMale->id = $data['id'].'-M';
             $categoryMale->sesso = 'M';
             $categoryMale = $this->Categorycodes->save($categoryMale);
             
-            $categoryFemale->id = $data['categorycode'].'-F';
+            $categoryFemale->id = $data['id'].'-F';
             $categoryFemale->sesso = 'F';
             $categoryFemale = $this->Categorycodes->save($categoryFemale);
         }

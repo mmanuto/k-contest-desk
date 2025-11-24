@@ -1,16 +1,7 @@
 import { Component, ViewEncapsulation, OnInit, Pipe, PipeTransform } from '@angular/core';
 import { DisplayInfoService } from './displayinfo.service';
-import {ModalDirective} from 'ngx-bootstrap/modal';
-import { FormGroup, FormControl, FormBuilder, Validators } from '@angular/forms';
 import { interval, Subscription} from 'rxjs';
-/*import { IMultiSelectOption, IMultiSelectSettings, IMultiSelectTexts } from 'angular-2-dropdown-multiselect';
-import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
-import { ToastrService } from 'ngx-toastr';
-import { MenuService } from '../../theme/components/menu/menu.service';
-import { DatePipe } from '@angular/common';
- import { DataTable, DataTableTranslations, DataTableResource } from 'angular5-data-table';
-import { films } from './data-table-demo3-data'; */
-import * as Constants from '../../constants';
+import {monitor} from '../../constants';
 import { LocalStorageService } from 'angular-2-local-storage';
 declare var jQuery: any;
 
@@ -48,13 +39,13 @@ export class DisplayInfoComponent implements OnInit {
       elem.requestFullscreen();*/
     var card = jQuery('.card_body');
     this.currentUser = this.localStorageService.get('currentUser');
-    if(this.localStorageService.get(Constants.MONITOR_ATHLETE_1)){
-      this.athlete_1 = this.localStorageService.get(Constants.MONITOR_ATHLETE_1);
+    if(this.localStorageService.get(monitor.ATHLETE_1)){
+      this.athlete_1 = this.localStorageService.get(monitor.ATHLETE_1);
       this.displayName_1 = `${this.athlete_1['athlete']['nome']} ${this.athlete_1['athlete']['cognome']}`;
       if(this.athlete_1['scores']['total']){
         this.displayName_1 = `${this.athlete_1['athlete']['nome']} ${this.athlete_1['athlete']['cognome']}  -  ${this.athlete_1['scores']['total']}`;
       }
-      this.athlete_2 = this.localStorageService.get(Constants.MONITOR_ATHLETE_2)?? null;
+      this.athlete_2 = this.localStorageService.get(monitor.ATHLETE_2)?? null;
       this.athleteList = null;
 
       setTimeout(function(){
@@ -64,10 +55,10 @@ export class DisplayInfoComponent implements OnInit {
       this.athleteList = this.localStorageService.get('classifica');
       this.athlete_1 = null;
       card.addClass('hidden');
-    }else if(this.localStorageService.get(Constants.MONITOR_KUMITE)){
+    }else if(this.localStorageService.get(monitor.KUMITE)){
       console.log('entraaaaaaaaaaa');
-      this.currentMatch = this.localStorageService.get(Constants.MONITOR_KUMITE);
-      this.countdown = this.localStorageService.get(Constants.MONITOR_COUNTDOWN);
+      this.currentMatch = this.localStorageService.get(monitor.KUMITE);
+      this.countdown = this.localStorageService.get(monitor.COUNTDOWN);
       console.log(this.currentMatch);
       this.athlete_1 = null;
       card.addClass('hidden');
@@ -83,14 +74,14 @@ export class DisplayInfoComponent implements OnInit {
 
   checkAthlete(){
     
-    if(this.athlete_1 && this.localStorageService.get(Constants.MONITOR_ATHLETE_1)){
-      if(this.athlete_1['id'] != this.localStorageService.get(Constants.MONITOR_ATHLETE_1)['id'] || 
-      this.athlete_1['scores']['total'] != this.localStorageService.get(Constants.MONITOR_ATHLETE_1)['scores']['total']){
+    if(this.athlete_1 && this.localStorageService.get(monitor.ATHLETE_1)){
+      if(this.athlete_1['id'] != this.localStorageService.get(monitor.ATHLETE_1)['id'] || 
+      this.athlete_1['scores']['total'] != this.localStorageService.get(monitor.ATHLETE_1)['scores']['total']){
 
       window.top.location.reload();
       }
-    }else if(this.athlete_1 == null && this.localStorageService.get(Constants.MONITOR_ATHLETE_1) ||
-      this.athlete_1 && this.localStorageService.get(Constants.MONITOR_ATHLETE_1) == null ||
+    }else if(this.athlete_1 == null && this.localStorageService.get(monitor.ATHLETE_1) ||
+      this.athlete_1 && this.localStorageService.get(monitor.ATHLETE_1) == null ||
       this.athleteList == null && this.localStorageService.get('classifica') ||
       this.athleteList && this.localStorageService.get('classifica') == null){
 
@@ -100,21 +91,21 @@ export class DisplayInfoComponent implements OnInit {
 
     }
 
-    if(this.currentMatch && this.localStorageService.get(Constants.MONITOR_KUMITE)){
+    if(this.currentMatch && this.localStorageService.get(monitor.KUMITE)){
       console.log('entra 1');
-      if(this.currentMatch != this.localStorageService.get(Constants.MONITOR_KUMITE)){
+      if(this.currentMatch != this.localStorageService.get(monitor.KUMITE)){
         console.log('changeeeeeeeeeee');
-        this.currentMatch = this.localStorageService.get(Constants.MONITOR_KUMITE);
+        this.currentMatch = this.localStorageService.get(monitor.KUMITE);
       }
       if(this.action != this.localStorageService.get('ACTION') || this.action == 'MODIFY'){
         this.action = this.localStorageService.get('ACTION');
         if(this.action == 'START'){
-          this.countdown = this.localStorageService.get(Constants.MONITOR_COUNTDOWN);
+          this.countdown = this.localStorageService.get(monitor.COUNTDOWN);
           this.startTimer();
         }else if(this.action == 'PAUSE'){
           this.pauseTimer();
         }else if(this.action == 'MODIFY'){
-          this.countdown = this.localStorageService.get(Constants.MONITOR_COUNTDOWN);
+          this.countdown = this.localStorageService.get(monitor.COUNTDOWN);
         }
         
       }

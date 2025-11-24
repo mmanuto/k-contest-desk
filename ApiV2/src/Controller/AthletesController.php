@@ -343,8 +343,8 @@ class AthletesController extends ApiController
         $dataPdf = base64_decode($data['pdf']);
         $autodichiarazionePdf = base64_decode($data['autodichiarazione']);
 
-        $filename = $competition['nome_gara'] . "/iscrizioni_" . $datiSocieta['nome_societa'] . ".pdf";
-        $filenameCertificati = $competition['nome_gara'] . "/autodichiarazione_" . $datiSocieta['nome_societa'] . ".pdf";
+        $filename = $competition['nome_gara'] . "/iscrizioni_" . $datiSocieta['club_name'] . ".pdf";
+        $filenameCertificati = $competition['nome_gara'] . "/autodichiarazione_" . $datiSocieta['club_name'] . ".pdf";
 
         $mediaupload_success = file_put_contents($filename, $dataPdf);
         $mediaupload_success = file_put_contents($filenameCertificati, $autodichiarazionePdf);
@@ -352,7 +352,7 @@ class AthletesController extends ApiController
 
         //-----------------------------  EXCEL  -------------------------------------
         $list = $data['datiCsv'];
-        $filenameCsv = 'iscrizioni_' . $datiSocieta['nome_societa'] . '.csv';
+        $filenameCsv = 'iscrizioni_' . $datiSocieta['club_name'] . '.csv';
         $fp = fopen($filenameCsv, 'w');
         foreach ($list as $fields) {
 
@@ -375,11 +375,11 @@ class AthletesController extends ApiController
             array_push($destinatariExcel, $competition['email']);
         }
 
-        $testoMail = "Nuova iscrizione effettuata da " . $datiSocieta['nome_societa'];
+        $testoMail = "Nuova iscrizione effettuata da " . $datiSocieta['club_name'];
         $Email = new Email();
         $Email->from(['info@iscrizionicsenveneto.it' => 'Iscrizioni CSEN Veneto'])
             ->bcc($destinatariExcel)
-            ->subject('Nuova iscrizione ' . $datiSocieta['nome_societa'] . ' - ' . $competition['nome_gara'])
+            ->subject('Nuova iscrizione ' . $datiSocieta['club_name'] . ' - ' . $competition['nome_gara'])
             ->attachments($filenameCsv)
             ->send($testoMail);
 
@@ -388,7 +388,7 @@ class AthletesController extends ApiController
         //------------------------------------ INVIO MAIL PDF RIEPILOGO -------------------------------------
         $destinatariPdf = array($competition['email'], $user['email'], $datiSocieta['mail']);
 
-        $testoSocieta = "Buongiorno, in allegato il riepilogo delle iscrizioni per la manifestazione " . $competition['nome_gara'] . "\r\r Societa: " . $datiSocieta['nome_societa'] . "\r Codice Fiscale: " . $datiSocieta['CF'] . "\r Responsabile: " . $datiSocieta['responsabile'] . "\r Telefono: " . $datiSocieta['telefono'] . "\r Email: " . $datiSocieta['mail'] . "\r coach: " . $datiSocieta['coach'] . "\r\r Inviamo anche il modulo di autocertificazione per l'affiliazione e i certificati medici che deve essere firmato e consegnato in sede di gara, o inviato via email al responsabile di gara.";
+        $testoSocieta = "Buongiorno, in allegato il riepilogo delle iscrizioni per la manifestazione " . $competition['nome_gara'] . "\r\r Societa: " . $datiSocieta['club_name'] . "\r Codice Fiscale: " . $datiSocieta['CF'] . "\r Responsabile: " . $datiSocieta['responsabile'] . "\r Telefono: " . $datiSocieta['telefono'] . "\r Email: " . $datiSocieta['mail'] . "\r coach: " . $datiSocieta['coach'] . "\r\r Inviamo anche il modulo di autocertificazione per l'affiliazione e i certificati medici che deve essere firmato e consegnato in sede di gara, o inviato via email al responsabile di gara.";
 
         if ($data['note'] != '') {
             $testoSocieta .= "\r \r NOTE: \r " . $data['note'];
@@ -397,7 +397,7 @@ class AthletesController extends ApiController
         $EmailRiepilogo = new Email();
         $EmailRiepilogo->from(['info@iscrizionicsenveneto.it' => 'Iscrizioni CSEN Veneto'])
             ->bcc($destinatariPdf)
-            ->subject('Riepilogo iscrizione ' . $datiSocieta['nome_societa'] . ' - ' . $competition['nome_gara'])
+            ->subject('Riepilogo iscrizione ' . $datiSocieta['club_name'] . ' - ' . $competition['nome_gara'])
             ->attachments([$filename, $filenameCertificati])
             ->send($testoSocieta);
 

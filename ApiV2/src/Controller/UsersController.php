@@ -107,14 +107,9 @@ class UsersController extends ApiController
     }
 
     public function login(){
-        //$this->request->allowMethod('post');
-    
-        //$this->loadModel('Psychologists');
-        //print_r($this->request->getData());
+
         $entity = $this->Users->newEntity($this->request->getData());
     
-    
-
             $user = $this->Users->find()
                 ->where([
                     'username' => $entity->username,

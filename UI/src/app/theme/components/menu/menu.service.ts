@@ -10,7 +10,7 @@ import { LocalStorageService } from 'angular-2-local-storage';
 @Injectable()
 export class MenuService {
 
-  userType: number;
+  userType: string;
   
   constructor(private location:Location, 
               private renderer2:Renderer2,

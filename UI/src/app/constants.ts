@@ -1,45 +1,79 @@
- 
-  
-  //export const IMAGES_WEBROOT = "http://localhost:4200/aemserver/webroot/resources/";
-  export const IMAGES_WEBROOT = "http://www.iscrizionicsenveneto.it/apiV2/webroot/resources/";
-  
-  //export const ISCRIZIONI_URL = "https://www.iscrizionicsenveneto.it/apiV2/"
-  export const ISCRIZIONI_URL = "http://localhost:4200/backend/" 
-  
-  //export const BASEAPPURL = "http://" + document.location.hostname + "/csenveneto/ApiV2/";
-  export const BASEAPPURL = "http://localhost:4200/ApiV2/";
-  
-  //export const DISPLYINFO_URL = "http://" + document.location.hostname + "/csenveneto/displayinfo"
-  export const DISPLYINFO_URL = "http://localhost:4200/displayinfo"
+export const colorMapping = {
+  AKA: "red",
+  AO: "blue",
+  PAL: "teal",
+  PER: "teal",
+  KAG: "teal",
+  KIA: "teal",
+} as const;
 
-  export const colorMapping = {
-    AKA: 'red',
-    AO: 'blue',
-    PAL: 'teal',
-    PER: 'teal',
-    KAG: 'teal',
-    KIA: 'teal'    
-  }
+export const prova = {
+  PERCORSO: "PER",
+  PALLONCINO: "PAL",
+  KATA_ADULTI: "KIA",
+  KATA_BAMBINI: "KAG",
+  KUMITE: "KUA",
+  KUMITE_U12: "KUG",
+  KATA_SQUADRE: "KAS"
+} as const;
 
-  export const PROVA_PERCORSO = 'PER';
-  export const PROVA_PALLONCINO = 'PAL';
-  export const PROVA_KATA_ADULTI = 'KIA';
-  export const PROVA_KATA_BAMBINI = 'KAG';
-  export const PROVA_KUMITE = 'KUA';
-  export const PROVA_KUMITE_U12 = 'KUG';
-  export const PROVA_KATA_SQUADRE = 'KAS';
+export const monitor = {
+  ATHLETE_1: "athlete_1",
+  ATHLETE_2: "athlete_2",
+  KUMITE: "kumite",
+  COUNTDOWN: "countdown",
+  ACTION: "ACTION",
+  ACTION_PAUSE: "PAUSE",
+  ACTION_START: "START"
+} as const
 
-  export const MONITOR_ATHLETE_1 = 'monitor_athlete_1';
-  export const MONITOR_ATHLETE_2 = 'monitor_athlete_2';
-  export const MONITOR_KUMITE = 'monitor_kumite';
-  export const MONITOR_COUNTDOWN = 'monitor_countdown';
-  export const MONITOR_ACTION = 'ACTION';
-  export const MONITOR_ACTION_PAUSE = 'PAUSE';
-  export const MONITOR_ACTION_START = 'START';
+export const categoryStatus = {
+  BACKLOG: "CAT_BACKLOG",
+  TODO: "CAT_TODO",
+  OPEN: "CAT_OPEN",
+  DOING: "CAT_DOING",
+  CLOSED: "CAT_CLOSED",
+  AWARD: "CAT_AWARD"
+} as const;
 
-  export const STATUS_BACKLOG = 'CAT_BACKLOG';
-  export const STATUS_TODO = 'CAT_TODO';
-  export const STATUS_OPEN = 'CAT_OPEN';
-  export const STATUS_DOING = 'CAT_DOING';
-  export const STATUS_DONE = 'CAT_DONE';
-  export const STATUS_AWARD = 'CAT_AWARD';
+export const categoryPhase = {
+  PENDING: 'PENDING',
+  JUDGING_PANEL: 'JUDGING_PANEL',
+  AWAITING_TIEBREAK: 'AWAITING_TIEBREAK',
+  AWAITING_BRACKETS: 'AWAITING_BRACKETS',
+  BRACKETS: 'BRACKETS',
+  FINALIZED: 'FINALIZED'
+} as const;
+
+export const userRole = {
+  ADMIN: "admin",
+  TATAMI_USER: "tatami_user"
+} as const;
+
+// Mappa per i round di tipo "Punteggio"
+export const RoundJudgedPanel = {
+  QUALIFICHE: 1,
+  SPAREGGIO: 2
+} as const;
+
+// Mappa per i round di tipo "Incontro"
+export const RoundMatch = {
+  OTTAVI: 1,
+  QUARTI: 2,
+  SEMIFINALE: 3,
+  FINALE: 4
+} as const;
+
+// Oggetto inverso per la traduzione nell'HTML
+// (Puoi anche generarlo automaticamente)
+export const RoundJudgedPanelTitles: Record<number, string> = {
+  [RoundJudgedPanel.QUALIFICHE]: 'Qualifiche',
+  [RoundJudgedPanel.SPAREGGIO]: 'Spareggio'
+};
+
+export const RoundMatchTitles: Record<number, string> = {
+  [RoundMatch.OTTAVI]: 'Ottavi di finale',
+  [RoundMatch.QUARTI]: 'Quarti di Finale',
+  [RoundMatch.SEMIFINALE]: 'Semifinale',
+  [RoundMatch.FINALE]: 'Finale'
+};

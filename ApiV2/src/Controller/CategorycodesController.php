@@ -126,7 +126,7 @@ class CategorycodesController extends ApiController
 
     public function getCategories(){
         $this->loadModel('AthleteInscriptions');
-        $this->loadModel('UsersCategorycodes');
+        $this->loadModel('TatamiAssignments');
         
         $conn = ConnectionManager::get('default');
         $stmt = $conn->execute("SELECT categorycodes.*, COUNT(athlete_inscriptions.id) AS n_athletes FROM athlete_inscriptions 
@@ -140,7 +140,7 @@ class CategorycodesController extends ApiController
 
         foreach ($categories as $category) {
            
-            $status = $this->UsersCategorycodes->find()
+            $status = $this->TatamiAssignments->find()
                 ->where([
                     'categorycode_id' => $category['id']
                 ])
@@ -165,7 +165,7 @@ class CategorycodesController extends ApiController
      */
     public function getCategoriesWithAthletes(){
         $this->loadModel('AthleteInscriptions');
-        $this->loadModel('UsersCategorycodes');
+        $this->loadModel('TatamiAssignments');
         
         $conn = ConnectionManager::get('default');
         $stmt = $conn->execute("SELECT categorycodes.*, COUNT(athlete_inscriptions.id) AS n_athletes FROM athlete_inscriptions 

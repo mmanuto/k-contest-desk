@@ -1,4 +1,5 @@
 import { Menu } from './menu.model';
+import {userRole} from '../../../constants';
 
 export const verticalMenuItems = [ 
     //new Menu (1, 'ADMIN_NAV.DASHBOARD', '/', null, 'tachometer', null, false, 0),
@@ -53,9 +54,9 @@ export const verticalMenuItems = [
 ]
 
 export const horizontalMenuItems = [ 
-    new Menu (1, 'Categorie', '/categories', null, 'users', null, false, 0, 1),
-    new Menu (2, 'Admin', '/adminpanel', null, 'users', null, false, 0, 1),
-    new Menu (3, 'Atleti', '/athlete-list', null, 'users', null, false, 0, 1)
+    new Menu (1, 'Categorie', '/categories', null, 'users', null, false, 0, userRole.ADMIN),
+    new Menu (2, 'Admin', '/adminpanel', null, 'users', null, false, 0, userRole.ADMIN),
+    new Menu (3, 'Atleti', '/athlete-list', null, 'users', null, false, 0, userRole.ADMIN)
     /*new Menu (2, 'ADMIN_NAV.MEMBERSHIP', '/membership', null, 'users', null, false, 0), 
     new Menu (100, 'Categorie', '/categories', null, 'users', null, false, 0), 
     new Menu (101, 'Tatami', '/tatami', null, 'users', null, false, 0) 

@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import * as Constants from '../../constants';
+import { environment } from '../../../environments/environment';
 
 
 @Injectable()
@@ -11,51 +10,51 @@ export class AthletesService {
 
 
     getAthleteList(){
-        return this.http.post(Constants.BASEAPPURL + 'athleteInscriptions/getAthleteList', {});
+        return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/getAthleteList', {});
     }
 
     getClubs(){
-        return this.http.post(Constants.BASEAPPURL + 'clubs/getClubs', {});
+        return this.http.post(environment.BASEAPPURL + 'clubs/getClubs', {});
     }
 
 
 
     getCategoria(request){
-        return this.http.post(Constants.BASEAPPURL + "athletes/getCategoria", request);
+        return this.http.post(environment.BASEAPPURL + "athletes/getCategoria", request);
         
     }
 
     getElencoProve(request){
-        return this.http.post(Constants.BASEAPPURL + "athletes/getElencoProve", request);
+        return this.http.post(environment.BASEAPPURL + "athletes/getElencoProve", request);
     }
 
     getTotalAthleteList(){
-        return this.http.post(Constants.BASEAPPURL + "athletes/getAthleteList", {});
+        return this.http.post(environment.BASEAPPURL + "athletes/getAthleteList", {});
     }
 
 
     getListaIscritti(request){
-        return this.http.post(Constants.BASEAPPURL + "athletes/getIscritti", request);
+        return this.http.post(environment.BASEAPPURL + "athletes/getIscritti", request);
     }
 
     saveAtleta(request){
-        return this.http.post(Constants.BASEAPPURL + "athletes/saveAtleta", request);
+        return this.http.post(environment.BASEAPPURL + "athletes/saveAtleta", request);
     }
 
     deteleAtletaInscription(request){
         console.log(request);
-        return this.http.post(Constants.BASEAPPURL + "athleteInscriptions/deleteInscription", request);
+        return this.http.post(environment.BASEAPPURL + "athleteInscriptions/deleteInscription", request);
     }
 
     getAllCategories(){
-        return this.http.post(Constants.BASEAPPURL + "categorycodes/getAllCategories", {});
+        return this.http.post(environment.BASEAPPURL + "categorycodes/getAllCategories", {});
     }
 
     updateCategory(request){
-        return this.http.post(Constants.BASEAPPURL + "athleteInscriptions/updateCategory", request);
+        return this.http.post(environment.BASEAPPURL + "athleteInscriptions/updateCategory", request);
     }
 
     checkCategoryStatus(request){
-        return this.http.post(Constants.BASEAPPURL + 'usersCategorycodes/checkCategoryStatus', request);
+        return this.http.post(environment.BASEAPPURL + 'tatamiAssignments/checkCategoryStatus', request);
     }
 } 

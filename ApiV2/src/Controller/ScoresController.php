@@ -533,4 +533,10 @@ class ScoresController extends ApiController
         $this->apiResponse['success'] = true;
 
     }
+
+
+    public function getClassifiche(){
+        $data = $this->request->getData();
+
+    }
 }

@@ -7,10 +7,10 @@
                 <li *ngFor="let category of tatamiStatus;">
     
                   <button [class.selected]="selectedCategory && category.categorycode_id === selectedCategory.categorycode_id" type="button" (click)="onSelect(category)">
-                    <span *ngIf="category.status == constants.STATUS_TODO" class="badge badge-success code">{{category.categorycode.id}}</span>
-                    <span *ngIf="category.status == constants.STATUS_OPEN" class="badge badge-primary code">{{category.categorycode.id}}</span>
-                    <span *ngIf="category.status == constants.STATUS_DOING" class="badge badge-warning code">{{category.categorycode.id}}</span>
-                    <span *ngIf="category.status == constants.STATUS_DONE" class="badge badge-danger code">{{category.categorycode.id}}</span>
+                    <span *ngIf="category.status == categoryStatus.TODO" class="badge badge-success code">{{category.categorycode.id}}</span>
+                    <span *ngIf="category.status == categoryStatus.OPEN" class="badge badge-primary code">{{category.categorycode.id}}</span>
+                    <span *ngIf="category.status == categoryStatus.DOING" class="badge badge-warning code">{{category.categorycode.id}}</span>
+                    <span *ngIf="category.status == categoryStatus.CLOSED" class="badge badge-danger code">{{category.categorycode.id}}</span>
                     <span class="name">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} </span>
                     <span></span>
                     
@@ -28,7 +28,7 @@
             </div>
             
             <div id="accordion" role="tablist" aria-multiselectable="true">
-                <div class="row mb-1" *ngIf="athleteList && typeForm != constants.PROVA_KUMITE && typeForm != constants.PROVA_KUMITE_U12">
+                <div class="row mb-1" *ngIf="athleteList && typeForm != prova.KUMITE && typeForm != prova.KUMITE_U12">
                     <div class="col">
                         <div class="input-group mb-3 box-shadow"> 
                             <div class="input-group-prepend">
@@ -39,25 +39,16 @@
                     </div>
                 </div>
                 <div class="card border-0" *ngFor="let athlete of athleteList | CategorySearchPipe : searchText; index as i ">
-                  <div class="card-header" [ngStyle]="{'background-color': athlete.scores.type == 'CL' ? 'lightgreen' : '' }" role="tab" id="headingOne">
+                  <div class="card-header" [ngStyle]="{'background-color': athlete.total_score ? 'lightgreen' : '' }" role="tab" id="headingOne">
                     <h6 class="ml-4 mb-0">
                       <a class="text-primary row" data-toggle="collapse" href="#" aria-expanded="false" aria-controls="collapseOne" (click)="displayAthlete(athlete)">
                         
                         
-                        <div class="mr-2" style="font-weight: bold; font-size: large;">{{athlete.scores.cl_position && athlete.scores.type == 'CL'? athlete.scores.cl_position + ' - ' : ''}}</div>
-                        <!-- <i *ngIf="athlete.scores.type == 'FI'" class="fa fa-trophy fa-lg " style="color:goldenrod"> </i> 
-                        <i *ngIf="athlete.scores.type == 'FI'" class="fa fa-trophy fa-lg " style="color:grey"></i> 
-                        <div *ngIf="athlete.scores.type == 'FI'" class="ml-3 mr-3 finals-label"> Finale</div> 
-      
-                        <i *ngIf="athlete.scores.type == 'SF_1'" class="fa fa-trophy fa-lg " style="color:brown"></i> 
-                        <div *ngIf="athlete.scores.type == 'SF_1'" class="ml-3 mr-3 finals-label"> Semifinale 1</div> 
-                        <i *ngIf="athlete.scores.type == 'SF_2'" class="fa fa-trophy fa-lg " style="color: brown"></i> 
-                        <div *ngIf="athlete.scores.type == 'SF_2'" class="ml-3 mr-3 finals-label"> Semifinale 2</div>   -->                       
-                        <i class="fa fa-user-circle-o fa-lg mr-2" [ngStyle]="{'color': colorMapping[athlete.scores.color]}"></i> 
+                        <div class="mr-2" style="font-weight: bold; font-size: large;">{{athlete.pool_ranking ? athlete.pool_ranking + ' - ' : ''}}</div>                     
                         
-                        {{athlete.athlete.cognome}} {{athlete.athlete.nome}} - {{athlete.athlete.data_nascita}} -  {{athlete.athlete.club.club_name}}
-                        <div *ngIf="athlete.scores.type == 'CL'" class="ml-3 mr-3 finals-label"> CLASSIFICA FINALE</div> 
-                        <i *ngIf="athlete.scores.total != null || athlete.scores.total_time_seconds != null" class="fa fa-check fa-lg" style="color:green"></i>
+                        {{athlete.athlete_inscription.athlete.cognome}} {{athlete.athlete_inscription.athlete.nome}} - {{athlete.athlete_inscription.athlete.data_nascita}} -  {{athlete.athlete_inscription.athlete.club.club_name}}
+                        <div *ngIf="athlete.athlete_inscription.final_ranking" class="ml-3 mr-3 finals-label"> CLASSIFICA FINALE</div> 
+                        <i *ngIf="athlete.pool_ranking" class="fa fa-check fa-lg" style="color:green"></i>
                  
                         
                       </a>
@@ -67,7 +58,7 @@
                   <div [id]="'collapseOne'+i" class="collapse" [class.show]="athlete.show" data-parent="#accordion" role="tabpanel" aria-labelledby="headingOne">
                     <div class="card-body">
                       
-                        <form *ngIf="typeForm == constants.PROVA_KATA_ADULTI || typeForm == constants.PROVA_KATA_SQUADRE" [formGroup]="athlete.scoreForm" method="post" enctype="multipart/form-data" class="form-horizontal">
+                        <form *ngIf="athlete.scoreForm && (typeForm == prova.KATA_ADULTI || typeForm == prova.KATA_SQUADRE)" [formGroup]="athlete.scoreForm" method="post" enctype="multipart/form-data" class="form-horizontal">
                       
                             
                             <div class="row">
@@ -84,35 +75,35 @@
                                 <label class=" col-form-label" for="referee_1">Giudice 1</label>
                                 <div>
                                   <input formControlName="referee_1" class="form-control" id="referee_1" currencyMask [options]="{decimal: '.', prefix:'', precision: 1, align: 'left'}"
-                                   [ngStyle]=" athlete.scores.min_referee == '1' || athlete.scores.max_referee == '1' ? {'background-color': 'mistyrose'} : ''" required>
+                                   [ngStyle]=" athlete.min_referee == '1' || athlete.max_referee == '1' ? {'background-color': 'mistyrose'} : ''" required>
                                 </div>
                               </div>
                               <div style="max-width: 20%">
                                 <label class="col-form-label" for="referee_2">Giudice 2</label>
                                 <div>
                                   <input formControlName="referee_2" class="form-control" id="referee_2" currencyMask [options]="{decimal: '.', prefix:'', precision: 1, align: 'left'}" 
-                                  [ngStyle]=" athlete.scores.min_referee == '2' || athlete.scores.max_referee == '2' ? {'background-color': 'mistyrose'} : ''" required>
+                                  [ngStyle]=" athlete.min_referee == '2' || athlete.max_referee == '2' ? {'background-color': 'mistyrose'} : ''" required>
                                 </div>
                               </div>
                               <div style="max-width: 20%">
                                 <label class="col-form-label" for="referee_3">Giudice 3</label>
                                 <div >
                                   <input formControlName="referee_3" class="form-control" id="referee_3" min="5.0" currencyMask [options]="{decimal: '.', prefix:'', precision: 1, align: 'left'}"
-                                  [ngStyle]=" athlete.scores.min_referee == '3' || athlete.scores.max_referee == '3' ? {'background-color': 'mistyrose'} : ''"  required>
+                                  [ngStyle]=" athlete.min_referee == '3' || athlete.max_referee == '3' ? {'background-color': 'mistyrose'} : ''"  required>
                                 </div>
                               </div>
                               <div style="max-width: 20%">
                                 <label class="col-form-label" for="referee_4">Giudice 4</label>
                                 <div>
                                   <input formControlName="referee_4" class="form-control" id="referee_4" min="5.0" currencyMask [options]="{decimal: '.', prefix:'', precision: 1, align: 'left'}"
-                                  [ngStyle]=" athlete.scores.min_referee == '4' || athlete.scores.max_referee == '4' ? {'background-color': 'mistyrose'} : ''" required>
+                                  [ngStyle]=" athlete.min_referee == '4' || athlete.max_referee == '4' ? {'background-color': 'mistyrose'} : ''" required>
                                 </div>
                               </div>
                               <div style="max-width: 20%">
                                 <label class="col-form-label" for="referee_5">Giudice 5</label>
                                 <div>
                                   <input formControlName="referee_5" class="form-control" id="referee_5" min="5.0" currencyMask [options]="{decimal: '.', prefix:'', precision: 1, align: 'left'}"
-                                  [ngStyle]=" athlete.scores.min_referee == '5' || athlete.scores.max_referee == '5' ? {'background-color': 'mistyrose'} : ''" required>
+                                  [ngStyle]=" athlete.min_referee == '5' || athlete.max_referee == '5' ? {'background-color': 'mistyrose'} : ''" required>
                                 </div>
                               </div>
                             </div>
@@ -129,8 +120,8 @@
                             </div>
                             <div class="row">
                             <div class="col-md-3">
-                              <div *ngIf="athlete.scores.n_prova > 1" class="row">
-                                <button type="button" class="btn btn-primary ml-3" (click)="getPreviousMatch(athlete.scores, 'SHOW')"><i class="fa fa-dot-circle-o"></i> Vedi prove precedenti</button>
+                              <div *ngIf="athlete.round > 1" class="row">
+                                <button type="button" class="btn btn-primary ml-3" (click)="getPreviousMatch(athlete, 'SHOW')"><i class="fa fa-dot-circle-o"></i> Vedi prove precedenti</button>
                               </div>
                             </div>
                             
@@ -138,7 +129,7 @@
                           <div class="row">
                           <div class="row col-md-6"></div>
                           <div class="row col-md-6">
-                            <div *ngIf="athlete.scores.type != 'CL'" class="row"  style="float: right;">
+                            <div *ngIf="!athlete.pool_ranking" class="row"  style="float: right;">
                               <button type="button" class="btn btn-danger" (click)="checkSubmit(athlete.scoreForm, athlete.id, 'kiken')"><i class="fa fa-ban"></i> Ritirato</button>
                               <button type="button" class="btn btn-warning ml-3" (click)="checkSubmit(athlete.scoreForm, athlete.id, 'min_score')"><i class="fa fa-ban"></i> Squalificato</button>
                               <button type="button" class="btn btn-primary ml-3" (click)="checkSubmit(athlete.scoreForm, athlete.id)"><i class="fa fa-dot-circle-o"></i> Calcola totale</button>
@@ -147,7 +138,7 @@
                           </div>
                           </form>
       
-                          <form *ngIf="typeForm == constants.PROVA_KATA_BAMBINI" [formGroup]="athlete.scoreForm" method="post" enctype="multipart/form-data" class="form-horizontal">
+                          <form *ngIf="typeForm == prova.KATA_BAMBINI" [formGroup]="athlete.scoreForm" method="post" enctype="multipart/form-data" class="form-horizontal">
                             <div class="row">
                             <div class="form-group col-md-3">
                               <label class="col-form-label" for="kata">Kata</label>
@@ -195,7 +186,7 @@
                           </div>
                           </form>
       
-                          <form *ngIf="typeForm == constants.PROVA_PALLONCINO" [formGroup]="athlete.scoreForm" method="post" enctype="multipart/form-data" class="form-horizontal">
+                          <form *ngIf="typeForm == prova.PALLONCINO" [formGroup]="athlete.scoreForm" method="post" enctype="multipart/form-data" class="form-horizontal">
                             <div class="row">
                             <div class="form-group row col-md-6">
                               <div style="max-width: 20%">
@@ -252,7 +243,7 @@
                           </div>
                           </form>
       
-                          <form *ngIf="typeForm == constants.PROVA_PERCORSO" [formGroup]="athlete.scoreForm" method="post" enctype="multipart/form-data" class="form-horizontal">
+                          <form *ngIf="typeForm == prova.PERCORSO" [formGroup]="athlete.scoreForm" method="post" enctype="multipart/form-data" class="form-horizontal">
                             <div class="row">
                             <div class="form-group row col-md-6">
                               <div style="max-width: 20%">
@@ -303,8 +294,70 @@
                     </div>
                   </div>
                 </div>
+
+                <div *ngIf="typeForm == prova.KATA_ADULTI" class="bracket-container">
+  
+  <div *ngIf="isLoading" class="text-center p-4">Caricamento tabellone...</div>
+
+  <div  *ngFor="let round of rounds" class="round-section">
+    
+    <h2 class="round-title">{{ round.name }}</h2>
+
+    <div class="matches-grid">
+      <div *ngFor="let match of round.matches" class="match-card" 
+           [class.match-closed]="match.winner_inscription_id !== null">
+        
+        <div class="match-header">
+          <span>Match #{{ match.match_number }}</span>
+          <span *ngIf="match.winner_inscription_id" class="badge-finished">TERMINATO</span>
+        </div>
+
+        <div class="match-body">
+          
+          <div class="competitor aka" 
+               [class.winner]="match.winner_inscription_id && match.winner_inscription_id === match.athlete_aka_inscription?.id">
+            <div class="competitor-info">
+              <span class="belt-indicator red"></span>
+              <span class="name">
+                {{ match.athlete_aka_inscription?.athlete?.cognome || 'In attesa...' }}
+              </span>
+            </div>
+            <input type="number" [(ngModel)]="match.score_aka" 
+                   [disabled]="!match.athlete_aka_inscription || match.winner_inscription_id !== null"
+                   class="score-input">
+          </div>
+
+          <div class="vs-column">
+            <button *ngIf="!match.winner_inscription_id" 
+                    (click)="saveMatchKata(match)" 
+                    [disabled]="!match.athlete_aka_inscription || !match.athlete_ao_inscription"
+                    class="btn-save">
+              <i class="fa fa-check"></i>
+            </button>
+            <span *ngIf="match.winner_inscription_id" class="vs-text">VS</span>
+          </div>
+
+          <div class="competitor ao" 
+               [class.winner]="match.winner_inscription_id && match.winner_inscription_id === match.athlete_ao_inscription?.id">
+            <input type="number" [(ngModel)]="match.score_ao" 
+                   [disabled]="!match.athlete_ao_inscription || match.winner_inscription_id !== null"
+                   class="score-input">
+            <div class="competitor-info text-right">
+              <span class="name">
+                {{ match.athlete_ao_inscription?.athlete?.cognome || 'In attesa...' }}
+              </span>
+              <span class="belt-indicator blue"></span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
                <!-- <div class="brackets-viewer"></div> -->
-               <div *ngIf="typeForm == constants.PROVA_KUMITE || typeForm == constants.PROVA_KUMITE_U12" class="row mt-4">
+               <div *ngIf="typeForm == prova.KUMITE || typeForm == prova.KUMITE_U12" class="row mt-4">
                 <div class="col-md-9">
                   <div id="minimal"></div>
                 </div>
@@ -317,8 +370,9 @@
               </div>
                 <div class="row mt-4">
                     <div class="col-md-9"></div>
-                    <button type="button" *ngIf="typeForm != constants.PROVA_KUMITE && typeForm != constants.PROVA_KUMITE_U12" class="btn btn-warning ml-3" (click)="elaboraPunteggi(athleteList[0].scores.n_prova)"><i class="fa fa-dot-circle-o"></i> Elabora punteggi</button>
-                    <button *ngIf="athleteList && athleteList[0] && athleteList[0].scores && athleteList[0].scores.type == 'CL' || typeForm == constants.PROVA_KUMITE || typeForm == constants.PROVA_KUMITE_U12" type="button" class="btn btn-danger ml-3" (click)="closeCategory()"><i class="fa fa-dot-circle-o"></i> Chiudi categoria</button>
+                    <button type="button" *ngIf="typeForm == prova.KATA_ADULTI" class="btn btn-warning ml-3" (click)="generateBrackets()"><i class="fa fa-dot-circle-o"></i> Genera tabelloni</button>
+                    <button type="button" *ngIf="typeForm != prova.KUMITE && typeForm != prova.KUMITE_U12 && typeForm != prova.KATA_ADULTI" class="btn btn-warning ml-3" (click)="elaboraPunteggi(athleteList[0].scores.n_prova)"><i class="fa fa-dot-circle-o"></i> Elabora punteggi</button>
+                    <button *ngIf="athleteList && athleteList[0] && athleteList[0].scores && athleteList[0].scores.type == 'CL' || typeForm == prova.KUMITE || typeForm == prova.KUMITE_U12" type="button" class="btn btn-danger ml-3" (click)="closeCategory()"><i class="fa fa-dot-circle-o"></i> Chiudi categoria</button>
                   </div>
                
             </div>

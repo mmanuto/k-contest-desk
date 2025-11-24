@@ -1,9 +1,10 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 import { UntypedFormGroup, FormControl, AbstractControl, UntypedFormBuilder, Validators} from '@angular/forms'; 
-import { EmailValidators } from 'ngx-validators'
+import { ToastrService } from 'ngx-toastr';
 import { LoginService } from './login.service';
 import { LocalStorageService } from 'angular-2-local-storage';
+import {userRole} from '../../constants';
 
 @Component({
   selector: 'app-login',
@@ -17,7 +18,8 @@ export class LoginComponent {
   public username:AbstractControl;
   public password:AbstractControl;
 
-  constructor(router:Router, 
+  constructor(router:Router,
+    public toastrService: ToastrService, 
     fb:UntypedFormBuilder,
     public loginService: LoginService,
     protected localStorageService: LocalStorageService) {
@@ -42,14 +44,16 @@ export class LoginComponent {
                 this.localStorageService.set('currentUser', response.result.data);
               if(response.result.data.username == 'Admin'){
                 this.router.navigate(['adminpanel']);
-                this.localStorageService.set('userType', 1);
+                this.localStorageService.set('userType', userRole.ADMIN);
               }else{
                 this.router.navigate(['tatami']);
-                this.localStorageService.set('userType', 0);
+                this.localStorageService.set('userType', userRole.TATAMI_USER);
               }
   
                 console.log(response.result.data);
-            } 
+            } else{
+              this.toastrService.error('Credenziali errate');
+            }
   
         });
       }

@@ -2,7 +2,6 @@ import { Component, ViewEncapsulation } from '@angular/core';
 import { AthletesService } from './athletes.service';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import * as Constants from '../../constants';
 
 @Component({
   selector: 'app-smart',
@@ -189,7 +188,7 @@ export class AthletesComponent {
           id: element.id,
           firstName: element.athlete.nome,
           lastName: element.athlete.cognome,
-          club: element.athlete.club.nome_societa,
+          club: element.athlete.club.club_name,
           birthdate: element.athlete.data_nascita,
           belt: element.athlete.grado,
           codes: element.categorycode.id,

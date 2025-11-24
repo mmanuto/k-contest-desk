@@ -171,7 +171,10 @@ export class AdminPanleComponent implements OnInit {
     
   }
 
+  
   creaPdfIscrizioni(category, peso = false) {
+
+    console.log(this.competitionData);
     
     let nomeGara = this.competitionData.nome_gara;
     
@@ -216,7 +219,6 @@ export class AdminPanleComponent implements OnInit {
     if(category.id.substring(0, 3) == 'KIA'){
       columns = [
         {header: "Nr.", dataKey: 'nr'}, 
-        {header: "Cintura", dataKey: 'nr'}, 
         {header: "Atleti", dataKey: 'atleti'}, 
         {header: "Società", dataKey: 'societa'}
       ];
@@ -235,19 +237,11 @@ export class AdminPanleComponent implements OnInit {
     let count = 1;
     for (let atleta of category.athletes) {
 
-      let record = [count, atleta.athlete.cognome + ' ' + atleta.athlete.nome, atleta.athlete.club.nome_societa];
-
-      if(category.id.substring(0, 3) == 'KIA'){
-        let color = 'AKA'
-        if(category.athletes.length != 3 && count % 2 == 0){
-            color = 'AO';
-        }
-        record = [count, color, atleta.athlete.cognome + ' ' + atleta.athlete.nome, atleta.athlete.club.nome_societa];
-      }
+      let record = [count, atleta.athlete.cognome + ' ' + atleta.athlete.nome, atleta.athlete.club.club_name];
 
       if((category.id.substring(0, 3) == 'KUA' || category.id.substring(0, 3) == 'KUG') && peso){
         
-        record = [count, atleta.athlete.cognome + ' ' + atleta.athlete.nome, atleta.athlete.club.nome_societa, atleta.athlete.peso];
+        record = [count, atleta.athlete.cognome + ' ' + atleta.athlete.nome, atleta.athlete.club.club_name, atleta.athlete.peso];
       }
       rows.push(record);
       count++;
@@ -545,7 +539,7 @@ export class AdminPanleComponent implements OnInit {
               position: position, 
               id: kumiteAthleteList[index].id, 
               name: kumiteAthleteList[index].athlete.cognome + ' ' + kumiteAthleteList[index].athlete.nome, 
-              club:kumiteAthleteList[index].athlete.club.nome_societa
+              club:kumiteAthleteList[index].athlete.club.club_name
             })
           }else{
             kumiteMatches.push({

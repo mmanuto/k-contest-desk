@@ -7,7 +7,7 @@ import { MenuService } from '../../theme/components/menu/menu.service';
 import { TranslateService } from '@ngx-translate/core';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import {interval,Subscription} from 'rxjs';
-import * as Constants from '../../constants';
+import {categoryStatus} from '../../constants';
 
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -90,7 +90,7 @@ export class CategoriesComponent implements OnInit {
   public athletestNumber = null;
   selectedCategory: any = null;
   mySubscription: Subscription;
-  constants = Constants;
+  categoryStatus = categoryStatus;
   alertsDismiss: any = [];
   message: string = '';
   public kumiteMatches:any[] = [];
@@ -189,7 +189,7 @@ export class CategoriesComponent implements OnInit {
       tatami.userCategories.forEach(category => {
           if(category.id == this.tatamiForm.value.categorycode_id){
             this.message = 'La categoria selezionata è già assegnata al ' + tatami.name;
-            if(category.status == Constants.STATUS_DOING){
+            if(category.status == categoryStatus.DOING){
               this.message += ' ed è già in corso! Proseguendo la categoria verrà spostata sul tatami selezionato.';
             }else{
               this.message += '. Proseguendo la categoria verrà spostata sul tatami selezionato.';
@@ -206,7 +206,7 @@ export class CategoriesComponent implements OnInit {
     let request = {
       user_id: this.tatamiForm.value.user_id,
       categorycode_id: this.tatamiForm.value.categorycode_id,
-      status: Constants.STATUS_TODO
+      status: categoryStatus.TODO
     }
 
     this.categoriesService.saveTatamiAssegnee(request).subscribe((response: any) => {
@@ -508,6 +508,11 @@ export class CategoriesComponent implements OnInit {
   //====================================================================================================
 
   public openClassification(category_id){
+    console.log(category_id);
+
+    this.categoriesService.getClassifiche({categorycode_id: category_id}).subscribe((response: any) => {
+    }
+  );
 
   }
 

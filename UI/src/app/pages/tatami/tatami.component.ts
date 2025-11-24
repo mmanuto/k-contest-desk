@@ -2,12 +2,14 @@ import { Component, ViewEncapsulation, ViewChild, Pipe, PipeTransform, ElementRe
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { LocalStorageService } from 'angular-2-local-storage';
 import { TatamiService } from './tatami.service';
-import * as Constants from '../../constants';
+import { categoryStatus, colorMapping, monitor, prova, categoryPhase, RoundMatch, RoundMatchTitles } from '../../constants';
 import {interval,Subscription} from 'rxjs';
 import {ModalDirective} from 'ngx-bootstrap/modal';
 import * as Dataset from './datasets';
 import { InMemoryDatabase } from './storage/memory';
 import { BracketsManager } from 'brackets-manager';
+import { environment } from '../../../environments/environment';
+import { SelectDropDownModule } from 'ngx-select-dropdown';
 
 declare global {
   interface JQuery {
@@ -60,6 +62,31 @@ async function process(dataset: Dataset) {
   };
 }
 
+interface Match {
+  id: number;
+  round: number;
+  match_number: number;
+  athlete_aka_inscription: any | null; // Oggetto atleta o null
+  athlete_ao_inscription: any | null;
+  score_aka: number;
+  score_ao: number;
+  winner_inscription_id: number | null;
+  is_closed: boolean; // Flag per sapere se il match è finito
+}
+
+interface RoundGroup {
+  roundId: number;
+  name: string;
+  matches: Match[];
+}
+
+const ROUND_NAMES = {
+  1: 'Ottavi di Finale',
+  2: 'Quarti di Finale',
+  3: 'Semifinale',
+  4: 'Finale',
+  5: 'Ripescaggi'
+};
 
 @Component({
   selector: 'tatami',
@@ -75,6 +102,11 @@ export class TatamiComponent {
   @ViewChild('doubleKataModal') public doubleKataModal: ModalDirective;
   @ViewChild('kumiteModal') public kumiteModal: ModalDirective;
 
+  //CONSTANTS
+  colorMapping = colorMapping;
+  prova = prova;
+  categoryStatus = categoryStatus;
+
   public searchText: string;
   categories: any[];
   athleteList: any[];
@@ -82,10 +114,9 @@ export class TatamiComponent {
   selectedCategory: any;
   labelCategory: string = '';
   alertsDismiss: any = [];
-  colorMapping = Constants.colorMapping;
+  
   currentUser;
   typeForm;
-  constants = Constants;
   kataList: any = [];
   mySubscription: Subscription;
   tempFormRequest: any = [];
@@ -106,6 +137,10 @@ export class TatamiComponent {
   firstMatch = [];
   secondMatch = [];
   thirdMatch = [];
+  
+  // Round Kata a bandierine
+  public rounds: RoundGroup[] = [];
+  public isLoading = false;
 
   constructor(private tatamiService: TatamiService, 
     public fb: FormBuilder,
@@ -120,6 +155,7 @@ export class TatamiComponent {
   ngOnInit() {
 
     this.currentUser = this.localStorageService.get('currentUser');
+    //TODO - Da rivedere
     this.getTatamiStatus();
     this.tatamiService.getKataList().subscribe((response: any) => {
       if(response.result.success){
@@ -133,8 +169,10 @@ export class TatamiComponent {
 
   //============================================================ SALVATAGGIO PUNTEGGIO SINGOLO ==================================================
 
+  // Salvo punteggio KATA (adulti e bambini) - Percorso e palloncino
   checkSubmit(form: FormGroup, athleteId, type = null){
 
+    //se ho già dei valori avviso che stiamo modificando un punteggio già salvato
     if(form.value.total || form.value.total_time){
       this.tempFormRequest = {
         form: form,
@@ -143,36 +181,42 @@ export class TatamiComponent {
       }
       this.dangerModal.show();
     }else{
-      this.saveScoresAndGetTotals(form, athleteId, type);
+      this.saveJudgeScore(form, athleteId, type);
     }
     
   }
 
+  //funzione richiamata da dangerModal, modifica punteggio già salvato
   editScores(){
-    this.saveScoresAndGetTotals(this.tempFormRequest.form, this.tempFormRequest.athleteId, this.tempFormRequest.type);
+    this.saveJudgeScore(this.tempFormRequest.form, this.tempFormRequest.athleteId, this.tempFormRequest.type);
     this.dangerModal.hide();
   }
 
-  saveScoresAndGetTotals(form: FormGroup, athleteId, type = null){
+  /**
+   * ================================
+   * Calcola totali e salva punteggi
+   * ================================
+   * */
+  saveJudgeScore(form: FormGroup, athleteId, type = null){
 
-    this.checkCategoryStatus(Constants.STATUS_DOING);
+    //TODO - da rivedere logica per pulsanti predefiniti
     switch (type) {
       case 'kiken':
         if(this.typeForm == 'KIA'){
-          form = this.prevalueKata(form, 0);
+          this.patchKataForm(form, 0);
         }else if(this.typeForm == 'PER'){
-          form = this.prevaluePercorso(form);
+          this.patchPercorsoForm(form);
         }else{
-          form = this.prevalueBambini(form, 0);
+          this.patchBambiniForm(form, 0);
         }
         break;
       case 'min_score':
         if(this.typeForm == 'KIA'){
-          form = this.prevalueKata(form, 5.0);
+          this.patchKataForm(form, 5.0);
         }else if(this.typeForm == 'PER'){
-          form = this.prevaluePercorso(form);
+          this.patchPercorsoForm(form);
         }else{
-          form = this.prevalueBambini(form, 5.0);
+          this.patchBambiniForm(form, 5.0);
         }
         break;
     
@@ -183,22 +227,29 @@ export class TatamiComponent {
       console.log('INVALID');
     }else{
       form.value.category = this.typeForm;
-      this.tatamiService.saveScoresAndGetTotals(form.value).subscribe((response:any) => {
+      this.tatamiService.saveJudgeScore(form.value).subscribe((response:any) => {
         if(response.result.success){
-          this.getAtlheteList(form.value.athlete_inscription_id, athleteId);
+          //this.getAtlheteList(form.value.athlete_inscription_id, athleteId);
+          this.checkCategoryStatus(categoryStatus.DOING);
+          this.getKataMatches(form.value.athlete_inscription_id, athleteId);
         }
       })
 
     }
   }
   
+  /**
+   * ===================================================================
+   * Controlla lo satto della categoria e se necessario lo aggiorna - OK
+   * ===================================================================
+   * */
   checkCategoryStatus(status){
 
     if(this.selectedCategory.status == status)
     return;
 
-    if(this.selectedCategory.status == Constants.STATUS_TODO && status == Constants.STATUS_OPEN ||
-      this.selectedCategory.status == Constants.STATUS_OPEN && status == Constants.STATUS_DOING){
+    if(this.selectedCategory.status == categoryStatus.TODO && status == categoryStatus.OPEN ||
+      this.selectedCategory.status == categoryStatus.OPEN && status == categoryStatus.DOING){
         this.selectedCategory.status = status;
     
         let request = {
@@ -217,7 +268,7 @@ export class TatamiComponent {
 
   closeCategory(){
 
-      this.selectedCategory.status = Constants.STATUS_DONE;
+      this.selectedCategory.status = categoryStatus.CLOSED;
       this.athleteList = [];
       this.kumiteAthleteList = [];
       jQuery('#minimal').hide();
@@ -226,7 +277,7 @@ export class TatamiComponent {
       let request = {
         categorycode_id: this.selectedCategory.categorycode_id,
         id: this.selectedCategory.id,
-        status: Constants.STATUS_DONE,
+        status: categoryStatus.CLOSED,
         user_id: this.selectedCategory.user_id
       }
       this.tatamiService.updateCategoryStatus(request).subscribe((response: any) => {
@@ -234,29 +285,36 @@ export class TatamiComponent {
       })
   }
 
-  prevalueBambini(form, value){
-    form.value.kata_id = null;
-    form.value.referee_1 = value;
-    form.value.referee_2 = value;
-    form.value.referee_3 = value;
-    form.value.penalty = 0;
-    return form;
+   // --- Helper Functions con patchValue ---
+
+  private patchBambiniForm(form: FormGroup, value: number){
+    form.patchValue({
+      kata_id: null,
+      referee_1: value,
+      referee_2: value,
+      referee_3: value,
+      penalty: 0 // Resetta penalità
+    });
   }
-  prevalueKata(form, value){
-    form.value.kata_id = null;
-    form.value.referee_1 = value;
-    form.value.referee_2 = value;
-    form.value.referee_3 = value;
-    form.value.referee_4 = value;
-    form.value.referee_5 = value;
-    return form;
+
+  private patchKataForm(form: FormGroup, value: number) {
+    form.patchValue({
+      kata_id: null, // Reset del kata selezionato
+      referee_1: value,
+      referee_2: value,
+      referee_3: value,
+      referee_4: value,
+      referee_5: value
+    });
   }
-  prevaluePercorso(form){
-    form.value.minutes = 0;
-    form.value.seconds = 0;
-    form.value.milliseconds = 0;
-    form.value.penalty = 0;
-    return form;
+
+  private patchPercorsoForm(form: FormGroup) {
+    form.patchValue({
+      minutes: 0,
+      seconds: 0,
+      milliseconds: 0,
+      penalty: 0
+    });
   }
 
   // ================================================================ ELABORAZIONE PUNTEGGI CATEGORIA ==========================================
@@ -288,6 +346,15 @@ export class TatamiComponent {
       this.doubleKataModal.show();
     }
     
+  }
+
+  //TODO - mettere una verifica da qualche parte. Questo pulsante deve essere cliccabile solo se tutti i punteggi sono valorizzati
+  generateBrackets(){
+    this.tatamiService.generateBrackets({categorycode_id: this.selectedCategory.categorycode.id}).subscribe((response: any) => {
+        if(response.result.success){
+          //this.getAtlheteList();
+        }
+      });
   }
 
   // ------------------------------------------------ KATA CONTROLS ----------------------------------------------------------
@@ -326,12 +393,16 @@ export class TatamiComponent {
         element.show = true;
       }
     });
-    console.log(this.athleteList);
+
+    // creo il form per il punteggio
+    if(this.typeForm == prova.KATA_ADULTI){
+      athlete.scoreForm = this.buildKataAdutiForm(athlete);
+    }
 
     if(this.typeForm != 'PER'){
       let athleteToDisplay = {
-        athlete: athlete.athlete,
-        athlete_id: athlete.athlete_id,
+        athlete: athlete.athlete_inscription.athlete,
+        athlete_id: athlete.athlete_inscription.athlete_id,
         categorycode: athlete.categorycode,
         categorycode_id: athlete.categorycode_id,
         cintura: athlete.cintura,
@@ -362,25 +433,25 @@ export class TatamiComponent {
         this.localStorageService.set('classifica', athlete);
       }
       this.localStorageService.set('type', type);
-      this.localStorageService.set(Constants.MONITOR_ATHLETE_1, null);
-      this.localStorageService.set(Constants.MONITOR_KUMITE, null);
+      this.localStorageService.set(monitor.ATHLETE_1, null);
+      this.localStorageService.set(monitor.KUMITE, null);
     }else if(type == 'AT'){
-      this.localStorageService.set(Constants.MONITOR_ATHLETE_1, athlete);
+      this.localStorageService.set(monitor.ATHLETE_1, athlete);
       this.localStorageService.set('classifica', null);
-      this.localStorageService.set(Constants.MONITOR_KUMITE, null);
+      this.localStorageService.set(monitor.KUMITE, null);
     }else if(type == 'KUMITE'){
-      this.localStorageService.set(Constants.MONITOR_ATHLETE_1, null);
-      this.localStorageService.set(Constants.MONITOR_COUNTDOWN, this.countdown);
+      this.localStorageService.set(monitor.ATHLETE_1, null);
+      this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
       this.localStorageService.set('classifica', null);
     }else{
-      this.localStorageService.set(Constants.MONITOR_ATHLETE_1, null);
-      this.localStorageService.set(Constants.MONITOR_KUMITE, null);
+      this.localStorageService.set(monitor.ATHLETE_1, null);
+      this.localStorageService.set(monitor.KUMITE, null);
       this.localStorageService.set('classifica', null);
     }      
       
       //window.open("http://" + document.location.hostname + "/csenveneto/displayinfo", "http://" + document.location.hostname + "/csenveneto/displayinfo", "toolbar=no");
 
-      window.open(Constants.DISPLYINFO_URL, Constants.DISPLYINFO_URL, "toolbar=no");
+      window.open(environment.DISPLYINFO_URL, environment.DISPLYINFO_URL, "toolbar=no");
 
     
     
@@ -411,9 +482,15 @@ export class TatamiComponent {
     this.kumiteAthleteList = [];
     this.kumiteMatches = [];
 
-    this.checkCategoryStatus(Constants.STATUS_OPEN);
+    this.checkCategoryStatus(categoryStatus.OPEN);
+
+    if(this.typeForm == prova.KATA_ADULTI){
+      this.getKataMatches();
+    }else{
+      this.getAtlheteList();
+    }
     
-    this.getAtlheteList();
+    
   }
 
   sortMarkets(array, sortArray){
@@ -422,18 +499,117 @@ export class TatamiComponent {
     )
   }
 
+  getKataMatches(athleteId = null, athleteId_info = null){
+    
+    this.tatamiService.getKataMatches({categorycode_id: this.selectedCategory.categorycode_id}).subscribe((response: any) => {
+
+      if(response.result.success){
+
+        if(this.selectedCategory.current_phase == categoryPhase.BRACKETS){
+
+          const flatMatches = response.result.data.athleteList[0].matches; // La tua lista piatta
+          this.rounds = this.groupMatchesByRound(flatMatches);
+
+          console.log(this.rounds);
+        }else{
+          this.athleteList = response.result.data.athleteList;
+
+          this.athleteList.forEach(element => {
+
+            element.show = false;
+
+            if(athleteId_info && element.id == athleteId_info){
+
+              element.scoreForm = this.buildKataAdutiForm(element);
+              this.openInfo(element, 'AT');
+              element.show = true;
+            }
+
+            if(element.total_score){
+              // Creiamo un array temporaneo mappando ID arbitro e Valore
+              // Questo ci permette di ordinare mantenendo il riferimento a "CHI" ha dato il voto
+              const scores = [
+                { id: 1, val: element.referee_1 },
+                { id: 2, val: element.referee_2 },
+                { id: 3, val: element.referee_3 },
+                { id: 4, val: element.referee_4 },
+                { id: 5, val: element.referee_5 }
+              ];
+
+              // Filtriamo eventuali valori null/undefined (se capita che un arbitro non ha votato)
+              const validScores = scores.filter(s => s.val !== null && s.val !== undefined);
+
+              // Se non abbiamo abbastanza voti, usciamo
+              if (validScores.length > 0) {
+                          
+                // Ordiniamo l'array in base al valore (dal più piccolo al più grande)
+                validScores.sort((a, b) => a.val - b.val);
+
+                // Il primo elemento è SEMPRE il minimo (o uno dei minimi a pari merito)
+                element.min_referee = validScores[0].id;
+
+                // L'ultimo elemento è SEMPRE il massimo (o uno dei massimi a pari merito)
+                element.max_referee = validScores[validScores.length - 1].id;
+              }
+            }         
+      
+            //element.scoreForm = this.buildKataAdutiForm(element);            
+    
+          });                               
+        }
+        
+        
+
+      }
+    });
+  }
+
+  // Funzione per raggruppare i match per Round
+  private groupMatchesByRound(matches: Match[]): RoundGroup[] {
+    const groups: { [key: number]: RoundGroup } = {};
+
+    matches.forEach(match => {
+      if (!groups[match.round]) {
+        groups[match.round] = {
+          roundId: match.round,
+          name: ROUND_NAMES[match.round] || `Turno ${match.round}`,
+          matches: []
+        };
+      }
+      groups[match.round].matches.push(match);
+    });
+
+    // Restituisce un array ordinato (es. Ottavi -> Quarti -> Semi -> Finale)
+    return Object.values(groups).sort((a, b) => a.roundId - b.roundId);
+  }
+
+  // Azione per salvare il punteggio
+  saveMatchKata(match: Match) {
+    if (confirm(`Confermi il risultato: Rosso ${match.score_aka} - Blu ${match.score_ao}?`)) {
+      //this.tatamiService.saveMatchResult(match).subscribe(() => {
+        // Ricarica i dati per vedere l'avanzamento nel tabellone successivo
+        //this.loadData(); 
+      //});
+    }
+  }
+
+  selectAthlete(athlete){
+    console.log('entraaaaa');
+  }
+
   getAtlheteList(athleteId = null, athleteId_info = null){
 
     this.tatamiService.getAthleteList({categorycode_id: this.selectedCategory.categorycode_id, readonly: false}).subscribe((response: any) => {
 
       //==================================================== KUMITE ==========================================================
   
-      if(this.typeForm == Constants.PROVA_KUMITE || this.typeForm == Constants.PROVA_KUMITE_U12){
+      if(this.typeForm == prova.KUMITE || this.typeForm == prova.KUMITE_U12){
 
         this.kumiteMatches = []; //coppie primo giro di incontri
         this.kumiteAthleteList = []; //lista atleti del kumite
 
         //imposto iltempo in base a categoria
+        //TODO: inserire la info a db
 
         if(this.selectedCategory.categorycode.categoria == 'RAGAZZI'){
           this.countdown = 60;
@@ -620,7 +796,7 @@ export class TatamiComponent {
                 position: position, 
                 id: this.kumiteAthleteList[index].id, 
                 name: this.kumiteAthleteList[index].athlete.cognome + ' ' + this.kumiteAthleteList[index].athlete.nome, 
-                club:this.kumiteAthleteList[index].athlete.club.nome_societa
+                club:this.kumiteAthleteList[index].athlete.club.club_name
               })
             }else{
               this.kumiteMatches.push({
@@ -1249,19 +1425,6 @@ export class TatamiComponent {
         //=============================================================== COMBINATA E KATA =====================================================================
       }else{
 
-        this.athleteList = response.result.data;
-
-        this.athleteList.forEach(element => {
-          element.show = false;
-
-          if(athleteId_info && element.id == athleteId_info){
-
-               this.openInfo(element, 'AT');
-               element.show = true;
-            }
-            
-        });
-
         
   
         if(this.athleteList[0].scores.type=='CL' || this.athleteList[0].scores.cl_position && this.athleteList.length<=4){
@@ -1295,63 +1458,14 @@ export class TatamiComponent {
 
   
           switch (this.typeForm) {
-            case Constants.PROVA_KATA_ADULTI:
-            case Constants.PROVA_KATA_SQUADRE:
-              if(element.scores.total){
   
-                let max = false;
-                let min = false;
-                
-  
-                //cerco punteggi eliminati
-                if(element.scores.referee_1 == element.scores.min){
-                  element.scores.min_referee = 1;
-                  min = true;
-                }else if (element.scores.referee_1 == element.scores.max){
-                  element.scores.max_referee = 1;
-                  max= true;
-                }
-                if(element.scores.referee_2 == element.scores.min && !min){
-                  element.scores.min_referee = 2;
-                  min = true;
-                }else if (element.scores.referee_2 == element.scores.max && !max){
-                  element.scores.max_referee = 2;
-                  max= true;
-                }
-                if(element.scores.referee_3 == element.scores.min && !min){
-                  element.scores.min_referee = 3;
-                  min = true;
-                }else if (element.scores.referee_3 == element.scores.max && !max){
-                  element.scores.max_referee = 3;
-                  max= true;
-                }
-                if(element.scores.referee_4 == element.scores.min && !min){
-                  element.scores.min_referee = 4;
-                  min = true;
-                }else if (element.scores.referee_4 == element.scores.max && !max){
-                  element.scores.max_referee = 4;
-                  max= true;
-                }
-                if(element.scores.referee_5 == element.scores.min && !min){
-                  element.scores.min_referee = 5;
-                  min = true;
-                }else if (element.scores.referee_5 == element.scores.max && !max){
-                  element.scores.max_referee = 5;
-                  max= true;
-                }
-                
-              }
-  
-              element.scoreForm = this.buildKataAdutiForm(element);            
-              break;
-  
-            case Constants.PROVA_KATA_BAMBINI:
+            case prova.KATA_BAMBINI:
               element.scoreForm = this.buildKataBambiniForm(element);
               break;
-            case Constants.PROVA_PERCORSO:
+            case prova.PERCORSO:
               element.scoreForm = this.buildPercorsoForm(element);
               break;
-            case Constants.PROVA_PALLONCINO:
+            case prova.PALLONCINO:
               element.scoreForm = this.buildPalloncinoForm(element);
               break;
           
@@ -1374,8 +1488,8 @@ export class TatamiComponent {
     }else{
       this.countdown =120;
     }
-    this.localStorageService.set(Constants.MONITOR_COUNTDOWN, this.countdown);
-    this.localStorageService.set(Constants.MONITOR_ACTION, 'MODIFY');
+    this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
+    this.localStorageService.set(monitor.ACTION, 'MODIFY');
   }
 
   modifyTimer(operation){
@@ -1384,33 +1498,34 @@ export class TatamiComponent {
     }else{
       this.countdown--;
     }
-    this.localStorageService.set(Constants.MONITOR_COUNTDOWN, this.countdown);
-    this.localStorageService.set(Constants.MONITOR_ACTION, 'MODIFY');
+    this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
+    this.localStorageService.set(monitor.ACTION, 'MODIFY');
   }
 
-  // Popolo form KATA ADULTI
+  // Popolo form KATA ADULTI - OK
   buildKataAdutiForm(element){
+
+    if (!element) return;
     const kataAdultiGroup = new FormGroup({
-      id: new FormControl(element.scores.id),
-      name: new FormControl({value: element.athlete.cognome + ' ' + element.athlete.nome, disabled: true}, Validators.required),
-      athlete_inscription_id: new FormControl(element.id),
+      id: new FormControl(element.id),
+      name: new FormControl({value: element.athlete_inscription.athlete.cognome + ' ' + element.athlete_inscription.athlete.nome, disabled: true}, Validators.required),
+      athlete_inscription_id: new FormControl(element.athlete_inscription.id),
       user_id: new FormControl(this.currentUser.id),
-      kata_id: new FormControl(element.scores.kata_id?? ''),
-      referee_1: new FormControl(element.scores.referee_1?? '', Validators.compose(
+      kata_id: new FormControl(element.kata_id?? ''),
+      referee_1: new FormControl(element.referee_1?? '', Validators.compose(
         [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      referee_2: new FormControl(element.scores.referee_2?? '', Validators.compose(
+      referee_2: new FormControl(element.referee_2?? '', Validators.compose(
         [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      referee_3: new FormControl(element.scores.referee_3?? '', Validators.compose(
+      referee_3: new FormControl(element.referee_3?? '', Validators.compose(
         [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      referee_4: new FormControl(element.scores.referee_4?? '', Validators.compose(
+      referee_4: new FormControl(element.referee_4?? '', Validators.compose(
         [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      referee_5: new FormControl(element.scores.referee_5?? '', Validators.compose(
+      referee_5: new FormControl(element.referee_5?? '', Validators.compose(
         [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      total: new FormControl(element.scores.total?? '')
+      total: new FormControl(element.total_score?? '')
     });
 
     return kataAdultiGroup;
-    //this.scoreForm.push(kataAdultiGroup);
 
   }
 
@@ -1547,9 +1662,9 @@ export class TatamiComponent {
     this.kumiteModal.show();
 
 
-    this.localStorageService.set(Constants.MONITOR_KUMITE, this.currentMatch);
-    this.localStorageService.set(Constants.MONITOR_COUNTDOWN, this.countdown);
-    this.localStorageService.set(Constants.MONITOR_ACTION, '');
+    this.localStorageService.set(monitor.KUMITE, this.currentMatch);
+    this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
+    this.localStorageService.set(monitor.ACTION, '');
     this.openInfo(null, 'KUMITE');
   }
 
@@ -1587,7 +1702,7 @@ export class TatamiComponent {
     }
 
     this.currentMatch.aka.scores.total = this.currentMatch.aka.scores.yuko + this.currentMatch.aka.scores.ippon*3 + this.currentMatch.aka.scores.wazaari*2;
-    this.localStorageService.set(Constants.MONITOR_KUMITE, this.currentMatch);
+    this.localStorageService.set(monitor.KUMITE, this.currentMatch);
 
     if(this.currentMatch.aka.scores.total > this.currentMatch.ao.scores.total && this.currentMatch.aka.scores.total - this.currentMatch.ao.scores.total >= 8){
       this.winMatch('AKA');
@@ -1622,7 +1737,7 @@ export class TatamiComponent {
     }
 
     this.currentMatch.ao.scores.total = this.currentMatch.ao.scores.yuko + this.currentMatch.ao.scores.ippon*3 + this.currentMatch.ao.scores.wazaari*2;
-    this.localStorageService.set(Constants.MONITOR_KUMITE, this.currentMatch);
+    this.localStorageService.set(monitor.KUMITE, this.currentMatch);
 
     if(this.currentMatch.ao.scores.total > this.currentMatch.aka.scores.total && this.currentMatch.ao.scores.total - this.currentMatch.aka.scores.total >= 8){
       this.winMatch('AO');
@@ -1642,9 +1757,9 @@ export class TatamiComponent {
 
     console.log(this.currentMatch);
     this.countdown = 0;
-    this.localStorageService.set(Constants.MONITOR_ACTION, Constants.MONITOR_ACTION_PAUSE);
-    this.localStorageService.set(Constants.MONITOR_COUNTDOWN, this.countdown);
-    this.localStorageService.set(Constants.MONITOR_KUMITE, this.currentMatch);
+    this.localStorageService.set(monitor.ACTION, monitor.ACTION_PAUSE);
+    this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
+    this.localStorageService.set(monitor.KUMITE, this.currentMatch);
     this.pauseTimer();
   }
 
@@ -1657,7 +1772,7 @@ export class TatamiComponent {
       this.currentMatch.ao.scores.total = this.currentMatch.aka.scores.total +1;
     }
     console.log(this.currentMatch);
-    this.checkCategoryStatus(Constants.STATUS_DOING);
+    this.checkCategoryStatus(categoryStatus.DOING);
     this.tatamiService.saveAthleteScores(this.currentMatch).subscribe((response: any) => {
       if(response.result.success){
         if(this.selectedCategory.categorycode.categoria == 'ESORDIENTI'){
@@ -1674,8 +1789,8 @@ export class TatamiComponent {
 
   startTimer() {
     this.showStartButton = false;
-    this.localStorageService.set(Constants.MONITOR_ACTION, Constants.MONITOR_ACTION_START);
-    this.localStorageService.set(Constants.MONITOR_COUNTDOWN, this.countdown);
+    this.localStorageService.set(monitor.ACTION, monitor.ACTION_START);
+    this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
     if(this.countdown > 0) {
       this.countdown--;
     }
@@ -1701,9 +1816,9 @@ export class TatamiComponent {
             this.currentMatch.ao.scores.total++;
           }
         }
-        this.localStorageService.set(Constants.MONITOR_ACTION, Constants.MONITOR_ACTION_PAUSE);
-        this.localStorageService.set(Constants.MONITOR_COUNTDOWN, this.countdown);
-        this.localStorageService.set(Constants.MONITOR_KUMITE, this.currentMatch);
+        this.localStorageService.set(monitor.ACTION, monitor.ACTION_PAUSE);
+        this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
+        this.localStorageService.set(monitor.KUMITE, this.currentMatch);
         console.log('finitoooooooooooooooooooooooo');
         this.pauseTimer();
       }
@@ -1715,11 +1830,11 @@ export class TatamiComponent {
   pauseTimer() {
     this.showStartButton = true;
     clearInterval(this.interval);
-    this.localStorageService.set(Constants.MONITOR_ACTION, Constants.MONITOR_ACTION_PAUSE);
+    this.localStorageService.set(monitor.ACTION, monitor.ACTION_PAUSE);
   }
 
   onCheckboxChange(){
-    this.localStorageService.set(Constants.MONITOR_KUMITE, this.currentMatch);
+    this.localStorageService.set(monitor.KUMITE, this.currentMatch);
 
     if(this.currentMatch.aka.scores.H){
       this.winMatch('AO');

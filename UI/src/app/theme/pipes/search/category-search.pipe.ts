@@ -7,8 +7,8 @@ export class CategorySearchPipe implements PipeTransform {
     if (value) {
       return value.filter(athlete => {
         
-          return athlete.athlete.nome.search(searchText) !== -1 ||
-          athlete.athlete.cognome.search(searchText) !== -1;
+          return athlete.athlete_inscription.athlete.nome.search(searchText) !== -1 ||
+          athlete.athlete_inscription.athlete.cognome.search(searchText) !== -1;
         
       });
     }

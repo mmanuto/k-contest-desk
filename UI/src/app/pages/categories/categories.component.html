@@ -42,15 +42,15 @@
                     <td class="align-middle">{{category.n_athletes}}</td>
                     <td class="align-middle">
     
-                    <span *ngIf="category.status == constants.STATUS_TODO" class="badge badge-success code">Attiva</span>
-                    <span *ngIf="category.status == constants.STATUS_OPEN" class="badge badge-primary code">Aperta</span>
-                    <span *ngIf="category.status == constants.STATUS_DOING" class="badge badge-warning code">In corso</span>
-                    <span *ngIf="category.status == constants.STATUS_BACKLOG" class="badge badge-secondary code"> Non assegnata </span>
-                    <span *ngIf="category.status == constants.STATUS_DONE" class="badge badge-danger code">Chiusa</span>
+                    <span *ngIf="category.status == categoryStatus.TODO" class="badge badge-success code">Attiva</span>
+                    <span *ngIf="category.status == categoryStatus.OPEN" class="badge badge-primary code">Aperta</span>
+                    <span *ngIf="category.status == categoryStatus.DOING" class="badge badge-warning code">In corso</span>
+                    <span *ngIf="category.status == categoryStatus.BACKLOG" class="badge badge-secondary code"> Non assegnata </span>
+                    <span *ngIf="category.status == categoryStatus.CLOSED" class="badge badge-danger code">Chiusa</span>
                     <span *ngIf="category.tatami" class="badge badge-info code ml-2">{{category.tatami}}</span>
                     </td>
                     <td class="align-middle">
-                      <button *ngIf="category.status != constants.STATUS_DONE" type="button" class="btn btn-outline mr-1" data-toggle="tooltip" data-placement="top" title="Assegna a tatami"  (click)="openTatamiModal(category.id)">
+                      <button *ngIf="category.status != categoryStatus.CLOSED" type="button" class="btn btn-outline mr-1" data-toggle="tooltip" data-placement="top" title="Assegna a tatami"  (click)="openTatamiModal(category.id)">
                         <i class="fa fa-upload"></i>
                       </button>
                       <button type="button" data-toggle="tooltip" data-placement="top" title="Visualizza categoria" class="btn btn-outline tt mr-1" data-animation="false" (click)="openCategory(category)">
@@ -60,10 +60,10 @@
                       *ngIf="category.id.includes('KU')" (click)="openKumiteBrackets(category)">
                         Tabellone
                       </button>
-                      <button *ngIf="category.status == constants.STATUS_DONE" type="button" class="btn btn-outline mr-1" data-toggle="modal" (click)="openClassification(category.id)">
+                      <button *ngIf="category.status == categoryStatus.CLOSED" type="button" class="btn btn-outline mr-1" data-toggle="modal" (click)="openClassification(category.id)">
                         <i class="fa fa-upload" tooltip="Visualizza classifica"></i>
                       </button>
-                      <button *ngIf="category.status == constants.STATUS_BACKLOG && category.sesso == 'M/F'" type="button" class="btn btn-outline mr-1" data-toggle="tooltip" data-placement="top" title="Dividi categoria"  (click)="splitCategory(category)">
+                      <button *ngIf="category.status == categoryStatus.BACKLOG && category.sesso == 'M/F'" type="button" class="btn btn-outline mr-1" data-toggle="tooltip" data-placement="top" title="Dividi categoria"  (click)="splitCategory(category)">
                         <i class="fa fa-files-o"></i>
                       </button>
                     </td>
@@ -96,16 +96,16 @@
                               <div class="media-body">
                                   <div class="row" *ngFor="let category of tatami.userCategories">  
                                       <div class="col-2 text-gray text-right pr-0 font-italic">
-                                        <span *ngIf="category.status == constants.STATUS_TODO" class="badge badge-success code">{{category.categorycode.id}}</span>
-                                        <span *ngIf="category.status == constants.STATUS_OPEN" class="badge badge-primary code">{{category.categorycode.id}}</span>
-                                        <span *ngIf="category.status == constants.STATUS_DOING" class="badge badge-warning code">{{category.categorycode.id}}</span>
-                                        <span *ngIf="category.status == constants.STATUS_BACKLOG" class="badge badge-secondary code">{{category.categorycode.id}}</span>
+                                        <span *ngIf="category.status == categoryStatus.TODO" class="badge badge-success code">{{category.categorycode.id}}</span>
+                                        <span *ngIf="category.status == categoryStatus.OPEN" class="badge badge-primary code">{{category.categorycode.id}}</span>
+                                        <span *ngIf="category.status == categoryStatus.DOING" class="badge badge-warning code">{{category.categorycode.id}}</span>
+                                        <span *ngIf="category.status == categoryStatus.BACKLOG" class="badge badge-secondary code">{{category.categorycode.id}}</span>
                                       </div>
                                       <div class="col-10 pl-2">
-                                        <span *ngIf="category.status == constants.STATUS_TODO">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
-                                        <span *ngIf="category.status == constants.STATUS_OPEN">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
-                                        <span *ngIf="category.status == constants.STATUS_DOING">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
-                                        <span *ngIf="category.status == constants.STATUS_BACKLOG">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
+                                        <span *ngIf="category.status == categoryStatus.TODO">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
+                                        <span *ngIf="category.status == categoryStatus.OPEN">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
+                                        <span *ngIf="category.status == categoryStatus.DOING">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
+                                        <span *ngIf="category.status == categoryStatus.BACKLOG">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
                                       </div>                          
                                   </div>
                               </div>
@@ -127,10 +127,10 @@
                       <div class="card-body pt-3"> 
                         <div class="row" *ngFor="let category of tatami.userCategories">  
                           <div class="col-2 text-gray text-right pr-0 font-italic">
-                            <span *ngIf="category.status == constants.STATUS_DONE" class="badge badge-danger code">{{category.categorycode.id}}</span>
+                            <span *ngIf="category.status == categoryStatus.CLOSED" class="badge badge-danger code">{{category.categorycode.id}}</span>
                           </div>
                           <div class="col-10 pl-2">
-                            <span *ngIf="category.status == constants.STATUS_DONE">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}}</span>
+                            <span *ngIf="category.status == categoryStatus.CLOSED">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}}</span>
                           </div>                          
                       </div>                             
                       </div>

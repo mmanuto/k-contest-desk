@@ -59,6 +59,12 @@ class AthleteInscriptionsTable extends Table
             'foreignKey' => 'competition_id',
             'joinType' => 'INNER',
         ]);
+        $this->hasMany('ResultsJudgedPanel', [
+            'foreignKey' => 'athlete_inscription_id',
+        ]);
+        $this->hasMany('ResultsTimed', [
+            'foreignKey' => 'athlete_inscription_id',
+        ]);
         $this->hasMany('Scores', [
             'foreignKey' => 'athlete_inscription_id',
         ]);
@@ -124,6 +130,10 @@ class AthleteInscriptionsTable extends Table
         $validator
             ->dateTime('modified_date')
             ->notEmptyDateTime('modified_date');
+
+        $validator
+            ->integer('final_ranking')
+            ->allowEmptyString('final_ranking');
 
         return $validator;
     }

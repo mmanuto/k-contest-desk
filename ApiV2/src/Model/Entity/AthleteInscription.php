@@ -21,6 +21,7 @@ use Cake\ORM\Entity;
  * @property string $old_category
  * @property \Cake\I18n\FrozenTime $created_date
  * @property \Cake\I18n\FrozenTime $modified_date
+ * @property int|null $final_ranking
  *
  * @property \App\Model\Entity\Athlete $athlete
  * @property \App\Model\Entity\Categorycode $categorycode
@@ -52,6 +53,7 @@ class AthleteInscription extends Entity
         'old_category' => true,
         'created_date' => true,
         'modified_date' => true,
+        'final_ranking' => true,
         'athlete' => true,
         'categorycode' => true,
         'competition' => true,

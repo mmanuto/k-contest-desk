@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import * as Constants from '../../constants';
+import { environment } from '../../../environments/environment';
 
 
 @Injectable()
@@ -12,38 +12,42 @@ export class CategoriesService {
     getCategories()
      {
         console.log('entra');
-         return this.http.post(Constants.BASEAPPURL + 'categorycodes/getCategories', {});
+         return this.http.post(environment.BASEAPPURL + 'categorycodes/getCategories', {});
                  
     }
 
     getCompetitions(){
-        return this.http.post(Constants.ISCRIZIONI_URL + 'competitions/getCompetitions', {});
+        return this.http.post(environment.ISCRIZIONI_URL + 'competitions/getCompetitions', {});
 
     }
 
     getTatami()
      {
-         return this.http.post(Constants.BASEAPPURL + 'users/getTatami', {});
+         return this.http.post(environment.BASEAPPURL + 'users/getTatami', {});
                  
     }
 
     getTatamistatus(){
-        return this.http.post(Constants.BASEAPPURL + 'usersCategorycodes/getUserCategories', {});
+        return this.http.post(environment.BASEAPPURL + 'tatamiAssignments/getUserCategories', {});
     }
 
     saveTatamiAssegnee(request){
-        return this.http.post(Constants.BASEAPPURL + 'usersCategorycodes/saveUserCategories', request);
+        return this.http.post(environment.BASEAPPURL + 'tatamiAssignments/saveUserCategories', request);
     }
 
     getAthleteList(request){
-        return this.http.post(Constants.BASEAPPURL + 'athleteInscriptions/getAthletesByCategory', request);
+        return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/getAthletesByCategory', request);
     }
 
     getTotaleIscrizioni(){
-        return this.http.post(Constants.BASEAPPURL + 'competitions/getTotaleIscrizioni', {});
+        return this.http.post(environment.BASEAPPURL + 'competitions/getTotaleIscrizioni', {});
     }
 
     splitCategory(request){
-        return this.http.post(Constants.BASEAPPURL + 'athleteInscriptions/splitCategory', request);
+        return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/splitCategory', request);
+    }
+
+    getClassifiche(request){
+        return this.http.post(environment.BASEAPPURL + 'scores/getClassifiche', request);
     }
 } 
