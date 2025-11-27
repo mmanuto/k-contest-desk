@@ -231,7 +231,7 @@ export class TatamiComponent {
         if(response.result.success){
           //this.getAtlheteList(form.value.athlete_inscription_id, athleteId);
           this.checkCategoryStatus(categoryStatus.DOING);
-          this.getKataMatches(form.value.athlete_inscription_id, athleteId);
+          this.getCategoryState(form.value.athlete_inscription_id, athleteId);
         }
       })
 
@@ -484,11 +484,9 @@ export class TatamiComponent {
 
     this.checkCategoryStatus(categoryStatus.OPEN);
 
-    if(this.typeForm == prova.KATA_ADULTI){
-      this.getKataMatches();
-    }else{
-      this.getAtlheteList();
-    }
+    this.getCategoryState();
+      //this.getAtlheteList();
+    
     
     
   }
@@ -499,18 +497,58 @@ export class TatamiComponent {
     )
   }
 
-  getKataMatches(athleteId = null, athleteId_info = null){
-    
-    this.tatamiService.getKataMatches({categorycode_id: this.selectedCategory.categorycode_id}).subscribe((response: any) => {
+  getCategoryState(athleteId = null, athleteId_info = null){
+  
+  // 1. Chiama il backend per avere lo stato del tabellone
+   
+    this.tatamiService.getCategoryState({categorycode_id: this.selectedCategory.categorycode_id}).subscribe((response: any) => {
 
       if(response.result.success){
 
         if(this.selectedCategory.current_phase == categoryPhase.BRACKETS){
 
-          const flatMatches = response.result.data.athleteList[0].matches; // La tua lista piatta
-          this.rounds = this.groupMatchesByRound(flatMatches);
+            // 2. I dati arrivano già pronti dal backend (lista di match)
+            const flatMatches = response.result.data; 
+            
+            // 3. Usa l'Adapter per trasformarli nel formato che piace a jQuery Bracket
+            // (Nota: jQuery Bracket vuole un formato diverso da BracketsManager, 
+            //  ma il concetto è lo stesso: trasformare i dati).
+            const bracketData = this.transformForJQueryBracket(flatMatches);
+            
+            // 4. Inizializza la libreria (senza logica if/else infinita!)
+            jQuery('#minimal').bracket({
+                teamWidth: 250,
+                scoreWidth: 45,
+                matchMargin: 70,
+                roundMargin: 70,
+                init: bracketData,
+                save: function(){},
+                decorator:{edit:edit_fn, render: render_fn}
+            });
 
-          console.log(this.rounds);
+                  function render_fn(container, data, score, state) {
+        switch(state) {
+          case "empty-bye":
+            container.append("--")
+            return;
+          case "empty-tbd":
+            container.append("Upcoming")
+            return;
+       
+          case "entry-no-score":
+          case "entry-default-win":
+          case "entry-complete":
+            container.append(data.name)
+            return;
+        }
+      }
+      const component = this;
+  
+      /* Edit function is called when team label is clicked */
+      function edit_fn(container, data, doneCb) {
+        component.openMatch(data);
+        doneCb(data);
+      }
         }else{
           this.athleteList = response.result.data.athleteList;
 
@@ -1843,6 +1881,62 @@ export class TatamiComponent {
       this.winMatch('AKA');
     }
   }
+
+  // bracket-adapter.service.ts
+
+public transformForJQueryBracket(matches: any[]): any {
+    // 1. Trova il numero di round (log2 del numero di partecipanti iniziali)
+    // o semplicemente guarda il max(round) nei match
+    const maxRound = Math.max(...matches.map(m => m.round));
+    
+    const teams = [];
+    const results = [];
+
+    // 2. Popola 'teams' (Solo il Round 1 / Ottavi / Quarti iniziali)
+    const round1Matches = matches.filter(m => m.round === 1); // O il round più basso
+    
+    round1Matches.forEach(match => {
+        const aka = match.athlete_aka_inscription ? match.athlete_aka_inscription.athlete.cognome : null;
+        const ao = match.athlete_ao_inscription ? match.athlete_ao_inscription.athlete.cognome : null;
+        teams.push([aka, ao]);
+    });
+
+    // 3. Popola 'results' (Tutti i round)
+    // La struttura di jquery-bracket è: [ [ [score1, score2], [score3, score4] ], [ [semi1, semi2] ], ... ]
+    
+    // Raggruppa match per round
+    const matchesByRound = this.groupBy(matches, 'round'); 
+
+    // Itera sui round ordinati
+    Object.keys(matchesByRound).sort().forEach(roundKey => {
+        const roundMatches = matchesByRound[roundKey];
+        const roundResults = [];
+
+        roundMatches.forEach(match => {
+            // Se c'è un vincitore o punteggi, mettili. Altrimenti [null, null]
+            if (match.score_aka !== null || match.score_ao !== null) {
+                roundResults.push([match.score_aka, match.score_ao]);
+            } else {
+                roundResults.push([null, null]);
+            }
+        });
+
+        results.push(roundResults);
+    });
+
+    return {
+        teams: teams,
+        results: results
+    };
+}
+
+// Helper
+private groupBy(xs, key) {
+  return xs.reduce(function(rv, x) {
+    (rv[x[key]] = rv[x[key]] || []).push(x);
+    return rv;
+  }, {});
+}
 
 
 }

@@ -14,7 +14,7 @@ export class TatamiService
         return this.http.post(environment.BASEAPPURL + 'tatamiAssignments/getUserCategories', request);
     }
 
-    getKataMatches(request){
+    getCategoryState(request){
         return this.http.post(environment.BASEAPPURL + 'results/getCategoryState', request);
     }
 
