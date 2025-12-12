@@ -12,10 +12,11 @@ use Cake\ORM\Entity;
  * @property string $user_id
  * @property int $athlete_inscription_id
  * @property string $categorycode_id
- * @property float $time_seconds
- * @property int $penalties_count
- * @property float $penalty_value_seconds
- * @property float $total_time
+ * @property int|null $minutes
+ * @property int|null $seconds
+ * @property int|null $milliseconds
+ * @property int $penalties
+ * @property int|null $total_time
  * @property int|null $pool_ranking
  *
  * @property \App\Model\Entity\User $user
@@ -37,9 +38,10 @@ class ResultsTimed extends Entity
         'user_id' => true,
         'athlete_inscription_id' => true,
         'categorycode_id' => true,
-        'time_seconds' => true,
-        'penalties_count' => true,
-        'penalty_value_seconds' => true,
+        'minutes' => true,
+        'seconds' => true,
+        'milliseconds' => true,
+        'penalties' => true,
         'total_time' => true,
         'pool_ranking' => true,
         'user' => true,

@@ -43,16 +43,6 @@ class ResultsMatchTable extends Table
         $this->setDisplayField('categorycode_id');
         $this->setPrimaryKey('id');
 
-        $this->belongsTo('AthleteInscriptions', [
-            'foreignKey' => 'athlete_aka_inscription_id',
-            'joinType' => 'INNER',
-        ]);
-
-        $this->belongsTo('AthleteInscriptions', [
-            'foreignKey' => 'athlete_ao_inscription_id',
-            'joinType' => 'INNER',
-        ]);
-
         $this->belongsTo('Categorycodes', [
             'foreignKey' => 'categorycode_id',
             'joinType' => 'INNER',
@@ -99,8 +89,12 @@ class ResultsMatchTable extends Table
             ->allowEmptyString('loser_inscription_id');
 
         $validator
-            ->scalar('method_of_win')
-            ->allowEmptyString('method_of_win');
+            ->integer('kata_id_aka')
+            ->allowEmptyString('kata_id_aka');
+
+        $validator
+            ->integer('kata_id_ao')
+            ->allowEmptyString('kata_id_ao');
 
         $validator
             ->integer('score_aka')
@@ -119,16 +113,58 @@ class ResultsMatchTable extends Table
             ->allowEmptyString('senshu_ao');
 
         $validator
-            ->integer('penalties_aka')
-            ->allowEmptyString('penalties_aka');
+            ->integer('yuko_aka')
+            ->allowEmptyString('yuko_aka');
 
         $validator
-            ->integer('penalties_ao')
-            ->allowEmptyString('penalties_ao');
+            ->integer('yuko_ao')
+            ->allowEmptyString('yuko_ao');
 
         $validator
-            ->boolean('kiken')
-            ->allowEmptyString('kiken');
+            ->integer('wazaari_aka')
+            ->allowEmptyString('wazaari_aka');
+
+        $validator
+            ->integer('wazaari_ao')
+            ->allowEmptyString('wazaari_ao');
+
+        $validator
+            ->integer('ippon_aka')
+            ->allowEmptyString('ippon_aka');
+
+        $validator
+            ->integer('ippon_ao')
+            ->allowEmptyString('ippon_ao');
+
+        $validator
+            ->allowEmptyString('chui_1_aka');
+
+        $validator
+            ->allowEmptyString('chui_1_ao');
+
+        $validator
+            ->allowEmptyString('chui_2_aka');
+
+        $validator
+            ->allowEmptyString('chui_2_ao');
+
+        $validator
+            ->allowEmptyString('chui_3_aka');
+
+        $validator
+            ->allowEmptyString('chui_3_ao');
+
+        $validator
+            ->allowEmptyString('hans_chui_aka');
+
+        $validator
+            ->allowEmptyString('hans_chui_ao');
+
+        $validator
+            ->allowEmptyString('hans_aka');
+
+        $validator
+            ->allowEmptyString('hans_ao');
 
         return $validator;
     }
@@ -143,8 +179,6 @@ class ResultsMatchTable extends Table
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn('categorycode_id', 'Categorycodes'), ['errorField' => 'categorycode_id']);
-        $rules->add($rules->existsIn('athlete_aka_inscription_id', 'AthleteInscriptions'), ['errorField' => 'athlete_inscription_id']);
-        $rules->add($rules->existsIn('athlete_ao_inscription_id', 'AthleteInscriptions'), ['errorField' => 'athlete_inscription_id']);
 
         return $rules;
     }

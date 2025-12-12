@@ -16,14 +16,28 @@ use Cake\ORM\Entity;
  * @property int|null $athlete_ao_inscription_id
  * @property int|null $winner_inscription_id
  * @property int|null $loser_inscription_id
- * @property string|null $method_of_win
+ * @property int|null $kata_id_aka
+ * @property int|null $kata_id_ao
  * @property int|null $score_aka
  * @property int|null $score_ao
  * @property bool|null $senshu_aka
  * @property bool|null $senshu_ao
- * @property int|null $penalties_aka
- * @property int|null $penalties_ao
- * @property bool|null $kiken
+ * @property int|null $yuko_aka
+ * @property int|null $yuko_ao
+ * @property int|null $wazaari_aka
+ * @property int|null $wazaari_ao
+ * @property int|null $ippon_aka
+ * @property int|null $ippon_ao
+ * @property int|null $chui_1_aka
+ * @property int|null $chui_1_ao
+ * @property int|null $chui_2_aka
+ * @property int|null $chui_2_ao
+ * @property int|null $chui_3_aka
+ * @property int|null $chui_3_ao
+ * @property int|null $hans_chui_aka
+ * @property int|null $hans_chui_ao
+ * @property int|null $hans_aka
+ * @property int|null $hans_ao
  *
  * @property \App\Model\Entity\Categorycode $categorycode
  */
@@ -46,14 +60,28 @@ class ResultsMatch extends Entity
         'athlete_ao_inscription_id' => true,
         'winner_inscription_id' => true,
         'loser_inscription_id' => true,
-        'method_of_win' => true,
+        'kata_id_aka' => true,
+        'kata_id_ao' => true,
         'score_aka' => true,
         'score_ao' => true,
         'senshu_aka' => true,
         'senshu_ao' => true,
-        'penalties_aka' => true,
-        'penalties_ao' => true,
-        'kiken' => true,
+        'yuko_aka' => true,
+        'yuko_ao' => true,
+        'wazaari_aka' => true,
+        'wazaari_ao' => true,
+        'ippon_aka' => true,
+        'ippon_ao' => true,
+        'chui_1_aka' => true,
+        'chui_1_ao' => true,
+        'chui_2_aka' => true,
+        'chui_2_ao' => true,
+        'chui_3_aka' => true,
+        'chui_3_ao' => true,
+        'hans_chui_aka' => true,
+        'hans_chui_ao' => true,
+        'hans_aka' => true,
+        'hans_ao' => true,
         'categorycode' => true,
     ];
 }

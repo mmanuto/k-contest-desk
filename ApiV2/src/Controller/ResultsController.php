@@ -25,7 +25,7 @@ class ResultsController extends ApiController
     public function getCategoryState()
     {
         $this->loadModel('TatamiAssignments');
-        
+
         $request = $this->request->getData();
         $categorycode_id = $request['categorycode_id'];
 
@@ -48,11 +48,19 @@ class ResultsController extends ApiController
             // Fasi KATA (Punteggio)
             case Configure::read('PHASE_JUDGING_PANEL'):
             case Configure::read('PHASE_AWAITING_TIEBREAK'):
+            case Configure::read('JUDGING_FINALIZING'):
                 $data = $this->_getPanelData($categorycode_id);
+                break;
+            
+            // Fase PERCORSO (Tempo) -- NUOVO --
+            case Configure::read('PHASE_TIME_PANEL'):
+            case Configure::read('TIMED_FINALIZING'):
+                $data = $this->_getTimedData($categorycode_id);
                 break;
             
             // Fase PRE-TABELLONE (Comune)
             case Configure::read('PHASE_AWAITING_BRACKETS'):
+                
                 // Se è Kata, mostriamo la classifica finale delle qualifiche
                 if (!$this->_isKumite($categorycode_id)) {
                     $data = $this->_getPanelData($categorycode_id, true); // true = ordinato per rank
@@ -64,6 +72,7 @@ class ResultsController extends ApiController
 
             // Fase TABELLONE (Comune)
             case Configure::read('PHASE_BRACKETS'):
+            case Configure::read('BRACKETS_FINALIZING'):
                 $data = $this->getBracket($categorycode_id);
                 break;
 
@@ -80,6 +89,7 @@ class ResultsController extends ApiController
             'status' => $stateRecord->status,                                   // Lo stato UI (es. CAT_DOING)
             'phase' => $current_phase,                                          // Lo stato logico (es. JUDGING_PANEL)
             'is_kumite' => $this->_isKumite($categorycode_id), // Utile per il frontend
+            'is_percorso' => $this->_isPercorso($categorycode_id),
             'athleteList' => $data                                              // I dati da mostrare
         ];
     }
@@ -97,18 +107,10 @@ class ResultsController extends ApiController
         $id = $data['id']; // ID della riga in results_judged_panel
         
         try {
-            $scoreRecord = $this->ResultsJudgedPanel->get($id);
-
-            $referee_scores = [
-                (float)$data['referee_1'],
-                (float)$data['referee_2'],
-                (float)$data['referee_3'],
-                (float)$data['referee_4'],
-                (float)$data['referee_5']
-            ];
+            $scoreRecord = $this->ResultsJudgedPanel->get($id);           
 
             // Calcola il punteggio
-            $calculatedData = $this->calculateKataScore($referee_scores);
+            $calculatedData = $this->calculateKataScore($data);
 
             // Applica i dati calcolati e quelli ricevuti
             $patchData = array_merge($data, $calculatedData);
@@ -135,18 +137,105 @@ class ResultsController extends ApiController
     }
 
     /**
+     * AZIONE 5: Salva Tempo Percorso (Solo per fase PHASE_TIME_PANEL)
+     */
+    public function saveTimedScore()
+    {
+        $this->request->allowMethod(['post']);
+        $this->loadModel('ResultsTimed');
+        $this->loadModel('TatamiAssignments');
+
+        $data = $this->request->getData();
+        
+        // ID della riga in results_timed (passato dal frontend)
+        // Se non lo hai nel frontend, puoi cercarlo con athlete_inscription_id + categorycode_id
+        $id = $data['id'] ?? null; 
+
+        if (!$id) {
+            $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] = 'ID record mancante.';
+            return;
+        }
+
+        try {
+            $timeRecord = $this->ResultsTimed->get($id);
+
+            // 1. Validazione Dati
+            $minutes = (int)($data['minutes'] ?? 0);
+            $seconds = (int)($data['seconds'] ?? 0);
+            $milliseconds = (int)($data['milliseconds'] ?? 0);
+            $penalties = (int)($data['penalties'] ?? 0); // Numero di penalità
+
+            // 2. Calcolo Tempo Totale in Millisecondi
+            // Formula: (min * 60 * 1000) + (sec * 1000) + ms + (penalità * valore_penalità)
+            // Assumiamo che 1 penalità = 1000ms (1 secondo) o altro valore da config
+            $penaltyValueMs = 1000; // Esempio: 1 secondo a penalità
+            
+            $rawTimeMs = ($minutes * 60 * 1000) + ($seconds * 1000) + $milliseconds;
+            $penaltyMs = $penalties * $penaltyValueMs;
+            
+            $totalTimeMs = $rawTimeMs + $penaltyMs;
+
+            // 3. Prepara i dati per il salvataggio
+            $patchData = [
+                'minutes' => $minutes,
+                'seconds' => $seconds,
+                'milliseconds' => $milliseconds,
+                'penalties' => $penalties,
+                'total_time' => $totalTimeMs // Questo campo serve per l'ordinamento in classifica
+            ];
+
+            $timeRecord = $this->ResultsTimed->patchEntity($timeRecord, $patchData);
+
+            if ($this->ResultsTimed->save($timeRecord)) {
+                
+                // 4. CONTROLLO AVANZAMENTO AUTOMATICO
+                // (Se tutti hanno fatto il percorso -> classifica -> fine)
+                $categorycode_id = $data['categorycode_id'];
+                $this->_checkAndAdvancePhase($this->_findStateRecord($categorycode_id));
+
+                $this->apiResponse['success'] = true;
+                $this->apiResponse['message'] = 'Tempo salvato con successo.';
+                $this->apiResponse['data'] = $timeRecord;
+            } else {
+                $this->apiResponse['success'] = false;
+                $this->apiResponse['message'] = 'Errore di validazione.';
+                $this->apiResponse['errors'] = $timeRecord->getErrors();
+            }
+
+        } catch (\Exception $e) {
+            $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] = 'Errore salvataggio tempo: ' . $e->getMessage();
+        }
+    }
+
+    /**
      * AZIONE 3: Genera Tabelloni (Unificata KATA + KUMITE)
      * * Chiamato dall'admin quando le qualifiche sono finite (stato 'ready_for_brackets').
      * Applica le regole Top 4 / Top 8, controlla i pareggi e crea i tabelloni.
      */
-    public function generateBrackets()
+    public function generateBrackets($categorycode_id = null)
     {
         $this->request->allowMethod(['post']);
+        
         $categorycode_id = $this->request->getData('categorycode_id');
+        
+        if($this->generateInternalBrackets(($categorycode_id))){
+            $this->apiResponse['success'] = true;
+            $this->apiResponse['message'] = 'Tabellone generato con successo!';
+        }else{
+            $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] = 'Errore nella generazione del tabellone';
+        }      
+    }
+
+    private function generateInternalBrackets($categorycode_id)
+    {
 
         $this->loadModel('TatamiAssignments');
         $this->loadModel('ResultsJudgedPanel');
         $this->loadModel('ResultsMatch');
+        $this->loadModel('Categorycodes');
 
         $stateRecord = $this->_findStateRecord($categorycode_id);
 
@@ -157,18 +246,27 @@ class ResultsController extends ApiController
             // KUMITE: Prende tutti gli iscritti (Logica Seed o Random)
             $atleti_obj = $this->_getRegisteredAthletes($categorycode_id); 
             $atleti_ids = array_column($atleti_obj, 'id');
+            
         } else {
             // KATA: Prende la classifica dalle qualifiche
             $top_scores = $this->getQualificationRanking($categorycode_id);
             
             // Logica Cut-off (Top 4 o Top 8)
             $total_athletes = count($top_scores);
-            $limit = ($total_athletes >= 8) ? 8 : 4;
+      
+
+            $category = $this->Categorycodes->get($categorycode_id);
+            $limit = 4;
+
+            if($category->grado == 'Marrone/Nera' && $total_athletes > 8){
+
+                    $limit = 8;
+            }
             
             //TODO: da controllare. Controllo Pareggi (solo Kata)
-            if ($this->_checkTies($top_scores, $limit, $categorycode_id, $stateRecord)) {
-                return; // _checkTies gestisce la risposta e cambia stato
-            }
+            //if ($this->_checkTies($top_scores, $limit, $categorycode_id, $stateRecord)) {
+            //    return; // _checkTies gestisce la risposta e cambia stato
+            //}
             
             // Estrai solo i primi N qualificati
             for ($i = 0; $i < $limit; $i++) {
@@ -180,7 +278,6 @@ class ResultsController extends ApiController
         $nuoviIncontri = [];
         
         // --- LOGICA GENERAZIONE TABELLONE ---
-
         // CASO A: Girone all'Italiana (3 Atleti - Solo Kumite)
         // (Il Kata a 3 atleti è gestito via punteggi, non arriva qui)
         if ($count == 3 && $this->_isKumite($categorycode_id)) {
@@ -198,11 +295,9 @@ class ResultsController extends ApiController
             }
             $this->_updatePhase($stateRecord, Configure::read('PHASE_BRACKETS'));
             
-            $this->apiResponse['success'] = true;
-            $this->apiResponse['message'] = 'Tabellone generato con successo!';
+           return true;
         } catch (\Exception $e) {
-            $this->apiResponse['success'] = false;
-            $this->apiResponse['message'] = $e->getMessage();
+            return false;
         }        
     }
 
@@ -224,6 +319,19 @@ class ResultsController extends ApiController
         // 2. Aggiorna i dati (punteggi, penalità, vincitore)
         $match = $this->ResultsMatch->patchEntity($match, $data);
 
+        if (isset($data['score_aka']) && isset($data['score_ao'])) {
+            
+            $scoreAka = $data['score_aka'];
+            $scoreAo = $data['score_ao'];
+
+            if ($scoreAka > $scoreAo) {
+                $match->winner_inscription_id = $match->athlete_aka_inscription_id;
+            } elseif ($scoreAo > $scoreAka) {
+                $match->winner_inscription_id = $match->athlete_ao_inscription_id;
+            } 
+
+        }
+
         // Se il frontend non manda il vincitore esplicito, calcolalo qui (opzionale)
         // if ($match->score_aka > $match->score_ao) ...
 
@@ -233,26 +341,43 @@ class ResultsController extends ApiController
             
             // Se c'è un vincitore, dobbiamo gestire le conseguenze
             if ($match->winner_inscription_id) {
-                
-                // Recupera lo stato attuale per aggiornarlo se serve
-                $stateRecord = $this->_findStateRecord($match->categorycode_id);
 
-                // CASO A: ERA LA FINALE? -> FINALIZZA LA GARA
-                // (Assumiamo che 4 sia la FINALE come da tue costanti, 
-                //  oppure puoi calcolare qual è il round massimo per questa categoria)
-                if ($match->round == Configure::read('ROUND_MATCH_FINALE')) {
+                // CASO GIRONE ALL'ITALIANA
+                if ($match->round == Configure::read('ROUND_ROBIN')) {
                     
-                    // 1. Scrivi i risultati nella tabella athlete_inscriptions (1°, 2°, 3°)
-                    $this->_finalizeBracketRanking($match->categorycode_id);
+                    // Controlla se tutti i match del girone sono finiti
+                    $finishedCount = $this->ResultsMatch->find()
+                        ->where([
+                            'categorycode_id' => $match->categorycode_id, 
+                            'round' => Configure::read('ROUND_ROBIN'),
+                            'winner_inscription_id IS NOT NULL'
+                        ])->count();
                     
-                    // 2. Chiudi la categoria
-                    $this->_updatePhase($stateRecord, Configure::read('PHASE_FINALIZED'));
+                    // Se ne abbiamo finiti 3, calcola classifica e chiudi
                     
-                } 
-                // CASO B: NON ERA LA FINALE -> SPOSTA IL VINCITORE AL TURNO DOPO
-                else {
-                    $this->_advanceWinnerToNextRound($match);
-                }
+                    if ($finishedCount >= 3) {
+                        //$this->_finalizeRoundRobinRanking($match->categorycode_id);
+                        // Aggiorna stato categoria a FINALIZED
+                        //$this->_updatePhase($stateRecord, Configure::read('PHASE_FINALIZED'));
+
+                         // Recupera lo stato attuale per aggiornarlo se serve
+                        $stateRecord = $this->_findStateRecord($data['categorycode_id']);
+                        $this->_updatePhase($stateRecord, Configure::read('BRACKETS_FINALIZING'));
+                    }
+                    
+                }else{
+
+                    // NON ERA LA FINALE -> SPOSTA IL VINCITORE AL TURNO DOPO
+                    if ($match->round != Configure::read('ROUND_MATCH_FINALE')) {                  
+
+                        $this->_advanceWinnerToNextRound($match);
+                    }else{
+                        // Recupera lo stato attuale per aggiornarlo se serve
+                        $stateRecord = $this->_findStateRecord($data['categorycode_id']);
+
+                        $this->_updatePhase($stateRecord, Configure::read('BRACKETS_FINALIZING'));
+                    }
+                }                
             }
 
             $this->apiResponse['success'] = true;
@@ -262,6 +387,34 @@ class ResultsController extends ApiController
             $this->apiResponse['message'] = 'Errore nel salvataggio.';
             $this->apiResponse['errors'] = $match->getErrors();
         }
+    }
+
+    public function getKumiteFinalRanking(){
+
+
+        $this->loadModel('AthleteInscriptions');
+
+        $data = $this->request->getData();
+
+        // Recupera lo stato attuale per aggiornarlo se serve
+        $stateRecord = $this->_findStateRecord($data['categorycode_id']);
+
+
+        $athlete_count = $this->AthleteInscriptions->find()
+                ->where(['categorycode_id' => $data['categorycode_id'], 'deleted' => 0])
+                ->count();
+
+    
+        if($athlete_count == 3){
+            $this->_finalizeRoundRobinRanking($data['categorycode_id']);
+        }else{
+            // 1. Scrivi i risultati nella tabella athlete_inscriptions (1°, 2°, 3°)
+            $this->_finalizeBracketRanking($data['categorycode_id']);
+        }        
+                    
+        // 2. Chiudi la categoria
+        $this->_updatePhase($stateRecord, Configure::read('PHASE_FINALIZED'));
+
     }
 
 
@@ -279,6 +432,64 @@ class ResultsController extends ApiController
     }
 
     /**
+     * Controlla se una categoria è di tipo Percorso.
+     * (Assumi di avere una tabella CategoryCodes con colonna 'type' o simile)
+     */
+    private function _isPercorso($categorycode_id)
+    {
+        return (strpos($categorycode_id, 'PER') !== false); 
+    }
+
+    /**
+     * Calcola la classifica per il percorso (Tempo minore = Migliore)
+     */
+    private function _calculateTimedRankings($categorycode_id) {
+        $this->loadModel('ResultsTimed');
+        
+        $results = $this->ResultsTimed->find()
+            ->where(['categorycode_id' => $categorycode_id, 'total_time IS NOT NULL'])
+            ->order(['total_time' => 'ASC']) // ASC: Tempo minore vince
+            ->toArray();
+
+        $rank = 0;
+        foreach ($results as $res) {
+            $rank++; // Qui puoi implementare logica Dense Rank se vuoi gestiore pari merito
+            $res->pool_ranking = $rank; // Assumi che ResultsTimed abbia colonna 'rank' o 'pool_ranking'
+            $this->ResultsTimed->save($res);
+        }
+    }
+
+    /**
+     * Copia la classifica finale in AthleteInscriptions
+     */
+    public function finalizeTimedCategory() {
+        $this->loadModel('ResultsTimed');
+        $this->loadModel('AthleteInscriptions');
+        $this->loadModel('TatamiAssignments');
+
+        $data = $this->request->getData();
+
+        $results = $this->ResultsTimed->find()
+            ->where(['categorycode_id' => $data['categorycode_id']])
+            ->all();
+
+        foreach ($results as $res) {
+            $inscription = $this->AthleteInscriptions->get($res->athlete_inscription_id);
+            $inscription->final_ranking = $res->pool_ranking; // O pool_ranking
+            $this->AthleteInscriptions->save($inscription);
+        }
+
+        $stateRecord = $this->TatamiAssignments->find()
+            ->where(['categorycode_id' => $data['categorycode_id']])
+            ->first();
+
+        $this->_updatePhase($stateRecord, Configure::read('PHASE_FINALIZED'));
+        $this->apiResponse['success'] = true;
+        $this->apiResponse['message'] = 'Classifica stilata';
+
+    }
+
+    /**
      * Gestisce il ciclo di vita della categoria:
      * 1. Inizializzazione (se PENDING)
      * 2. Avanzamento fase (se JUDGING e voti completi)
@@ -289,6 +500,7 @@ class ResultsController extends ApiController
         $this->loadModel('TatamiAssignments');
         $this->loadModel('AthleteInscriptions');
         $this->loadModel('ResultsJudgedPanel');
+        $this->loadModel('ResultsTimed');
 
         $categorycode_id = $stateRecord->categorycode_id;
         $current_phase = $stateRecord->current_phase;
@@ -298,7 +510,43 @@ class ResultsController extends ApiController
             
             // KUMITE: Non serve nulla, vai subito all'attesa
             if ($this->_isKumite($categorycode_id)) {
-                return $this->_updatePhase($stateRecord, Configure::read('PHASE_AWAITING_BRACKETS'));
+                if($this->generateInternalBrackets($categorycode_id)){
+                    return Configure::read('PHASE_BRACKETS');
+                }
+                
+            } // CASO B: PERCORSO (Nuova Logica)
+            elseif ($this->_isPercorso($categorycode_id)) {
+                
+                // Popolamento tabella TEMPI (ResultsTimed)
+                $countExisting = $this->ResultsTimed->find()
+                    ->where(['categorycode_id' => $categorycode_id])
+                    ->count();
+
+                if ($countExisting == 0) {
+                    $athletes = $this->AthleteInscriptions->find()
+                        ->where(['categorycode_id' => $categorycode_id, 'deleted' => 0])
+                        ->all();
+
+                    $entitiesToSave = [];
+                    foreach ($athletes as $athlete) {
+                        $entitiesToSave[] = $this->ResultsTimed->newEntity([
+                            'athlete_inscription_id' => $athlete->id,
+                            'user_id' => $stateRecord->user_id,
+                            'categorycode_id' => $categorycode_id,
+                            'minutes' => 0, 
+                            'seconds' => 0, 
+                            'milliseconds' => 0,
+                            'total_time' => null // Null finché non gareggia
+                        ]);
+                    }
+                    
+                    if (!empty($entitiesToSave)) {
+                        $this->ResultsTimed->saveMany($entitiesToSave);
+                    }
+                }
+                
+                // Passa alla fase cronometro
+                return $this->_updatePhase($stateRecord, Configure::read('PHASE_TIME_PANEL'));
             }
             
             // KATA: Popolamento iniziale
@@ -359,20 +607,54 @@ class ResultsController extends ApiController
                 // 1. Calcola Classifica (Dense Rank)
                 $this->_calculateAndSaveRankings($categorycode_id);
 
-                // 2. Avanza
-                if ($athlete_count <= 3) {
-                    // Gara finita (1-3 atleti)
-                    $this->_finalizeScoreOnlyCategory($categorycode_id); // Nota: passiamo ID o entities? Controlla la tua implementazione
-                    return $this->_updatePhase($stateRecord, Configure::read('PHASE_FINALIZED'));
-                } else {
-                    // Vai ai tabelloni (4+ atleti)
-                    return $this->_updatePhase($stateRecord, Configure::read('PHASE_AWAITING_BRACKETS'));
-                }
+                return $this->_updatePhase($stateRecord, Configure::read('JUDGING_FINALIZING'));
+            }
+        }
+
+        // --- LOGICA 3: AVANZAMENTO PERCORSO (Check fine tempi) ---
+        if ($current_phase == Configure::read('PHASE_TIME_PANEL')) {
+            
+            $athlete_count = $this->AthleteInscriptions->find()
+                ->where(['categorycode_id' => $categorycode_id, 'deleted' => 0])
+                ->count();
+            
+            // Conta quanti hanno un tempo totale
+            $timed_count = $this->ResultsTimed->find()
+                ->where([
+                    'categorycode_id' => $categorycode_id,
+                    'total_time IS NOT NULL'
+                ])
+                ->count();
+
+            // Se tutti hanno finito il percorso
+            if ($athlete_count > 0 && $athlete_count == $timed_count) {
+                
+                // 1. Calcola Classifica Tempi (chi ha impiegato meno vince)
+                $this->_calculateTimedRankings($categorycode_id);
+                
+                return $this->_updatePhase($stateRecord, Configure::read('TIMED_FINALIZING'));
             }
         }
 
         // Se non siamo in nessuno di questi casi speciali, restituisci la fase attuale
         return $current_phase;
+    }
+
+    /**
+     * Verifica se la categoria prevede solo la classifica a punteggio
+     * senza fasi a eliminazione diretta (es. Palloncino, Kata Bambini, Percorso).
+     */
+    private function _isDirectFinalCategory($categorycode_id)
+    {        
+        $directFinalCodes = ['PAL', 'KAG'];
+        
+        foreach ($directFinalCodes as $code) {
+            if (strpos($categorycode_id, $code) !== false) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**
@@ -505,7 +787,6 @@ class ResultsController extends ApiController
      * Genera gli incontri per un tabellone a eliminazione (4, 8, 16, 32...)
      * Usa logica dinamica (pow 2) invece di if/else fissi.
      */
-    //TODO: da controllare
     private function _generateEliminationBracket($categorycode_id, array $atleti_ids)
     {
         $count = count($atleti_ids);
@@ -513,53 +794,192 @@ class ResultsController extends ApiController
         $bracketSize = pow(2, ceil(log($count, 2)));
         
         // Riempi i buchi con NULL (BYE)
-        $atletiPaddati = array_pad($atleti_ids, $bracketSize, null);
+        $atletiPaddati = array_pad($atleti_ids, intval($bracketSize), null);
+
+        $half = $bracketSize / 2;
+        $matches = [];
+
+        // --- FASE 0: Definisci l'ordine degli indici (Logica Split) ---
+        // Vogliamo prima i dispari della prima metà (0, 2, 4...), poi i pari (1, 3, 5...)
+        $indicesOrder = [];
         
-        // Genera accoppiamenti (1-8, 2-7...)
-        // Implementazione semplificata: accoppia primo con ultimo, secondo con penultimo...
-        // (Per seeding perfetto serve l'algoritmo "slither" o standard seeding)
-        $pairings = [];
-        for ($i = 0; $i < $bracketSize / 2; $i++) {
-            $pairings[] = [
-                'aka' => $atletiPaddati[$i],
-                'ao' => $atletiPaddati[$bracketSize - 1 - $i]
-            ];
+        // Prima passata: 0, 2, 4... (Rank 1, 3, 5...)
+        for ($i = 0; $i < $half; $i += 2) {
+            $indicesOrder[] = $i;
+        }
+        
+        // Seconda passata: 1, 3, 5... (Rank 2, 4, 6...)
+        for ($i = 1; $i < $half; $i += 2) {
+            $indicesOrder[] = $i;
         }
 
-        // Determina il round iniziale
-        $roundMap = [32 => 0, 16 => 1, 8 => 2, 4 => 3]; // 1=Ottavi, 2=Quarti...
-        $startRound = $roundMap[$bracketSize] ?? 1;
+        // --- FASE 1: Genera le entity del PRIMO TURNO ---
+        
+        // Determina il round di partenza
+        // 32->0, 16->1 (Ottavi), 8->2 (Quarti), 4->3 (Semi)
+        $roundMap = [32 => 0, 16 => 1, 8 => 2, 4 => 3, 2 => 4]; 
+        $currentRound = $roundMap[$bracketSize] ?? 1;
 
-        $matches = [];
-        foreach ($pairings as $idx => $pair) {
+        $matchCounter = 1;
+
+        foreach ($indicesOrder as $i) {
+            $akaId = $atletiPaddati[$i];
+            $aoId  = $atletiPaddati[$i + $half];
+
             $matches[] = $this->ResultsMatch->newEntity([
                 'categorycode_id' => $categorycode_id,
-                'round' => $startRound,
-                'match_number' => $idx + 1,
-                'athlete_aka_inscription_id' => $pair['aka'],
-                'athlete_ao_inscription_id' => $pair['ao'],
-                // Gestione BYE automatico se AO è null
-                'winner_inscription_id' => ($pair['ao'] === null) ? $pair['aka'] : null
+                'round' => $currentRound,
+                'match_number' => $matchCounter++,
+                'athlete_aka_inscription_id' => $akaId,
+                'athlete_ao_inscription_id' => $aoId,
+                // Se AO è null, AKA vince subito (BYE)
+                'winner_inscription_id' => ($aoId === null) ? $akaId : null,
+                'method_of_win' => ($aoId === null) ? 'BYE' : null
             ]);
         }
+
+        // --- FASE 2: Genera i TURNI SUCCESSIVI (Vuoti per avanzamento) ---
+        // Questo è fondamentale per far funzionare l'avanzamento automatico
+        
+        $matchesInRound = count($matches); // Es. 2 Semifinali
+
+        while ($matchesInRound > 1) {
+            $matchesInRound = $matchesInRound / 2; // Dimezza (es. 2 -> 1 Finale)
+            $currentRound++; // Avanza round (es. da 3 a 4)
+
+            for ($k = 1; $k <= $matchesInRound; $k++) {
+                $matches[] = $this->ResultsMatch->newEntity([
+                    'categorycode_id' => $categorycode_id,
+                    'round' => $currentRound,
+                    'match_number' => $k,
+                    'athlete_aka_inscription_id' => null, // Vuoto, attende vincitore
+                    'athlete_ao_inscription_id' => null,  // Vuoto
+                    'winner_inscription_id' => null
+                ]);
+            }
+        }
+
         return $matches;
     }
 
     /**
      * Genera incontri Round Robin (1 vs 2, 1 vs 3, 2 vs 3)
      */
-    //TODO: da controllare
     private function _generateRoundRobinMatches($categorycode_id, array $ids)
     {
+        //round 10 - girone all italiana
+        $round = Configure::read('ROUND_ROBIN');
         $matches = [];
         // Match 1: A vs B
-        $matches[] = $this->ResultsMatch->newEntity(['categorycode_id' => $categorycode_id, 'round' => 1, 'match_number' => 1, 'athlete_aka_inscription_id' => $ids[0], 'athlete_ao_inscription_id' => $ids[1]]);
+        $matches[] = $this->ResultsMatch->newEntity(['categorycode_id' => $categorycode_id, 'round' => $round, 'match_number' => 1, 'athlete_aka_inscription_id' => $ids[0], 'athlete_ao_inscription_id' => $ids[1]]);
         // Match 2: A vs C
-        $matches[] = $this->ResultsMatch->newEntity(['categorycode_id' => $categorycode_id, 'round' => 1, 'match_number' => 2, 'athlete_aka_inscription_id' => $ids[0], 'athlete_ao_inscription_id' => $ids[2]]);
+        $matches[] = $this->ResultsMatch->newEntity(['categorycode_id' => $categorycode_id, 'round' => $round, 'match_number' => 2, 'athlete_aka_inscription_id' => $ids[0], 'athlete_ao_inscription_id' => $ids[2]]);
         // Match 3: B vs C
-        $matches[] = $this->ResultsMatch->newEntity(['categorycode_id' => $categorycode_id, 'round' => 1, 'match_number' => 3, 'athlete_aka_inscription_id' => $ids[1], 'athlete_ao_inscription_id' => $ids[2]]);
+        $matches[] = $this->ResultsMatch->newEntity(['categorycode_id' => $categorycode_id, 'round' => $round, 'match_number' => 3, 'athlete_aka_inscription_id' => $ids[1], 'athlete_ao_inscription_id' => $ids[2]]);
         
         return $matches;
+    }
+
+    /**
+     * Calcola la classifica del Girone all'Italiana (3 atleti).
+     * Criteri: 1. Vittorie, 2. Punti Fatti, 3. Differenza Punti.
+     */
+    private function _finalizeRoundRobinRanking($categorycode_id)
+    {
+        $this->loadModel('ResultsMatch');
+        $this->loadModel('AthleteInscriptions');
+
+        // 1. Recupera i 3 incontri del girone
+        $matches = $this->ResultsMatch->find()
+            ->where([
+                'categorycode_id' => $categorycode_id,
+                'round' => Configure::read('ROUND_ROBIN'),
+                'winner_inscription_id IS NOT NULL' // Assicuriamoci che siano finiti
+            ])
+            ->all();
+
+        // Se non sono finiti tutti e 3 gli incontri, esci (o gestisci come preferisci)
+        if ($matches->count() < 3) return;
+
+        // 2. Inizializza statistiche
+        $stats = [];
+        
+        // Helper per inizializzare un atleta nell'array se non esiste
+        $initStat = function($id) use (&$stats) {
+            if (!isset($stats[$id])) {
+                $stats[$id] = [
+                    'id' => $id,
+                    'wins' => 0,
+                    'points_scored' => 0,
+                    'points_conceded' => 0,
+                    'diff' => 0
+                ];
+            }
+        };
+
+        // 3. Calcola le statistiche ciclando sui match
+        foreach ($matches as $match) {
+            $akaId = $match->athlete_aka_inscription_id;
+            $aoId = $match->athlete_ao_inscription_id;
+            
+            $initStat($akaId);
+            $initStat($aoId);
+
+            // Aggiorna Punti Fatti e Subiti
+            $stats[$akaId]['points_scored'] += $match->score_aka;
+            $stats[$akaId]['points_conceded'] += $match->score_ao;
+            
+            $stats[$aoId]['points_scored'] += $match->score_ao;
+            $stats[$aoId]['points_conceded'] += $match->score_aka;
+
+            // Aggiorna Vittorie
+            if ($match->winner_inscription_id == $akaId) {
+                $stats[$akaId]['wins']++;
+            } elseif ($match->winner_inscription_id == $aoId) {
+                $stats[$aoId]['wins']++;
+            }
+        }
+
+        // Calcola differenza punti
+        foreach ($stats as &$stat) {
+            $stat['diff'] = $stat['points_scored'] - $stat['points_conceded'];
+        }
+        unset($stat); // rompe il riferimento
+
+        // 4. ORDINAMENTO (Ranking)
+        // Usort ordina l'array in base alla funzione di callback
+        usort($stats, function ($a, $b) {
+            // A. Criterio 1: Vittorie (Decrescente)
+            if ($a['wins'] != $b['wins']) {
+                return $b['wins'] <=> $a['wins'];
+            }
+            
+            // B. Criterio 2: Punti Fatti (Decrescente)
+            if ($a['points_scored'] != $b['points_scored']) {
+                return $b['points_scored'] <=> $a['points_scored'];
+            }
+
+            // C. Criterio 3: Differenza Punti (Decrescente)
+            return $b['diff'] <=> $a['diff'];
+        });
+
+        // 5. SALVA LA CLASSIFICA
+        $rank = 1;
+        $updates = [];
+        
+        foreach ($stats as $stat) {
+            $updates[$stat['id']] = $rank;
+            $rank++;
+        }
+
+        // Salvataggio su DB (Transazione)
+        $this->AthleteInscriptions->getConnection()->transactional(function () use ($updates) {
+            foreach ($updates as $athleteId => $ranking) {
+                $entity = $this->AthleteInscriptions->get($athleteId);
+                $entity->final_ranking = $ranking;
+                $this->AthleteInscriptions->save($entity);
+            }
+        });
     }
 
     /**
@@ -567,6 +987,8 @@ class ResultsController extends ApiController
      */
     private function _advanceWinnerToNextRound($currentMatch)
     {
+
+        $this->loadModel('ResultsMatch');
         $nextRound = $currentMatch->round + 1;
         
         // Calcola il numero del prossimo match.
@@ -580,7 +1002,6 @@ class ResultsController extends ApiController
         $nextMatch = $this->ResultsMatch->find()
             ->where([
                 'categorycode_id' => $currentMatch->categorycode_id,
-                'competition_id' => $currentMatch->competition_id,
                 'round' => $nextRound,
                 'match_number' => $nextMatchNumber
             ])
@@ -606,6 +1027,7 @@ class ResultsController extends ApiController
         return $this->AthleteInscriptions->find()
             ->where(['categorycode_id' => $categorycode_id, 'deleted' => 0])
             ->contain(['Athletes' => ['Clubs']]) // Per visualizzare nomi
+            ->order(['Clubs.id', 'Athletes.id'])
             ->toArray();
     }
 
@@ -614,31 +1036,159 @@ class ResultsController extends ApiController
      * @param array $scores Array di 5 punteggi float
      * @return array Dati calcolati
      */
-    private function calculateKataScore(array $scores): array
+    private function calculateKataScore(array $data): array
     {
-        $filtered_scores = array_filter($scores, 'is_numeric'); // Rimuovi eventuali NULL
-        if (count($filtered_scores) < 5) {
-             // Non calcoliamo se non abbiamo 5 punteggi
-            return [
-                'min' => null, 'max' => null, 'total_score' => null,
-                'valid_1' => null, 'valid_2' => null, 'valid_3' => null
+        $referee_scores = [];
+
+            switch ($data['category']) {
+                case 'PAL':
+                   $referee_scores = [
+                        (float)$data['referee_1'],
+                        (float)$data['referee_2'],
+                        (float)$data['referee_3'],
+                    ];
+                    $filtered_scores = array_filter($referee_scores, 'is_numeric'); // Rimuovi eventuali NULL
+                    sort($filtered_scores); // Ordina
+                    $partial_score = array_sum($filtered_scores);
+                    $penalty = $data['penalties_points']*0.2;
+
+                    $total = $partial_score - $penalty; // Somma i 3 rimanenti
+                    return [
+                        'valid_1' => $filtered_scores[0], // Il primo dei 3 centrali
+                        'valid_2' => $filtered_scores[1], // Il secondo
+                        'valid_3' => $filtered_scores[2], // Il terzo
+                        'partial_score' => $partial_score,
+                        'total_score' => $total
+                    ];
+                case 'KAG':
+                    $referee_scores = [
+                        (float)$data['referee_1'],
+                        (float)$data['referee_2'],
+                        (float)$data['referee_3'],
+                    ];
+                    $filtered_scores = array_filter($referee_scores, 'is_numeric'); // Rimuovi eventuali NULL
+                    sort($filtered_scores); // Ordina
+                    $total = array_sum($filtered_scores); // Somma i 3 rimanenti
+                    return [
+                        'valid_1' => $filtered_scores[0], // Il primo dei 3 centrali
+                        'valid_2' => $filtered_scores[1], // Il secondo
+                        'valid_3' => $filtered_scores[2], // Il terzo
+                        'total_score' => $total
+                    ];
+                
+                default:
+                    $referee_scores = [
+                        (float)$data['referee_1'],
+                        (float)$data['referee_2'],
+                        (float)$data['referee_3'],
+                        (float)$data['referee_4'],
+                        (float)$data['referee_5']
+                    ];
+
+                    $filtered_scores = array_filter($referee_scores, 'is_numeric'); // Rimuovi eventuali NULL
+                    if (count($filtered_scores) < 5) {
+                        // Non calcoliamo se non abbiamo 5 punteggi
+                        return [
+                            'min' => null, 'max' => null, 'total_score' => null,
+                            'valid_1' => null, 'valid_2' => null, 'valid_3' => null
+                        ];
+                    }
+
+                    sort($filtered_scores); // Ordina
+                    $min = array_shift($filtered_scores); // Rimuove il primo (min)
+                    $max = array_pop($filtered_scores);   // Rimuove l'ultimo (max)
+                    
+                    $total = array_sum($filtered_scores); // Somma i 3 rimanenti
+                    
+                    return [
+                        'min' => $min,
+                        'max' => $max,
+                        'valid_1' => $filtered_scores[0], // Il primo dei 3 centrali
+                        'valid_2' => $filtered_scores[1], // Il secondo
+                        'valid_3' => $filtered_scores[2], // Il terzo
+                        'total_score' => $total
+                    ];
+            } 
+        
+    }
+
+    /**
+     * Recupera lo storico dei Kata e punteggi per un atleta in una categoria.
+     */
+    public function getAthleteHistory()
+    {
+
+        $this->loadModel('ResultsMatch');
+        $this->loadModel('ResultsJudgedPanel');
+        $this->loadModel('Katas');
+
+        $this->request->allowMethod(['post', 'get']);
+        $athlete_inscription_id = $this->request->getData('athlete_inscription_id');
+        $categorycode_id = $this->request->getData('categorycode_id');
+
+        $history = [];
+
+        // 1. RECUPERA DATI DAL PANEL (Qualifiche / Round 1)
+        
+        $panelData = $this->ResultsJudgedPanel->find()
+            ->contain(['Katas']) // Assumi di avere la relazione con la tabella Kata
+            ->where([
+                'athlete_inscription_id' => $athlete_inscription_id,
+                'categorycode_id' => $categorycode_id,
+                'total_score IS NOT NULL'
+            ])
+            ->first();
+
+        if ($panelData) {
+            $history[] = [
+                'round_name' => 'Qualifiche',
+                'kata_name' => $panelData->kata ? $panelData->kata->kata_name : 'Sconosciuto', // O come si chiama la colonna
+                'score' => $panelData->total_score
             ];
         }
 
-        sort($filtered_scores); // Ordina
-        $min = array_shift($filtered_scores); // Rimuove il primo (min)
-        $max = array_pop($filtered_scores);   // Rimuove l'ultimo (max)
+        // 2. RECUPERA DATI DAI MATCH (Eliminatorie / Round 2+)
         
-        $total = array_sum($filtered_scores); // Somma i 3 rimanenti
-        
-        return [
-            'min' => $min,
-            'max' => $max,
-            'valid_1' => $filtered_scores[0], // Il primo dei 3 centrali
-            'valid_2' => $filtered_scores[1], // Il secondo
-            'valid_3' => $filtered_scores[2], // Il terzo
-            'total_score' => $total
-        ];
+        $matches = $this->ResultsMatch->find()
+            ->where([
+                'categorycode_id' => $categorycode_id,
+                'OR' => [
+                    ['athlete_aka_inscription_id' => $athlete_inscription_id],
+                    ['athlete_ao_inscription_id' => $athlete_inscription_id]
+                ],
+                // Escludiamo match senza punteggio (non ancora avvenuti)
+                'winner_inscription_id IS NOT NULL' 
+            ])
+            ->order(['round' => 'ASC'])
+            ->all();
+
+        foreach ($matches as $match) {
+            // Determina se l'atleta era AKA o AO in questo match
+            $isAka = ($match->athlete_aka_inscription_id == $athlete_inscription_id);
+            
+            $kataName = $isAka 
+                ? $this->Katas->get($match->kata_id_aka)
+                : $this->Katas->get($match->kata_id_ao);
+            
+            $score = $isAka ? $match->score_aka : $match->score_ao;
+
+            // Mappa i round numerici in nomi (puoi usare un array map o helper)
+            $roundName = "Round " . $match->round;
+            if ($match->round == 1) $roundName = "Ottavi"; // Esempio
+            if ($match->round == 2) $roundName = "Quarti"; 
+            if ($match->round == 3) $roundName = "Semifinale"; 
+            if ($match->round == 4) $roundName = "Finale"; 
+            // ... logica personalizzata per i nomi dei round
+
+            $history[] = [
+                'round_name' => $roundName,
+                'kata_name' => $kataName->kata_name,
+                'score' => $score
+            ];
+        }
+
+        $this->apiResponse['success'] = true;
+        $this->apiResponse['data'] = $history;
     }
 
     /**
@@ -652,43 +1202,71 @@ class ResultsController extends ApiController
             ->where(['categorycode_id' => $categorycode_id])
             ->order(['total_score' => 'DESC'])
             ->toArray();
-/*
-            ->select([
-                'athlete_inscription_id',
-                'best_score' => $query->func()->max('total_score') // Prende il punteggio migliore
-            ])
-            ->where(['ResultsJudgedPanel.categorycode_id' => $categorycode_id])
-            ->group(['ResultsJudgedPanel.athlete_inscription_id'])
-            ->order(['best_score' => 'DESC', 'athlete_inscription_id' => 'ASC'])
-            ->toList();
-            */
     }
     
     /**
      * Finalizza una categoria con 1-3 atleti
      */
-    private function _finalizeScoreOnlyCategory($panel_entries)
+    public function finalizeScoreOnlyCategory()
     {
         $this->loadModel('AthleteInscriptions');
+        $this->loadModel('ResultsJudgedPanel');
+        $this->loadModel('TatamiAssignments');
 
-        // Ordina gli atleti in base al total_score (già calcolato)
-        usort($panel_entries, function($a, $b) {
-            return $b->total_score <=> $a->total_score;
-        });
-        $inscriptionsTable = $this->getTableLocator()->get('AthleteInscriptions');
-        $connection = $inscriptionsTable->getConnection();
+        $data = $this->request->getData();
+        $categorycode_id = $data['categorycode_id'];
 
-        try {
-            $connection->transactional(function () use ($panel_entries, $inscriptionsTable) {
-                foreach ($panel_entries as $index => $entry) {
-                    $ranking = $index + 1; // 1°, 2°, 3°
-                    $inscription = $this->AthleteInscriptions->get($entry->athlete_inscription_id);
-                    $inscription->final_ranking = $ranking;
-                    $inscriptionsTable->save($inscription);
-                }
+        $athlete_count = $this->AthleteInscriptions->find()
+                ->where(['categorycode_id' => $categorycode_id, 'deleted' => 0])
+                ->count();
+
+        $stateRecord = $this->TatamiAssignments->find()
+            ->where(['categorycode_id' => $data['categorycode_id']])
+            ->first();
+
+        if ($this->_isDirectFinalCategory($categorycode_id) || $athlete_count <= 4) {
+                
+            // GARA FINITA: Calcola podio e chiudi
+
+            $panel_entries = $this->ResultsJudgedPanel->find()
+                ->where([
+                    'categorycode_id' => $data['categorycode_id'], 
+                    'round' => Configure::read('ROUND_KATA_QUALIFICA'), 
+                    'total_score IS NOT NULL'
+                ])
+                ->toArray();
+
+            // Ordina gli atleti in base al total_score (già calcolato)
+            usort($panel_entries, function($a, $b) {
+                return $b->total_score <=> $a->total_score;
             });
-        } catch (\Exception $e) {
-            Log::error('Errore finalizzazione gara a punteggio: ' . $e->getMessage());
+            $inscriptionsTable = $this->getTableLocator()->get('AthleteInscriptions');
+            $connection = $inscriptionsTable->getConnection();
+
+            try {
+                $connection->transactional(function () use ($panel_entries, $inscriptionsTable) {
+                    foreach ($panel_entries as $index => $entry) {
+                        $ranking = $index + 1; // 1°, 2°, 3°
+                        $inscription = $this->AthleteInscriptions->get($entry->athlete_inscription_id);
+                        $inscription->final_ranking = $ranking;
+                        $inscriptionsTable->save($inscription);
+                    }
+                });               
+
+
+                $this->_updatePhase($stateRecord, Configure::read('PHASE_FINALIZED'));
+                $this->apiResponse['success'] = true;
+                $this->apiResponse['message'] = 'Classifica stilata';
+
+            } catch (\Exception $e) {
+                Log::error('Errore finalizzazione gara a punteggio: ' . $e->getMessage());
+            }                    
+                    
+        } else {
+            // Vai ai tabelloni (5+ atleti)
+            $this->_updatePhase($stateRecord, Configure::read('PHASE_AWAITING_BRACKETS'));
+            $this->apiResponse['success'] = true;
+            $this->apiResponse['message'] = 'Classifica stilata';
         }
     }
 
@@ -721,22 +1299,62 @@ class ResultsController extends ApiController
 
 
         $this->loadModel('ResultsJudgedPanel');
+        $this->loadModel('Categorycodes');
 
         if($ranking){
+            $category = $this->Categorycodes->get($categorycode_id);
+            $limit = 4;
+
+            if($category->grado == 'Marrone/Nera'){
+
+                $scored_count = $this->ResultsJudgedPanel->find()
+                ->where([
+                    'categorycode_id' => $categorycode_id, 
+                    'round' => Configure::read('ROUND_KATA_QUALIFICA'), 
+                    'total_score IS NOT NULL'
+                ])
+                ->count();
+
+                if($scored_count > 8){
+                    $limit = 8;
+                }
+
+            }
+
+        
             return $this->ResultsJudgedPanel->find('all', [
-            'contain' => ['AthleteInscriptions' =>['Athletes' => ['Clubs']]] // Assumendo associazioni per i nomi
-        ])
-        ->where(['ResultsJudgedPanel.categorycode_id' => $categorycode_id])
-        ->order(['pool_ranking' => 'ASC'])
-        ->toArray();
+            'contain' => ['AthleteInscriptions' =>['Athletes' => ['Clubs']]] 
+            ])
+            ->where(['ResultsJudgedPanel.categorycode_id' => $categorycode_id])
+            ->order(['pool_ranking' => 'ASC'])
+            ->limit($limit)
+            ->toArray();
+
         }
 
         return $this->ResultsJudgedPanel->find('all', [
-            'contain' => ['AthleteInscriptions' =>['Athletes' => ['Clubs']]] // Assumendo associazioni per i nomi
+            'contain' => ['AthleteInscriptions' =>['Athletes' => ['Clubs']]]
         ])
         ->where(['ResultsJudgedPanel.categorycode_id' => $categorycode_id])
         ->toArray();   
 
+    }
+
+    /**
+     * Recupera i dati per la fase a tempo (Percorso).
+     */
+    private function _getTimedData($categorycode_id)
+    {
+        $this->loadModel('ResultsTimed');
+
+        return $this->ResultsTimed->find()
+            ->contain([
+                'AthleteInscriptions' => ['Athletes' => ['Clubs']]
+            ])
+            ->where(['ResultsTimed.categorycode_id' => $categorycode_id])
+            // Ordiniamo per ordine di esecuzione o alfabetico (opzionale)
+            ->order(['AthleteInscriptions.athlete_id' => 'ASC']) 
+            ->toArray();
     }
 
     /**
@@ -758,17 +1376,24 @@ class ResultsController extends ApiController
         // Raggruppa i risultati per "round"
         $grouped = [];
         foreach ($matches as $match) {
-            $match->athlete_aka_inscription = $this->AthleteInscriptions->find()->where(['AthleteInscriptions.id' => $match->athlete_aka_inscription_id])->contain(['Athletes']);
-            $match->athlete_ao_inscription = $this->AthleteInscriptions->find()->where(['AthleteInscriptions.id' => $match->athlete_ao_inscription_id])->contain(['Athletes']);
+
+            if($match->athlete_aka_inscription_id){
+                $match->athlete_aka_inscription = $this->AthleteInscriptions->find()->where(['AthleteInscriptions.id' => $match->athlete_aka_inscription_id])->contain(['Athletes' => ['Clubs']])->first();
+            }
+
+            if($match->athlete_ao_inscription_id){                           
+                $match->athlete_ao_inscription = $this->AthleteInscriptions->find()->where(['AthleteInscriptions.id' => $match->athlete_ao_inscription_id])->contain(['Athletes' => ['Clubs']])->first();
+            }
             $grouped[$match->round][] = $match;
         }
         
         // Mappatura per i titoli (puoi renderla più elegante)
         $roundTitles = [
-            1 => 'Quarti di Finale',
-            2 => 'Semifinali',
-            3 => 'Finale',
-            4 => 'Ripescaggio' // Adatta ai tuoi round
+            1 => 'Ottavi di Finale',
+            2 => 'Quarti di Finale',
+            3 => 'Semifinali',
+            4 => 'Finale',
+            5 => 'Ripescaggio' // Adatta ai tuoi round
         ];
 
         // Prepara l'output per Angular (come definito nell'interfaccia MatchData)
@@ -793,6 +1418,8 @@ class ResultsController extends ApiController
     private function _getFinalRankingData($categorycode_id)
     {
         $this->loadModel('AthleteInscriptions');
+        $this->loadModel('ResultsTimed');
+        $this->loadModel('ResultsJudgedPanel');
 
         $rankings = $this->AthleteInscriptions->find()
             ->contain([
@@ -806,6 +1433,21 @@ class ResultsController extends ApiController
             ])
             ->order(['AthleteInscriptions.final_ranking' => 'ASC']) // 1°, 2°, 3°...
             ->toArray();
+        
+        if ($this->_isPercorso($categorycode_id)) {
+            foreach ($rankings as $item) {
+                $item->panel_data = $this->ResultsTimed->find()
+                ->where(['athlete_inscription_id' => $item->id])
+                ->first();
+            }
+        } else {
+            foreach ($rankings as $item) {
+                $item->panel_data = $this->ResultsJudgedPanel->find()
+                ->where(['athlete_inscription_id' => $item->id])
+                ->order(['round'])
+                ->first();
+            }
+        }
 
         return $rankings;
     }

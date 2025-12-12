@@ -82,22 +82,24 @@ class ResultsTimedTable extends Table
             ->notEmptyString('categorycode_id');
 
         $validator
-            ->numeric('time_seconds')
-            ->requirePresence('time_seconds', 'create')
-            ->notEmptyString('time_seconds');
+            ->integer('minutes')
+            ->allowEmptyString('minutes');
 
         $validator
-            ->integer('penalties_count')
-            ->notEmptyString('penalties_count');
+            ->integer('seconds')
+            ->allowEmptyString('seconds');
 
         $validator
-            ->numeric('penalty_value_seconds')
-            ->notEmptyString('penalty_value_seconds');
+            ->integer('milliseconds')
+            ->allowEmptyString('milliseconds');
 
         $validator
-            ->numeric('total_time')
-            ->requirePresence('total_time', 'create')
-            ->notEmptyString('total_time');
+            ->integer('penalties')
+            ->notEmptyString('penalties');
+
+        $validator
+            ->integer('total_time')
+            ->allowEmptyString('total_time');
 
         $validator
             ->integer('pool_ranking')

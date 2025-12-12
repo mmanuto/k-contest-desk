@@ -255,43 +255,41 @@ class AthleteInscriptionsController extends ApiController
     {
         Configure::load('constants');
         $this->loadModel('TatamiAssignments');
-        $this->loadModel('Scores');
+        $this->loadModel('ResultsJudgedPanel');
+        $this->loadModel('ResultsTimed');
         $request = $this->request->getData();
+
+        
 
         $categoryStatus = $this->TatamiAssignments->find()
             ->where([
                 'categorycode_id' => $request['categorycode_id']
             ])->first();
 
-        
-        if(!$categoryStatus || $categoryStatus['status'] == Configure::read('STATUS_TODO') ||
-        $categoryStatus['status'] == Configure::read('STATUS_OPEN')){
-
-            $scoreList = $this->Scores->find()
-                ->where([
-                    'categorycode_id' =>$request['categorycode_id'],
-                    'deleted' => 0
-                ])->toArray();
+        switch ($categoryStatus->current_phase) {
+            case Configure::read('PHASE_JUDGING_PANEL'):
+                $recordToDelete = $this->ResultsJudgedPanel->get($request['id']);
+                $this->ResultsJudgedPanel->delete($recordToDelete);
+                break;
             
-            foreach ($scoreList as $scoreItem) {
-                $scoreItem->deleted = 1;
-                $this->Scores->save($scoreItem);
-            }
-            $athleteInscription = $this->AthleteInscriptions->get($request['id']);
-            $athleteInscription->deleted = 1;
-    
-            if ($this->AthleteInscriptions->save($athleteInscription)) {
-    
-                $this->apiResponse['success'] = true;
-            } else {
-                $this->apiResponse['success'] = false;
-            }
-
-        }else{
-            $this->apiResponse['success'] = false;
-            $this->apiResponse['message'] = 'La categoria è in uno stato per cui non sono permesse modifiche';
+            case Configure::read('PHASE_TIME_PANEL'):
+                $recordToDelete = $this->ResultsTimed->get($request['id']);
+                $this->ResultsJudgedPanel->delete($recordToDelete);
+                break;
+            default:
+                
+                break;
         }
 
+
+        $athleteInscription = $this->AthleteInscriptions->get($request['athlete_inscription_id']);
+        $athleteInscription->deleted = 1;
+        if ($this->AthleteInscriptions->save($athleteInscription)) {
+    
+            $this->apiResponse['success'] = true;
+        } else {
+            $this->apiResponse['success'] = false;
+        }
         
     }
 
