@@ -313,3 +313,100 @@ $bg-gray: #f5f5f5;
   align-items: flex-end;
   text-align: right;
 }
+
+.head-ranking {
+  background-color: #202F40;
+  color: white;
+}
+
+
+$red: #d32f2f;
+$blue: #1976d2;
+
+.aka-competitor-name { color: $red; }
+
+.ao-competitor-name { color: $blue; }
+
+
+
+.red-border { 
+  color: $red; 
+  font-weight: bold;
+  border: 2px solid lighten($red, 20%); 
+  &:focus { color: $red; border: 2px solid lighten($red, 20%); box-shadow: 0 0 0 3px rgba($red, 0.1); }
+}
+
+.blue-border { 
+  color: $blue; 
+  font-weight: bold;
+  border: 2px solid lighten($blue, 20%); 
+  &:focus { color: $blue; border: 2px solid lighten($blue, 20%); box-shadow: 0 0 0 3px rgba($blue, 0.1); }
+}
+
+.history-container {
+  width: 100%;
+  text-align: left; // Allinea a sinistra per leggibilità
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #eee;
+  max-height: 200px; // Se la lista è lunga, scrolla
+  overflow-y: auto;
+}
+
+.history-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 4px;
+}
+
+.history-item {
+  display: flex;
+  flex-direction: column; // Round sopra, dettagli sotto
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #e0e0e0;
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+}
+
+.history-round {
+  font-size: 0.75rem;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.history-details {
+  display: flex;
+  justify-content: space-between; // Kata a sinistra, voto a destra
+  align-items: center;
+}
+
+.history-kata {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #444;
+}
+
+.history-score {
+  font-size: 0.9rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  
+  // Classi standard badge bootstrap (badge-danger/primary) gestiscono già i colori
+}
+
+.score-box {
+    font-size: 1.5rem;
+    padding: 5px;
+    border-radius: 5px;
+    font-weight: bold;
+}

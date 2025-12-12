@@ -12,7 +12,6 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import { ModalModule, BsModalService } from 'ngx-bootstrap/modal';
 import { PipesModule } from '../../theme/pipes/pipes.module';
 import { StageType } from 'brackets-model';
-import { DisplayInfoService } from '../displayinfo/displayinfo.service';
 
 declare global {
   interface Window {
@@ -53,6 +52,6 @@ export const routes: Routes = [
   declarations: [
     TatamiComponent, FormatTimePipe  
   ],
-  providers: [TatamiService, BsModalService, DisplayInfoService]
+  providers: [TatamiService, BsModalService]
 })
 export class TatamiModule { }

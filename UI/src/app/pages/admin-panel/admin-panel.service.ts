@@ -31,7 +31,7 @@ export class AdminPanelService {
     }
 
     syncCompetitionData(){
-        return this.http.post(environment.ISCRIZIONI_URL + 'competitions/syncCompetitionData', {competition_id:'GTTMLT-2025'});
+        return this.http.post(environment.ISCRIZIONI_URL + 'competitions/syncCompetitionData', {competition_id:'DKKC-2025'});
     }
 
     importCompetitionData(request){

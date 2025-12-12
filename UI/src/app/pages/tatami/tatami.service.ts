@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 @Injectable()
 export class TatamiService
 {
+    
     //public url = "api/users";
     constructor(private http: HttpClient)
     {
@@ -31,8 +32,28 @@ export class TatamiService
         return this.http.post(environment.BASEAPPURL + 'results/saveJudgeScore', request);
     }
 
-    elaboraPunteggi(request){
-        return this.http.post(environment.BASEAPPURL + 'scores/elaboraPunteggi', request);
+    saveTimedScore(request){
+        return this.http.post(environment.BASEAPPURL + 'results/saveTimedScore', request);
+    }
+
+    saveMatchResult(request) {
+        return this.http.post(environment.BASEAPPURL + 'results/saveMatchResult', request);
+    }
+
+    deleteInscription(request){
+        return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/deleteInscription', request);
+    }
+
+    finalizeScoreOnlyCategory(request){
+        return this.http.post(environment.BASEAPPURL + 'results/finalizeScoreOnlyCategory', request);
+    }
+
+    finalizeTimedCategory(request){
+        return this.http.post(environment.BASEAPPURL + 'results/finalizeTimedCategory', request);
+    }
+
+    getKumiteFinalRanking(request){
+        return this.http.post(environment.BASEAPPURL + 'results/getKumiteFinalRanking', request);
     }
 
     generateBrackets(request){
@@ -41,6 +62,10 @@ export class TatamiService
 
     updateCategoryStatus(request){
         return this.http.post(environment.BASEAPPURL + 'tatamiAssignments/updateCategoryStatus', request);
+    }
+
+    getAthleteHistory(request){
+        return this.http.post(environment.BASEAPPURL + 'results/getAthleteHistory', request);
     }
 
     getPreviousMatch(request){

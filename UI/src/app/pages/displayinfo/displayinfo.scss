@@ -63,35 +63,19 @@
     margin-left: 5%;
   }
   
-   /*.athlete-name{
-    color: aliceblue;
-    font-weight: bolder;
-    text-align: center;
-    margin-top: 5%;
-    height: 250px;
-    margin-left: 0;
-    background-image: linear-gradient(to left, rgba(255,0,0,0), rgba(255,0,0,1));
-    //background: linear-gradient(-45deg, #0f0c29, #ce0b0b, #d40a1b, #e26e78);
-	  //background-size: 400% 400%;
-	  //animation: gradient 15s ease infinite;
-    padding: 70px;
+  .aka {
+    color: crimson !important; 
+    font-weight: bold;
+  }
 
-    h2{
-      font-weight: bolder;
-    }
-    
-   @keyframes gradient {
-      0% {
-        background-position: 0% 50%;
-      }
-      50% {
-        background-position: 100% 50%;
-      }
-      100% {
-        background-position: 0% 50%;
-      }
-    }
-  }*/
+  .ao {
+    color: dodgerblue !important; 
+    font-weight: bold;
+  }
+
+  .senshu {
+    font-size: 3em;
+  }
 
   .displayinfo-content{
     min-height: inherit;

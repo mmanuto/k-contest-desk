@@ -7,7 +7,7 @@ import { CategoriesService } from '../categories/categories.service';
 import * as Dataset from '../tatami/datasets';
 import { InMemoryDatabase } from '../tatami/storage/memory';
 import { BracketsManager } from 'brackets-manager';
-import html2canvas from 'html2canvas';
+import { ToastrService } from 'ngx-toastr';
 
 declare global {
   interface JQuery {
@@ -76,7 +76,9 @@ export class AdminPanleComponent implements OnInit {
   matchList;
   gironiList;
 
-  constructor(public adminPanelService: AdminPanelService, public categoriesService: CategoriesService) { }
+  constructor(public adminPanelService: AdminPanelService,
+    public toastrService: ToastrService, 
+    public categoriesService: CategoriesService) { }
 
   ngOnInit() {
     this.adminPanelService.getCompetitionData().subscribe((response:any) => {
@@ -92,6 +94,10 @@ export class AdminPanleComponent implements OnInit {
       if(response.result.success){
         
         this.adminPanelService.importCompetitionData(response.result.data).subscribe((response:any) => {
+
+          if(response.result.success){
+            this.toastrService.success('Caricamento completato', 'Toastr fun!');
+          }
         });
       }
     });

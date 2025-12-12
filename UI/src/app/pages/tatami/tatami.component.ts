@@ -2,64 +2,19 @@ import { Component, ViewEncapsulation, ViewChild, Pipe, PipeTransform, ElementRe
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { LocalStorageService } from 'angular-2-local-storage';
 import { TatamiService } from './tatami.service';
-import { categoryStatus, colorMapping, monitor, prova, categoryPhase, RoundMatch, RoundMatchTitles } from '../../constants';
-import {interval,Subscription} from 'rxjs';
-import {ModalDirective} from 'ngx-bootstrap/modal';
-import * as Dataset from './datasets';
-import { InMemoryDatabase } from './storage/memory';
-import { BracketsManager } from 'brackets-manager';
+import { categoryStatus, colorMapping, monitor, prova, categoryPhase, RoundMatch, RoundMatchTitles, POINTS } from '../../constants';
+import { interval,Subscription } from 'rxjs';
+import { ModalDirective } from 'ngx-bootstrap/modal';
 import { environment } from '../../../environments/environment';
-import { SelectDropDownModule } from 'ngx-select-dropdown';
+import { DisplayInfoService } from '../displayinfo/displayinfo.service'; 
+import { ToastrService } from 'ngx-toastr';
+import { formatDate } from '@angular/common';
 
 declare global {
   interface JQuery {
     (any): JQuery;
     bracket(options: any): JQuery;
   }
-}
-
-const TOURNAMENT_ID = 0;
-
-function getNearestPowerOfTwo(input: number): number {
-  return Math.pow(2, Math.ceil(Math.log2(input)));
-}
-
-async function process(dataset: Dataset) {
-  const db = new InMemoryDatabase();
-  const manager = new BracketsManager(db);
-
-  db.setData({
-    participant: dataset.roster.map((player) => ({
-      ...player,
-      tournament_id: TOURNAMENT_ID,
-    })),
-    stage: [],
-    group: [],
-    round: [],
-    match: [],
-    match_game: [],
-  });
-
-  await manager.create({
-    name: dataset.title,
-    tournamentId: TOURNAMENT_ID,
-    type: dataset.type,
-    seeding: dataset.roster.map((player) => player.name),
-    settings: {
-      seedOrdering: ['natural'],
-      size: getNearestPowerOfTwo(dataset.roster.length),
-    },
-  });
-
-  const data = await manager.get.stageData(0);
-
-  return {
-    stages: data.stage,
-    matches: data.match,
-    matchGames: data.match_game,
-    participants: data.participant,
-    data: data
-  };
 }
 
 interface Match {
@@ -80,14 +35,6 @@ interface RoundGroup {
   matches: Match[];
 }
 
-const ROUND_NAMES = {
-  1: 'Ottavi di Finale',
-  2: 'Quarti di Finale',
-  3: 'Semifinale',
-  4: 'Finale',
-  5: 'Ripescaggi'
-};
-
 @Component({
   selector: 'tatami',
   templateUrl: './tatami.component.html',
@@ -106,13 +53,14 @@ export class TatamiComponent {
   colorMapping = colorMapping;
   prova = prova;
   categoryStatus = categoryStatus;
+  categoryPhase = categoryPhase;
 
-  public searchText: string;
-  categories: any[];
-  athleteList: any[];
-  tatamiStatus: any[];
-  selectedCategory: any;
-  labelCategory: string = '';
+  public searchText: string;      //barra di ricerca
+  //categories: any[];            //elenco categorie
+  athleteList: any[];             //elenco atleti in categoria
+  tatamiStatus: any[];            //categorie assegnate al tatami con relativo stato
+  selectedCategory: any;          //Categoria selezionata
+  labelCategory: string = '';     //Etichetta categoria
   alertsDismiss: any = [];
   
   currentUser;
@@ -123,10 +71,11 @@ export class TatamiComponent {
   previousMatches = [];
   kumiteAthleteList: any[];
   kumiteMatches: any = [];
-  currentMatch:any = [];
+  currentMatch:any = [];          //Incontro corrente da mandare a video
   message = '';
   dataKata= [];
   showStartButton = true;
+  allMatchesFlat = [];            //elenco match eliminazione diretta (KUMITE o KATA a bandierine)
 
   countdown: number = 120;
   interval;
@@ -141,9 +90,16 @@ export class TatamiComponent {
   // Round Kata a bandierine
   public rounds: RoundGroup[] = [];
   public isLoading = false;
+  historyAka: any[] = [];
+  historyAo: any[] = [];
+  isRoundRobin: boolean;
+  roundRobinMatches: any;
+  roundRobinStandings: any[];
 
   constructor(private tatamiService: TatamiService, 
     public fb: FormBuilder,
+    private displayService: DisplayInfoService,
+    public toastrService: ToastrService,
     protected localStorageService: LocalStorageService) { 
       this.mySubscription= interval(20000).subscribe((x =>{
         this.getTatamiStatus();
@@ -160,9 +116,39 @@ export class TatamiComponent {
     this.tatamiService.getKataList().subscribe((response: any) => {
       if(response.result.success){
         this.kataList = response.result.data;
+        console.log(this.kataList);
       }
     });
     
+    
+  }
+
+    // ELENCO CATEGORIE ASSEGNATE AL TATAMI
+  getTatamiStatus(){
+    let request = {
+      id: this.currentUser.id
+    };
+    this.tatamiService.getTatamiStatus(request).subscribe((response: any) => {
+      this.tatamiStatus = response.result.data;
+    });
+  }
+
+  // ------------------------------------------------- SELEZIONE CATEGORIA ----------------------------------------
+  
+  // ELENCO ATLETI NELLA CATEGORIA SELEZIONATA
+  onSelect(category){
+    
+    this.selectedCategory = category;
+
+    this.typeForm = category.categorycode.id.substring(0, 3);
+    this.labelCategory = `${category.categorycode.specialita} - ${category.categorycode.categoria} ${category.categorycode.grado} - ${category.categorycode.sesso} ${category.categorycode.cat_peso}`
+    this.athleteList = [];
+    this.kumiteAthleteList = [];
+    this.kumiteMatches = [];
+
+    this.checkCategoryStatus(categoryStatus.OPEN);
+
+    this.getCategoryState();
     
   }
 
@@ -181,14 +167,40 @@ export class TatamiComponent {
       }
       this.dangerModal.show();
     }else{
-      this.saveJudgeScore(form, athleteId, type);
+      if(this.typeForm == prova.PERCORSO){
+        
+        this.saveTimedScore(form, athleteId);        
+
+      }else{
+        this.saveJudgeScore(form, athleteId, type);
+      }
+      
     }
     
   }
 
+  deleteAthlete(athlete){
+
+    let request = {
+      athlete_inscription_id: athlete.athlete_inscription_id,
+      categorycode_id: athlete.categorycode_id,
+      id: athlete.id
+    }
+
+    this.tatamiService.deleteInscription(request).subscribe((response:any) => {
+        if(response.result.success){
+          this.getCategoryState();
+        }
+      })
+  }
+
   //funzione richiamata da dangerModal, modifica punteggio già salvato
   editScores(){
-    this.saveJudgeScore(this.tempFormRequest.form, this.tempFormRequest.athleteId, this.tempFormRequest.type);
+    if(this.typeForm == prova.PERCORSO){
+      this.saveTimedScore(this.tempFormRequest.form, this.tempFormRequest.athleteId);
+    }else{
+      this.saveJudgeScore(this.tempFormRequest.form, this.tempFormRequest.athleteId, this.tempFormRequest.type);
+    }    
     this.dangerModal.hide();
   }
 
@@ -199,44 +211,295 @@ export class TatamiComponent {
    * */
   saveJudgeScore(form: FormGroup, athleteId, type = null){
 
-    //TODO - da rivedere logica per pulsanti predefiniti
-    switch (type) {
-      case 'kiken':
-        if(this.typeForm == 'KIA'){
-          this.patchKataForm(form, 0);
-        }else if(this.typeForm == 'PER'){
-          this.patchPercorsoForm(form);
-        }else{
-          this.patchBambiniForm(form, 0);
-        }
-        break;
-      case 'min_score':
-        if(this.typeForm == 'KIA'){
-          this.patchKataForm(form, 5.0);
-        }else if(this.typeForm == 'PER'){
-          this.patchPercorsoForm(form);
-        }else{
-          this.patchBambiniForm(form, 5.0);
-        }
-        break;
-    
-      default:
-        break;
+    if(type == 'min_score'){
+      if(this.typeForm == 'KIA'){
+        this.patchKataForm(form, 5.0);
+      }else if(this.typeForm == 'PER'){
+        this.patchPercorsoForm(form);
+      }else{
+        this.patchBambiniForm(form, 5.0);
+      }
     }
+
     if(form.invalid && type == null){
-      console.log('INVALID');
+
     }else{
       form.value.category = this.typeForm;
       this.tatamiService.saveJudgeScore(form.value).subscribe((response:any) => {
         if(response.result.success){
           //this.getAtlheteList(form.value.athlete_inscription_id, athleteId);
           this.checkCategoryStatus(categoryStatus.DOING);
-          this.getCategoryState(form.value.athlete_inscription_id, athleteId);
+          this.getCategoryState(athleteId);
         }
       })
 
     }
   }
+
+  saveTimedScore(form: FormGroup, athleteId){
+
+    console.log(form.value);
+        
+        // Prepara il payload
+        const payload = {
+          id: form.value.id, // L'ID della riga results_timed
+          categorycode_id: this.selectedCategory.categorycode_id,
+          minutes: form.value.minutes,
+          seconds: form.value.seconds,
+          milliseconds: form.value.milliseconds,
+          penalties: form.value.penalties
+        };
+
+        this.tatamiService.saveTimedScore(payload).subscribe((response:any) => {
+        if(response.result.success){
+          this.getCategoryState(athleteId);
+        }
+      })
+  }
+
+  getCategoryState(athleteId_info = null){
+  
+  // 1. Chiama il backend per avere lo stato del tabellone
+   
+    this.tatamiService.getCategoryState({categorycode_id: this.selectedCategory.categorycode_id}).subscribe((response: any) => {
+
+      if(response.result.success){
+
+        this.selectedCategory.current_phase = response.result.data.phase;
+        this.selectedCategory.status = response.result.data.status;
+
+        switch (this.selectedCategory.current_phase) {
+          case categoryPhase.BRACKETS:
+          case categoryPhase.BRACKETS_FINALIZING:
+            
+            // 2. I dati arrivano già pronti dal backend (lista di match)
+            const flatMatches = response.result.data.athleteList;
+
+            const isRoundRobin = flatMatches[0].matches.length === 3 && flatMatches[0].round === 10;
+            
+            console.log(flatMatches);
+            console.log(isRoundRobin);
+
+            if (isRoundRobin) {
+              this.isRoundRobin = true;
+              this.roundRobinMatches = flatMatches[0].matches;
+              this.calculateRoundRobinStandings(); // Calcola classifica live
+              console.log(this.roundRobinStandings);
+            }else{
+              //popolo jquerybrackets
+              const bracketData = this.transformForJQueryBracket(flatMatches);
+
+              // FIX: Avvolgi l'inizializzazione in setTimeout
+              setTimeout(() => {
+          
+                jQuery('#minimal').empty(); 
+
+                // 4. Inizializza la libreria (senza logica if/else infinita!)
+                jQuery('#minimal').bracket({
+                    teamWidth: 250,
+                    scoreWidth: 45,
+                    matchMargin: 70,
+                    roundMargin: 70,
+                    init: bracketData,
+                    save: function(){},
+                    decorator:{
+                      edit:(container, data, doneCb) => this.edit_fn(container, data, doneCb), 
+                      render: (container, data, score, state) => this.render_fn(container, data, score, state)
+                    }
+                });
+
+              }, 0); // Basta 0ms per "saltare" un ciclo di rendering
+
+              } 
+              
+              if(this.selectedCategory.categorycode.categoria == 'UNDER 12'){
+                  this.countdown = 60;
+                }else if(this.selectedCategory.categorycode.categoria == 'ESORDIENTI'){
+                  this.countdown = 90;
+                }else{
+                  this.countdown = 120;
+                } 
+
+            break;
+          case categoryPhase.FINALIZED:
+            
+            this.athleteList = [];
+            response.result.data.athleteList.forEach(element => {
+              if(element.final_ranking <= 4){
+                this.athleteList.push(element);
+              }
+              
+            });
+
+            if(this.typeForm != prova.PERCORSO){
+              this.syncDataToDisplay('FINALIZED');
+            } 
+
+          case categoryPhase.AWAITING_BRACKETS:
+
+            this.athleteList = response.result.data.athleteList;
+            this.syncDataToDisplay('FINALIZED');
+
+          default:
+
+            this.athleteList = response.result.data.athleteList;
+
+            this.athleteList.forEach(element => {
+
+              element.show = false;
+              
+              console.log(athleteId_info);
+              if(athleteId_info && element.id == athleteId_info){
+                this.displayAthlete(element);
+              }
+
+              if(element.total_score){
+
+                // Creiamo un array temporaneo mappando ID arbitro e Valore
+                // Questo ci permette di ordinare mantenendo il riferimento a "CHI" ha dato il voto
+                const scores = [
+                  { id: 1, val: element.referee_1 },
+                  { id: 2, val: element.referee_2 },
+                  { id: 3, val: element.referee_3 },
+                  { id: 4, val: element.referee_4 },
+                  { id: 5, val: element.referee_5 }
+                ];
+
+                // Filtriamo eventuali valori null/undefined (se capita che un arbitro non ha votato)
+                const validScores = scores.filter(s => s.val !== null && s.val !== undefined);
+
+                // Se non abbiamo abbastanza voti, usciamo
+                if (validScores.length > 0) {
+                            
+                  // Ordiniamo l'array in base al valore (dal più piccolo al più grande)
+                  validScores.sort((a, b) => a.val - b.val);
+
+                  // Il primo elemento è SEMPRE il minimo (o uno dei minimi a pari merito)
+                  element.min_referee = validScores[0].id;
+
+                  // L'ultimo elemento è SEMPRE il massimo (o uno dei massimi a pari merito)
+                  element.max_referee = validScores[validScores.length - 1].id;
+                }
+              }            
+      
+            });
+
+            break;
+        }    
+
+      }
+    });
+  }
+  
+  // Funzione per calcolare la classifica lato frontend (solo visualizzazione)
+calculateRoundRobinStandings() {
+    let stats = {};
+
+    // Inizializza
+    this.roundRobinMatches.forEach(m => {
+        [m.athlete_aka_inscription, m.athlete_ao_inscription].forEach(ath => {
+            if (ath && !stats[ath.id]) {
+                stats[ath.id] = {
+                    name: `${ath.athlete.cognome} ${ath.athlete.nome}`,
+                    club: ath.athlete.club.club_name,
+                    wins: 0,
+                    score: 0,
+                    conceded: 0,
+                    diff: 0
+                };
+            }
+        });
+    });
+
+    // Calcola
+    this.roundRobinMatches.forEach(m => {
+        if (m.winner_inscription_id) {
+            // Punti
+            const akaId = m.athlete_aka_inscription.id;
+            const aoId = m.athlete_ao_inscription.id;
+            
+            stats[akaId].score += Number(m.score_aka);
+            stats[akaId].conceded += Number(m.score_ao);
+            stats[aoId].score += Number(m.score_ao);
+            stats[aoId].conceded += Number(m.score_aka);
+
+            // Vittorie
+            stats[m.winner_inscription_id].wins++;
+        }
+    });
+
+    // Calcola diff e trasforma in array
+    this.roundRobinStandings = Object.values(stats).map((s: any) => {
+        s.diff = s.score - s.conceded;
+        return s;
+    });
+
+    // Ordina (Vittorie > Punti Fatti > Differenza)
+    this.roundRobinStandings.sort((a, b) => {
+        if (b.wins !== a.wins) return b.wins - a.wins;
+        if (b.score !== a.score) return b.score - a.score;
+        return b.diff - a.diff;
+    });
+}
+
+    /**
+   * ==============================
+   * HELPER BRACKET MANAGER - OK
+   * ==============================
+   * */
+  render_fn(container, data, score, state) {
+              switch(state) {
+                case "empty-bye":
+                  container.append("--")
+                  return;
+                case "empty-tbd":
+                  container.append("In attesa")
+                  return;
+            
+                case "entry-no-score":
+                case "entry-default-win":
+                case "entry-complete":
+                  container.append(data.name)
+                  return;
+              }
+            }
+            
+  
+            /* Edit function is called when team label is clicked */
+            edit_fn(container, data, doneCb) {
+              if (!data || !data.id) return;
+
+              // 1. Capiamo in che ROUND abbiamo cliccato
+              // jQuery Bracket usa classi .round per le colonne. L'indice 0 è il primo turno visualizzato.
+              // Nota: container è un oggetto jQuery.
+              const roundIndex = container.closest('.round').index(); 
+              
+              // 2. Calcoliamo il 'round' reale del backend
+              // Se minRound era 2 (Semifinali), l'index 0 corrisponde al round 2.
+              const minRound = Math.min(...this.allMatchesFlat.map(m => m.round));
+              const currentRealRound = minRound + roundIndex;
+
+              // 3. CERCHIAMO IL MATCH CORRETTO
+              // Cerchiamo nell'array di tutti i match quello che:
+              // - Appartiene a questo Round
+              // - Contiene questo Atleta (o come AKA o come AO)
+              const targetMatch = this.allMatchesFlat.find(m => 
+                  m.round === currentRealRound && 
+                  (m.athlete_aka_inscription_id === data.id || m.athlete_ao_inscription_id === data.id)
+              );
+
+              if (targetMatch) {
+                  console.log("Match Trovato:", targetMatch);
+                  // ORA HAI L'OGGETTO MATCH COMPLETO con il suo ID univoco!
+                  this.openMatch(targetMatch); 
+              } else {
+                  console.error("Impossibile trovare il match per questo atleta in questo round.");
+              }
+
+              //doneCb(data);
+            }
+
+
   
   /**
    * ===================================================================
@@ -266,14 +529,36 @@ export class TatamiComponent {
     
   }
 
+
+  /**
+   * ===================================================================
+   * Genera classifche per percorso palloncino e kata bambini - OK
+   * ===================================================================
+   * */
+  finalizeScoreAndTimedCategory(categorycode_id){
+
+    if(this.typeForm == prova.PERCORSO){
+
+      this.tatamiService.finalizeTimedCategory({categorycode_id: categorycode_id}).subscribe((response:any) =>{
+        if(response.result.success){
+          this.getCategoryState();
+        }
+      });
+
+    }else{
+      this.tatamiService.finalizeScoreOnlyCategory({categorycode_id: categorycode_id}).subscribe((response:any) =>{
+        if(response.result.success){
+          this.getCategoryState();
+        }
+      });
+    }
+  }
+  
+
   closeCategory(){
 
       this.selectedCategory.status = categoryStatus.CLOSED;
-      this.athleteList = [];
-      this.kumiteAthleteList = [];
-      jQuery('#minimal').hide();
-      jQuery('#girone-2').hide();
-      jQuery('#girone-3').hide();
+      
       let request = {
         categorycode_id: this.selectedCategory.categorycode_id,
         id: this.selectedCategory.id,
@@ -281,6 +566,15 @@ export class TatamiComponent {
         user_id: this.selectedCategory.user_id
       }
       this.tatamiService.updateCategoryStatus(request).subscribe((response: any) => {
+
+        if(response.result.success){
+          
+          this.selectedCategory = [];
+          this.athleteList = [];
+          this.kumiteAthleteList = [];
+          this.roundRobinStandings = [];
+          jQuery('#minimal').hide();
+        }
 
       })
   }
@@ -317,41 +611,17 @@ export class TatamiComponent {
     });
   }
 
+  openDetailModal(athlete: any) {
+  //TODO Se usi Bootstrap Modal
+  //this.selectedAthleteForDetail = athlete;
+  //$('#detailModal').modal('show');
+}
   // ================================================================ ELABORAZIONE PUNTEGGI CATEGORIA ==========================================
 
-  elaboraPunteggi(nprova){
-    console.log(this.selectedCategory);
-
-    let request = {
-      category: this.selectedCategory.categorycode.id,
-      grado: this.selectedCategory.categorycode.grado,
-      nprova: nprova
-    };
-
-    let allScore = true;
-    this.athleteList.forEach(element => {
-      if(element.scores.total == null && element.scores.total_time_seconds == null && element.scores.type != 'CL'){
-        allScore = false;
-      }
-    });
-
-    if(allScore){
-      this.tatamiService.elaboraPunteggi(request).subscribe((response: any) => {
-        if(response.result.success){
-          this.getAtlheteList();
-        }
-      });
-    }else{
-      this.message = 'Non tutti gli atleti hanno un punteggio valido';
-      this.doubleKataModal.show();
-    }
-    
-  }
-
-  //TODO - mettere una verifica da qualche parte. Questo pulsante deve essere cliccabile solo se tutti i punteggi sono valorizzati
   generateBrackets(){
     this.tatamiService.generateBrackets({categorycode_id: this.selectedCategory.categorycode.id}).subscribe((response: any) => {
         if(response.result.success){
+          this.getCategoryState();
           //this.getAtlheteList();
         }
       });
@@ -394,1140 +664,114 @@ export class TatamiComponent {
       }
     });
 
-    // creo il form per il punteggio
-    if(this.typeForm == prova.KATA_ADULTI){
-      athlete.scoreForm = this.buildKataAdutiForm(athlete);
-    }
-
-    if(this.typeForm != 'PER'){
-      let athleteToDisplay = {
-        athlete: athlete.athlete_inscription.athlete,
-        athlete_id: athlete.athlete_inscription.athlete_id,
-        categorycode: athlete.categorycode,
-        categorycode_id: athlete.categorycode_id,
-        cintura: athlete.cintura,
-        competition_id: athlete.competition_id,
-        modificato: athlete.modificato,
-        id: athlete.id,
-        n_iscrizione: athlete.n_iscrizione,
-        scores: athlete.scores
-      }
-  
-      this.openInfo(athleteToDisplay, 'AT');
-    }
-
-    
-  }
-
-  openInfo(athlete, type = null){
-
-    if(type == 'CL'){
-      if(athlete.length > 4){
-        let tempAthlete = [];
-
-        for (let index = 0; index < 4; index++) {
-          tempAthlete.push(athlete[index]);
-        }
-        this.localStorageService.set('classifica', tempAthlete);
-      }else{
-        this.localStorageService.set('classifica', athlete);
-      }
-      this.localStorageService.set('type', type);
-      this.localStorageService.set(monitor.ATHLETE_1, null);
-      this.localStorageService.set(monitor.KUMITE, null);
-    }else if(type == 'AT'){
-      this.localStorageService.set(monitor.ATHLETE_1, athlete);
-      this.localStorageService.set('classifica', null);
-      this.localStorageService.set(monitor.KUMITE, null);
-    }else if(type == 'KUMITE'){
-      this.localStorageService.set(monitor.ATHLETE_1, null);
-      this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
-      this.localStorageService.set('classifica', null);
-    }else{
-      this.localStorageService.set(monitor.ATHLETE_1, null);
-      this.localStorageService.set(monitor.KUMITE, null);
-      this.localStorageService.set('classifica', null);
-    }      
-      
-      //window.open("http://" + document.location.hostname + "/csenveneto/displayinfo", "http://" + document.location.hostname + "/csenveneto/displayinfo", "toolbar=no");
-
-      window.open(environment.DISPLYINFO_URL, environment.DISPLYINFO_URL, "toolbar=no");
-
-    
-    
-  }
-
-  // ------------------------------------------------ UTILS METHODS --------------------------------------------------------
 
 
-  // ELENCO CATEGORIE ASSEGNATE AL TATAMI
-  getTatamiStatus(){
-    let request = {
-      id: this.currentUser.id
-    };
-    this.tatamiService.getTatamiStatus(request).subscribe((response: any) => {
-      this.tatamiStatus = response.result.data;
-    });
-  }
-
-  // ELENCO ATLETI NELLA CATEGORIA SELEZIONATA
-  onSelect(category){
-    
-    this.selectedCategory = category;
-    console.log(this.selectedCategory)
-
-    this.typeForm = category.categorycode.id.substring(0, 3);
-    this.labelCategory = `${category.categorycode.specialita} - ${category.categorycode.categoria} ${category.categorycode.grado} - ${category.categorycode.sesso} ${category.categorycode.cat_peso}`
-    this.athleteList = [];
-    this.kumiteAthleteList = [];
-    this.kumiteMatches = [];
-
-    this.checkCategoryStatus(categoryStatus.OPEN);
-
-    this.getCategoryState();
-      //this.getAtlheteList();
-    
-    
-    
-  }
-
-  sortMarkets(array, sortArray){
-    return [...array].sort(
-      (a, b) => sortArray.indexOf(a.position) - sortArray.indexOf(b.position)
-    )
-  }
-
-  getCategoryState(athleteId = null, athleteId_info = null){
-  
-  // 1. Chiama il backend per avere lo stato del tabellone
-   
-    this.tatamiService.getCategoryState({categorycode_id: this.selectedCategory.categorycode_id}).subscribe((response: any) => {
-
-      if(response.result.success){
-
-        if(this.selectedCategory.current_phase == categoryPhase.BRACKETS){
-
-            // 2. I dati arrivano già pronti dal backend (lista di match)
-            const flatMatches = response.result.data; 
-            
-            // 3. Usa l'Adapter per trasformarli nel formato che piace a jQuery Bracket
-            // (Nota: jQuery Bracket vuole un formato diverso da BracketsManager, 
-            //  ma il concetto è lo stesso: trasformare i dati).
-            const bracketData = this.transformForJQueryBracket(flatMatches);
-            
-            // 4. Inizializza la libreria (senza logica if/else infinita!)
-            jQuery('#minimal').bracket({
-                teamWidth: 250,
-                scoreWidth: 45,
-                matchMargin: 70,
-                roundMargin: 70,
-                init: bracketData,
-                save: function(){},
-                decorator:{edit:edit_fn, render: render_fn}
-            });
-
-                  function render_fn(container, data, score, state) {
-        switch(state) {
-          case "empty-bye":
-            container.append("--")
-            return;
-          case "empty-tbd":
-            container.append("Upcoming")
-            return;
-       
-          case "entry-no-score":
-          case "entry-default-win":
-          case "entry-complete":
-            container.append(data.name)
-            return;
-        }
-      }
-      const component = this;
-  
-      /* Edit function is called when team label is clicked */
-      function edit_fn(container, data, doneCb) {
-        component.openMatch(data);
-        doneCb(data);
-      }
-        }else{
-          this.athleteList = response.result.data.athleteList;
-
-          this.athleteList.forEach(element => {
-
-            element.show = false;
-
-            if(athleteId_info && element.id == athleteId_info){
-
-              element.scoreForm = this.buildKataAdutiForm(element);
-              this.openInfo(element, 'AT');
-              element.show = true;
-            }
-
-            if(element.total_score){
-              // Creiamo un array temporaneo mappando ID arbitro e Valore
-              // Questo ci permette di ordinare mantenendo il riferimento a "CHI" ha dato il voto
-              const scores = [
-                { id: 1, val: element.referee_1 },
-                { id: 2, val: element.referee_2 },
-                { id: 3, val: element.referee_3 },
-                { id: 4, val: element.referee_4 },
-                { id: 5, val: element.referee_5 }
-              ];
-
-              // Filtriamo eventuali valori null/undefined (se capita che un arbitro non ha votato)
-              const validScores = scores.filter(s => s.val !== null && s.val !== undefined);
-
-              // Se non abbiamo abbastanza voti, usciamo
-              if (validScores.length > 0) {
-                          
-                // Ordiniamo l'array in base al valore (dal più piccolo al più grande)
-                validScores.sort((a, b) => a.val - b.val);
-
-                // Il primo elemento è SEMPRE il minimo (o uno dei minimi a pari merito)
-                element.min_referee = validScores[0].id;
-
-                // L'ultimo elemento è SEMPRE il massimo (o uno dei massimi a pari merito)
-                element.max_referee = validScores[validScores.length - 1].id;
-              }
-            }         
-      
-            //element.scoreForm = this.buildKataAdutiForm(element);            
-    
-          });                               
-        }
+    switch (this.selectedCategory.current_phase) {
+      case categoryPhase.JUDGING_PANEL:
+      case categoryPhase.JUDGING_FINALIZING:
+        athlete.scoreForm = this.buildJudgeForm(athlete);
         
-        
+        let dataDisplay = {
+          type: 'ATHLETE_SCORE',
+          athlete_inscription: athlete.athlete_inscription,
+          category: this.selectedCategory,
+          score: athlete.total_score
+        }
 
-      }
-    });
-  }
-
-  // Funzione per raggruppare i match per Round
-  private groupMatchesByRound(matches: Match[]): RoundGroup[] {
-    const groups: { [key: number]: RoundGroup } = {};
-
-    matches.forEach(match => {
-      if (!groups[match.round]) {
-        groups[match.round] = {
-          roundId: match.round,
-          name: ROUND_NAMES[match.round] || `Turno ${match.round}`,
-          matches: []
-        };
-      }
-      groups[match.round].matches.push(match);
-    });
-
-    // Restituisce un array ordinato (es. Ottavi -> Quarti -> Semi -> Finale)
-    return Object.values(groups).sort((a, b) => a.roundId - b.roundId);
+        console.log('Sending to display:', dataDisplay);
+        this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+        break;
+      case categoryPhase.TIME_PANEL:
+      case categoryPhase.TIMED_FINALIZING:
+        athlete.scoreForm = this.buildTimerForm(athlete);
+        break;
+    
+      default:
+        break;
+    } 
   }
 
   // Azione per salvare il punteggio
-  saveMatchKata(match: Match) {
-    if (confirm(`Confermi il risultato: Rosso ${match.score_aka} - Blu ${match.score_ao}?`)) {
-      //this.tatamiService.saveMatchResult(match).subscribe(() => {
-        // Ricarica i dati per vedere l'avanzamento nel tabellone successivo
-        //this.loadData(); 
-      //});
+  saveMatch() {
+
+    let formOk = false;
+    let dataDisplay = null;
+
+    console.log(this.currentMatch);
+
+    if(this.typeForm == prova.KATA_ADULTI){
+
+      if(this.currentMatch.kata_id_aka && this.currentMatch.kata_id_ao && this.currentMatch.score_aka + this.currentMatch.score_ao > 0) {
+        formOk = true;
+        dataDisplay = {
+          type: 'KATA_BRACKETS',
+          currentMatch: this.currentMatch,
+          category: this.selectedCategory
+        } 
+
+        console.log('Sending to display:', dataDisplay);
+        this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+      }      
+
+    }else {
+
+      if(this.currentMatch.winner_inscription_id == this.currentMatch.athlete_aka_inscription_id && this.currentMatch.score_aka <= this.currentMatch.score_ao){
+        this.currentMatch.score_aka = this.currentMatch.score_ao +1;
+        }
+        if(this.currentMatch.winner_inscription_id == this.currentMatch.athlete_ao_inscription_id && this.currentMatch.score_aka >= this.currentMatch.score_ao){
+          this.currentMatch.score_ao = this.currentMatch.score_aka +1;
+        }
+        formOk = true;
+  
+        this.checkCategoryStatus(categoryStatus.DOING);
+
+        dataDisplay = {
+          type: 'KUMITE_BRACKETS',
+          currentMatch: this.currentMatch,
+          category: this.selectedCategory,
+          countdown : this.countdown
+        }
+
     }
+
+    
+    if(formOk && dataDisplay){      
+
+      this.tatamiService.saveMatchResult(this.currentMatch).subscribe(() => {
+        // Ricarica i dati per vedere l'avanzamento nel tabellone successivo
+
+        this.kumiteModal.hide();
+        this.getCategoryState(); 
+        this.closeMatch();
+      });
+    }     
+    
+  }
+
+  getKumiteFinalRanking(category_id){
+
+    this.tatamiService.getKumiteFinalRanking({categorycode_id: category_id}).subscribe(() => {
+        // Ricarica i dati per vedere l'avanzamento nel tabellone successivo
+        this.getCategoryState(); 
+
+      });
   }
 
   selectAthlete(athlete){
     console.log('entraaaaa');
   }
 
-  getAtlheteList(athleteId = null, athleteId_info = null){
-
-    this.tatamiService.getAthleteList({categorycode_id: this.selectedCategory.categorycode_id, readonly: false}).subscribe((response: any) => {
-
-      //==================================================== KUMITE ==========================================================
-  
-      if(this.typeForm == prova.KUMITE || this.typeForm == prova.KUMITE_U12){
-
-        this.kumiteMatches = []; //coppie primo giro di incontri
-        this.kumiteAthleteList = []; //lista atleti del kumite
-
-        //imposto iltempo in base a categoria
-        //TODO: inserire la info a db
-
-        if(this.selectedCategory.categorycode.categoria == 'RAGAZZI'){
-          this.countdown = 60;
-        }else if(this.selectedCategory.categorycode.categoria == 'ESORDIENTI'){
-          this.countdown = 90;
-        }else{
-          this.countdown =120;
-        }        
-        this.kumiteAthleteList = response.result.data;
-        
-        //SE GIRONE ALL'ITALIANA 3 INCONTRI DA 2
-        if(response.result.data.length == 3){
-
-          
-          this.firstMatch = [
-            {name: this.kumiteAthleteList[0]['athlete']['cognome'] + ' ' + this.kumiteAthleteList[0]['athlete']['nome'], id: this.kumiteAthleteList[0]['id'], round: 1},
-            {name: this.kumiteAthleteList[1]['athlete']['cognome'] + ' ' + this.kumiteAthleteList[1]['athlete']['nome'], id: this.kumiteAthleteList[1]['id'], round: 1}
-          ];
-          let firstResult = [null, null];
-          if(this.kumiteAthleteList[0]['old_scores'] && this.kumiteAthleteList[1]['old_scores']){
-
-            this.kumiteAthleteList[0]['old_scores'].forEach(score => {
-              if(score.opponentid == this.kumiteAthleteList[1].id){
-                firstResult[0] = score.total;
-              }
-            });
-
-            this.kumiteAthleteList[1]['old_scores'].forEach(score => {
-              if(score.opponentid == this.kumiteAthleteList[0].id){
-                firstResult[1] = score.total;
-              }
-            });
-          }
-          this.secondMatch = [
-            {name: this.kumiteAthleteList[0]['athlete']['cognome'] + ' ' + this.kumiteAthleteList[0]['athlete']['nome'], id: this.kumiteAthleteList[0]['id'], round: 2},
-            {name: this.kumiteAthleteList[2]['athlete']['cognome'] + ' ' + this.kumiteAthleteList[2]['athlete']['nome'], id: this.kumiteAthleteList[2]['id'], round: 2}
-          ];
-          let secondResult = [null, null];
-          if(this.kumiteAthleteList[0]['old_scores'] && this.kumiteAthleteList[2]['old_scores']){
-
-            this.kumiteAthleteList[0]['old_scores'].forEach(score => {
-              if(score.opponentid == this.kumiteAthleteList[2].id){
-                secondResult[0] = score.total;
-              }
-            });
-
-            this.kumiteAthleteList[2]['old_scores'].forEach(score => {
-              if(score.opponentid == this.kumiteAthleteList[0].id){
-                secondResult[1] = score.total;
-              }
-            });
-          }
-          this.thirdMatch = [
-            {name: this.kumiteAthleteList[1]['athlete']['cognome'] + ' ' + this.kumiteAthleteList[1]['athlete']['nome'], id: this.kumiteAthleteList[1]['id'], round: 3},
-            {name: this.kumiteAthleteList[2]['athlete']['cognome'] + ' ' + this.kumiteAthleteList[2]['athlete']['nome'], id: this.kumiteAthleteList[2]['id'], round: 3}
-          ];  
-          
-          let thirdResult = [null, null];
-          if(this.kumiteAthleteList[1]['old_scores'] && this.kumiteAthleteList[2]['old_scores']){
-
-            this.kumiteAthleteList[1]['old_scores'].forEach(score => {
-              if(score.opponentid == this.kumiteAthleteList[2].id){
-                thirdResult[0] = score.total;
-              }
-            });
-
-            this.kumiteAthleteList[2]['old_scores'].forEach(score => {
-              if(score.opponentid == this.kumiteAthleteList[1].id){
-                thirdResult[1] = score.total;
-              }
-            });
-          }
-
-          this.minimalData = {
-              teams: [this.firstMatch],
-              results: firstResult
-          }
-
-          this.secondGirone = {
-            teams: [this.secondMatch],
-            results: secondResult
-          }
-
-          this.thirdGirone = {
-            teams: [this.thirdMatch],
-            results: thirdResult
-          }           
-  
-            
-      function render_fn(container, data, score, state) {
-        switch(state) {
-          case "empty-bye":
-            container.append("--")
-            return;
-          case "empty-tbd":
-            container.append("Upcoming")
-            return;
-       
-          case "entry-no-score":
-          case "entry-default-win":
-          case "entry-complete":
-            container.append(data.name)
-            return;
-        }
-      }
-      const component = this;
-  
-      /* Edit function is called when team label is clicked */
-      function edit_fn(container, data, doneCb) {
-        component.openMatch(data);
-        doneCb(data);
-      }
-  
-  
-  
-        jQuery('#minimal').bracket({
-              teamWidth: 250,
-              scoreWidth: 45,
-              matchMargin: 70,
-              roundMargin: 70,
-              init: this.minimalData,
-              save: function(){},
-              decorator:{edit:edit_fn, render: render_fn},
-          });
-          jQuery('#girone-2').show();
-
-        jQuery('#girone-3').show();
-
-          jQuery('#girone-2').bracket({
-            teamWidth: 250,
-            scoreWidth: 45,
-            matchMargin: 70,
-            roundMargin: 70,
-            init: this.secondGirone,
-            save: function(){},
-            decorator:{edit:edit_fn, render: render_fn},
-        });
-
-        jQuery('#girone-3').bracket({
-          teamWidth: 250,
-          scoreWidth: 45,
-          matchMargin: 70,
-          roundMargin: 70,
-          init: this.thirdGirone,
-          save: function(){},
-          decorator:{edit:edit_fn, render: render_fn},
-      });
-
-      
-
-        }else{
-          
-          this.firstMatch = [];
-          this.secondMatch = [];
-          this.thirdMatch = [];
-          let position = 1;
-          let dataset:Tabset = null;
-
-          switch (true) {
-            case (this.kumiteAthleteList.length == 2):
-              dataset = Dataset.dataset2;
-              break;
-            case (this.kumiteAthleteList.length == 4):
-              dataset = Dataset.dataset4;
-              break;
-            case (this.kumiteAthleteList.length <= 8):
-              dataset = Dataset.dataset8;
-              break;
-            case (this.kumiteAthleteList.length <= 16):
-              dataset = Dataset.dataset16;
-              break;
-            case (this.kumiteAthleteList.length <= 32):
-              dataset = Dataset.dataset32;
-              break;
-            default:
-              console.log('ERROREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE');
-              break;
-          }
-
-          while (position <= dataset.number) {
-            let index = position-1;
-            if(this.kumiteAthleteList[index]){
-              this.kumiteMatches.push({
-                position: position, 
-                id: this.kumiteAthleteList[index].id, 
-                name: this.kumiteAthleteList[index].athlete.cognome + ' ' + this.kumiteAthleteList[index].athlete.nome, 
-                club:this.kumiteAthleteList[index].athlete.club.club_name
-              })
-            }else{
-              this.kumiteMatches.push({
-                position: position, 
-                id: null, 
-                name: null, 
-                club: null
-              })
-            }
-            
-            position++;
-          }
-
-          this.kumiteMatches = this.sortMarkets(this.kumiteMatches, dataset.positions);
-  
-          const datasetTemp: Dataset = {
-            title: 'Kumite',
-            type: 'single_elimination',
-            roster: this.kumiteMatches,
-          };
-          console.log(this.kumiteMatches);
-
-          
-          process(datasetTemp).then((data) => 
-          {
-  
-            let teams = [];
-            let results = [];
-            let opponent1 = null;
-            let opponent2 = null;
-            results.push([]);
-            //console.log(data);
-            data.matches.forEach(match => {
-  
-              
-              if(match.round_id == 0){
-  
-                opponent1 = match.opponent1 ? {name: '', id: match.opponent1.id} : null;
-                opponent2 = match.opponent2 ? {name: '', id: match.opponent2.id} : null;
-  
-                let firstAthlete = null;
-                let secondAthlete = null;
-  
-                let result = [null,null];
-  
-                let request = [];
-    
-                data.participants.forEach(participant => {
-                  if(opponent1 && opponent1.id == participant.id){
-                    opponent1.name = participant.name;
-                    firstAthlete = this.kumiteAthleteList.find(x => x.id == opponent1.id);
-                   console.log(opponent1);
-                   console.log(opponent2);
-                   console.log('----------------------- FIRST ATHLETE -----------------------------------------');
-                   console.log(firstAthlete);
-                    if(opponent2){
-                      console.log('entraaaaa');
-                      
-                      
-                      if(firstAthlete.old_scores && firstAthlete.old_scores.length > 0){
-                        result[0] = firstAthlete.old_scores[0]['total'];
-                      }else{
-                        firstAthlete.scores.opponentid = opponent2.id;
-                        firstAthlete.scores.color = 'AKA';
-                        request.push(firstAthlete.scores);
-                      }
-                    }
-                    
-                    
-                  }
-                  if(opponent2 && opponent2.id == participant.id){
-                    opponent2.name = participant.name;
-                    secondAthlete = this.kumiteAthleteList.find(x => x.id == opponent2.id);
-                    
-                    console.log('----------------------- SECOND ATHLETE -----------------------------------------');
-                    console.log(secondAthlete);
-                    
-                    if(secondAthlete.old_scores && secondAthlete.old_scores.length > 0){
-                      result[1] = secondAthlete.old_scores[0]['total'];                    
-                    }else{
-                      secondAthlete.scores.opponentid = opponent1.id;
-                      secondAthlete.scores.color = 'AO';
-                      request.push(secondAthlete.scores);
-                    }
-                  }              
-                    
-  
-                });
-  
-                if(request.length > 0){
-                  this.tatamiService.matchAthletes(request).subscribe((response) => {
-  
-                  });
-                }
-  
-  
-                teams.push([opponent1, opponent2]);
-                
-                results[0].push(result);
-              }
-              
-            });
-
-          
-            let secondRound = [];
-            let thirdRound = [];
-            let fourthRound = [];
-  
-            results[0].forEach((match, indexMatch) => {
-  
-              console.log(match);
-              console.log(teams);
-  
-              if(match[0] == null && match[1]== null){
-                if(teams[indexMatch][0] != null && teams[indexMatch][1] == null){
-                  secondRound.push(teams[indexMatch][0]);
-                }else if(teams[indexMatch][1] != null && teams[indexMatch][0] == null){
-                  secondRound.push(teams[indexMatch][1]);
-                }else if (teams[indexMatch][0] != null && teams[indexMatch][1] != null){
-                  secondRound.push(null);
-                }
-              }
-                
-              if(match[0] != null && match[1] != null){
-                if(match[0] > match[1]){
-                  secondRound.push(teams[indexMatch][0]);
-                }else if(match[0] < match[1]){
-                  secondRound.push(teams[indexMatch][1]);
-                }
-              }
-            });
-                  
-            console.log(secondRound);
-
-            //------------------------------ SECONDO ROUND -----------------------------------------------------------------------------------------
-  
-  
-            if(secondRound[0] && secondRound[1]){
-  
-              console.log('----------------------------- ENTRA 2 ROUND 1 ---------------------------------------------------------------');
-              let firstAthlete = this.kumiteAthleteList.find(x => x.id == secondRound[0]['id']);
-              let secondAthlete = this.kumiteAthleteList.find(x => x.id == secondRound[1]['id']);
-  
-              console.log(firstAthlete);
-              console.log(secondAthlete);
-  
-              let result = [null,null];
-              //devo ancora giocare il secondo round
-              if(firstAthlete.old_scores && secondAthlete.old_scores){
-                
-                  firstAthlete.old_scores.forEach(score => {
-                    if(score.opponentid == secondAthlete.id){
-                      result[0] = score.total;
-                    }
-                  });
-  
-                  secondAthlete.old_scores.forEach(score => {
-                    if(score.opponentid == firstAthlete.id){
-                      result[1] = score.total;
-                    }
-                  }); 
-                  
-                //results[1][0] = result;
-               
-              }
-              if(result[0] != null && result[1] != null){
-                if(result[0] > result[1]){
-                  thirdRound.push(firstAthlete);
-                }else if(result[0] < result[1]){
-                  thirdRound.push(secondAthlete);
-                }
-              }else{
-                firstAthlete.scores.opponentid = secondAthlete.id;
-                firstAthlete.scores.color = 'AKA';
-                secondAthlete.scores.opponentid = firstAthlete.id;
-                secondAthlete.scores.color = 'AO';
-  
-                let request = [];
-                request.push(firstAthlete.scores);
-                request.push(secondAthlete.scores);
-                this.tatamiService.matchAthletes(request).subscribe((response: any) => {});
-              }
-              
-
-              if(results[1]){
-                results[1][0] = result;
-              }else {
-                results.push([result]);
-              }
-              console.log(results);
-              
-            }
-  
-            if(secondRound[2] && secondRound[3]){
-  
-              console.log('----------------------------- ENTRA 2 ROUND 2 ---------------------------------------------------------------');
-
-              let firstAthlete = this.kumiteAthleteList.find(x => x.id == secondRound[2]['id']);
-              let secondAthlete = this.kumiteAthleteList.find(x => x.id == secondRound[3]['id']);
-  
-              let result = [null,null];
-              //devo ancora giocare il secondo round
-              
-              if(firstAthlete.old_scores && secondAthlete.old_scores){
-                
-                firstAthlete.old_scores.forEach(score => {
-                  if(score.opponentid == secondAthlete.id){
-                    result[0] = score.total;
-                  }
-                });
-
-                secondAthlete.old_scores.forEach(score => {
-                  if(score.opponentid == firstAthlete.id){
-                    result[1] = score.total;
-                  }
-                }); 
-                
-              //results[1][0] = result;
-             
-              }
-              if(result[0] != null && result[1] != null){
-
-                console.log('entraaaaaa');
-                if(result[0] > result[1]){
-                  thirdRound.push(firstAthlete);
-                }else if(result[0] < result[1]){
-                  thirdRound.push(secondAthlete);
-                }
-              }else{
-                firstAthlete.scores.opponentid = secondAthlete.id;
-                firstAthlete.scores.color = 'AKA';
-                secondAthlete.scores.opponentid = firstAthlete.id;
-                secondAthlete.scores.color = 'AO';
-
-                let request = [];
-                request.push(firstAthlete.scores);
-                request.push(secondAthlete.scores);
-                this.tatamiService.matchAthletes(request).subscribe((response: any) => {});
-              }
-
-              //results[1][1] = result;
-              if(results[1]){
-
-                if(results[1].length >= 2){
-                  results[1][1] = result;
-                }else{
-                  if(results[1][0]){
-                    results[1].push(result);
-                  }else{
-                    results[1].push([null, null]);
-                    results[1].push(result);
-                  }                    
-                }
-                
-              }else {
-                results.push([[null, null]]);
-                results[1].push([null, null]);
-                results[1].push(result);
-              }
-              console.log(results);
-
-            }
-
-            if(secondRound[4] && secondRound[5]){
-    
-
-              console.log('----------------------------- ENTRA 2 ROUND 3 ---------------------------------------------------------------');
-              let firstAthlete = this.kumiteAthleteList.find(x => x.id == secondRound[4]['id']);
-              let secondAthlete = this.kumiteAthleteList.find(x => x.id == secondRound[5]['id']);
-
-              console.log(firstAthlete);
-              console.log(secondAthlete);
-
-              let result = [null,null];
-
-              if(firstAthlete.old_scores && secondAthlete.old_scores){
-                
-                firstAthlete.old_scores.forEach(score => {
-                  if(score.opponentid == secondAthlete.id){
-                    result[0] = score.total;
-                  }
-                });
-
-                secondAthlete.old_scores.forEach(score => {
-                  if(score.opponentid == firstAthlete.id){
-                    result[1] = score.total;
-                  }
-                }); 
-                
-              //results[1][0] = result;
-             
-              }
-              if(result[0] != null && result[1] != null){
-                if(result[0] > result[1]){
-                  thirdRound.push(firstAthlete);
-                }else if(result[0] < result[1]){
-                  thirdRound.push(secondAthlete);
-                }
-              }else{
-                firstAthlete.scores.opponentid = secondAthlete.id;
-                firstAthlete.scores.color = 'AKA';
-                secondAthlete.scores.opponentid = firstAthlete.id;
-                secondAthlete.scores.color = 'AO';
-
-                let request = [];
-                request.push(firstAthlete.scores);
-                request.push(secondAthlete.scores);
-                this.tatamiService.matchAthletes(request).subscribe((response: any) => {});
-              }
-
-               //results[1][2] = result;
-               if(results[1]){
-                if(results[1].length >= 3){
-                  results[1][2] = result;
-                }else{
-                  if(results[1][1] == undefined){
-                    results[1].push([null, null]);
-                    results[1].push(result);
-                  }else{
-                    results[1].push(result);
-                  }
-                }
-                
-              }else {
-                results.push([[null, null]]);
-                results[1].push([null, null]);
-                results[1].push([null, null]);
-                results[1].push(result);
-              }
-              
-            }
-
-            if(secondRound[6] && secondRound[7]){
-
-              console.log('----------------------------- ENTRA 2 ROUND 4 ---------------------------------------------------------------');
-
-              let firstAthlete = this.kumiteAthleteList.find(x => x.id == secondRound[6]['id']);
-              let secondAthlete = this.kumiteAthleteList.find(x => x.id == secondRound[7]['id']);
-
-              console.log(firstAthlete);
-                console.log(secondAthlete);
-
-              let result = [null,null];
-              //devo ancora giocare il secondo round
-              
-              if(firstAthlete.old_scores && secondAthlete.old_scores){
-                
-                firstAthlete.old_scores.forEach(score => {
-                  if(score.opponentid == secondAthlete.id){
-                    result[0] = score.total;
-                  }
-                });
-
-                secondAthlete.old_scores.forEach(score => {
-                  if(score.opponentid == firstAthlete.id){
-                    result[1] = score.total;
-                  }
-                }); 
-                
-              //results[1][0] = result;
-             
-              }
-              if(result[0] != null && result[1] != null){
-                if(result[0] > result[1]){
-                  thirdRound.push(firstAthlete);
-                }else if(result[0] < result[1]){
-                  thirdRound.push(secondAthlete);
-                }
-              }else{
-                firstAthlete.scores.opponentid = secondAthlete.id;
-                firstAthlete.scores.color = 'AKA';
-                secondAthlete.scores.opponentid = firstAthlete.id;
-                secondAthlete.scores.color = 'AO';
-
-                let request = [];
-                request.push(firstAthlete.scores);
-                request.push(secondAthlete.scores);
-                this.tatamiService.matchAthletes(request).subscribe((response: any) => {});
-              }
-
-            //results[1][3] = result;
-            if(results[1]){
-              if(results[1].length >= 4){
-                results[1][3] = result;
-              }else{
-                if(results[1][1] == undefined){
-                  results[1].push([null, null]);
-                  results[1].push([null, null]);
-                  results[1].push(result);
-                } else if(results[1][2] == undefined){
-                  results[1].push([null, null]);
-                  results[1].push(result);
-                }else{
-                  results[1].push(result);
-                }
-              }
-              
-            }else {
-              results.push([[null, null]]);
-                results[1].push([null, null]);
-                results[1].push([null, null]);
-                results[1].push([null, null]);
-                results[1].push(result);
-            }
-          }
-  
-          // ------------------------------------------- TERZO ROUND --------------------------------------------------------------------------------
-
-          if(thirdRound[0] && thirdRound[1]){
-
-            console.log('----------------------------- ENTRA 3 ROUND 1 ---------------------------------------------------------------');
-  
-            let firstAthlete = this.kumiteAthleteList.find(x => x.id == thirdRound[0]['id']);
-            let secondAthlete = this.kumiteAthleteList.find(x => x.id == thirdRound[1]['id']);
-
-            console.log(firstAthlete);
-            console.log(secondAthlete);
-
-            let result = [null,null];
-            
-            if(firstAthlete.old_scores && secondAthlete.old_scores){
-              
-                firstAthlete.old_scores.forEach(score => {
-                  if(score.opponentid == secondAthlete.id){
-                    result[0] = score.total;
-                  }
-                });
-
-                secondAthlete.old_scores.forEach(score => {
-                  if(score.opponentid == firstAthlete.id){
-                    result[1] = score.total;
-                  }
-                });
-
-            }
-
-            if(result[0] != null && result[1] != null){
-              if(result[0] > result[1]){
-                fourthRound.push(firstAthlete);
-              }else if(result[0] < result[1]){
-                fourthRound.push(secondAthlete);
-              }
-            }else{
-              firstAthlete.scores.opponentid = secondAthlete.id;
-              firstAthlete.scores.color = 'AKA';
-              secondAthlete.scores.opponentid = firstAthlete.id;
-              secondAthlete.scores.color = 'AO';
-
-              let request = [];
-              request.push(firstAthlete.scores);
-              request.push(secondAthlete.scores);
-              this.tatamiService.matchAthletes(request).subscribe((response: any) => {});
-            }
-
-            //results[2][0] = result;
-            if(results[2]){
-              results[2][0] = result;
-            }else if (results[1]){
-              results.push([result]);
-            }
-
-            console.log(results);
-            
-          }
-
-          if(thirdRound[2] && thirdRound[3]){
-
-            console.log('----------------------------- ENTRA 3 ROUND 2 ---------------------------------------------------------------');
-
-            let firstAthlete = this.kumiteAthleteList.find(x => x.id == thirdRound[2]['id']);
-            let secondAthlete = this.kumiteAthleteList.find(x => x.id == thirdRound[3]['id']);
-
-            console.log(firstAthlete);
-            console.log(secondAthlete);
-
-            let result = [null,null];
-
-            if(firstAthlete.old_scores && secondAthlete.old_scores){
-              
-              firstAthlete.old_scores.forEach(score => {
-                if(score.opponentid == secondAthlete.id){
-                  result[0] = score.total;
-                }
-              });
-
-              secondAthlete.old_scores.forEach(score => {
-                if(score.opponentid == firstAthlete.id){
-                  result[1] = score.total;
-                }
-              });
-
-            }
-
-            if(result[0] != null && result[1] != null){
-              if(result[0] > result[1]){
-                fourthRound.push(firstAthlete);
-              }else if(result[0] < result[1]){
-                fourthRound.push(secondAthlete);
-              }
-            }else{
-              firstAthlete.scores.opponentid = secondAthlete.id;
-              firstAthlete.scores.color = 'AKA';
-              secondAthlete.scores.opponentid = firstAthlete.id;
-              secondAthlete.scores.color = 'AO';
-
-              let request = [];
-              request.push(firstAthlete.scores);
-              request.push(secondAthlete.scores);
-              this.tatamiService.matchAthletes(request).subscribe((response: any) => {});
-            }
-
-          //results[2][1] = result;
-          if(results[2]){
-            if(results[2][0]){
-              results[2].push(result);
-            }else{
-              results[2].push([null, null]);
-              results[2].push(result);
-            }
-            
-          }else {
-            results.push([[null, null]]);
-            results[2].push([null, null]);
-            results[2].push(result);
-          }
-
-        }
-
-        // ----------------------------------------------------- QUARTO ROUND --------------------------------------------------------------
-
-          if(fourthRound[0] && fourthRound[1]){
-            console.log('----------------------------- ENTRA 4 ---------------------------------------------------------------');
-            let firstAthlete = this.kumiteAthleteList.find(x => x.id == fourthRound[0]['id']);
-            let secondAthlete = this.kumiteAthleteList.find(x => x.id == fourthRound[1]['id']);
-  
-            let result = [null,null];
-            
-            if(firstAthlete.old_scores && secondAthlete.old_scores){
-  
-                firstAthlete.old_scores.forEach(score => {
-                  if(score.opponentid == secondAthlete.id){
-                    result[0] = score.total;
-                  }
-                });
-  
-                secondAthlete.old_scores.forEach(score => {
-                  if(score.opponentid == firstAthlete.id){
-                    result[1] = score.total;
-  
-                  }
-                });
-            }
-
-            if(result[0] != null && result[1] != null){
-
-              //results[2][0] = result;
-              if(results[3]){
-                results[3][0] = result;
-              }else if(results[2]){
-                results.push([result]);
-              }
-            }else{
-              firstAthlete.scores.opponentid = secondAthlete.id;
-              firstAthlete.scores.color = 'AKA';
-              secondAthlete.scores.opponentid = firstAthlete.id;
-              secondAthlete.scores.color = 'AO';
-  
-              let request = [];
-              request.push(firstAthlete.scores);
-              request.push(secondAthlete.scores);
-              this.tatamiService.matchAthletes(request).subscribe((response: any) => {});
-            }
-
-            
-          }  
-
-            this.minimalData = {
-              teams: teams,
-              results: results
-            }
-            
-  
-            
-      function render_fn(container, data, score, state) {
-        switch(state) {
-          case "empty-bye":
-            container.append("--")
-            return;
-          case "empty-tbd":
-            container.append("Upcoming")
-            return;
-       
-          case "entry-no-score":
-          case "entry-default-win":
-          case "entry-complete":
-            container.append(data.name)
-            return;
-        }
-      }
-      const component = this;
-  
-      // Edit function is called when team label is clicked
-      function edit_fn(container, data, doneCb) {
-        component.openMatch(data);
-        doneCb(data);
-      }
-  
-  
-  
-        jQuery('#minimal').bracket({
-              teamWidth: 200,
-              scoreWidth: 45,
-              matchMargin: 70,
-              roundMargin: 70,
-              init: this.minimalData,
-              save: function(){},
-              decorator:{edit:edit_fn, render: render_fn},
-          })
-          jQuery('#girone-2').hide();
-
-        jQuery('#girone-3').hide();
-    
-          });
-        }
-        
-        //=============================================================== COMBINATA E KATA =====================================================================
-      }else{
-
-        
-  
-        if(this.athleteList[0].scores.type=='CL' || this.athleteList[0].scores.cl_position && this.athleteList.length<=4){
-
-          for( var i = 0; i < this.athleteList.length; i++){ 
-    
-            if ( this.athleteList[i].scores.cl_position == -1) { 
-        
-              this.athleteList.splice(i, 1); 
-              i--; 
-            }
-        
-        }
-
-
-          this.athleteList.sort(function (a, b) {
-            return a.scores.cl_position - b.scores.cl_position;
-          });
-  
-          if(this.athleteList[0].scores.type=='CL'){
-            this.openInfo(this.athleteList, 'CL');
-          }
-          
-        }else if (this.athleteList[0].scores.cl_position){
-
-          this.athleteList.sort(function (a, b) {
-            return b.scores.cl_position - a.scores.cl_position;
-          });
-        }
-        this.athleteList.forEach(element => {
-
-  
-          switch (this.typeForm) {
-  
-            case prova.KATA_BAMBINI:
-              element.scoreForm = this.buildKataBambiniForm(element);
-              break;
-            case prova.PERCORSO:
-              element.scoreForm = this.buildPercorsoForm(element);
-              break;
-            case prova.PALLONCINO:
-              element.scoreForm = this.buildPalloncinoForm(element);
-              break;
-          
-            default:
-              break;
-          }
-  
-        });
-      }
-      
-    });
-  }
-
 
   resetTimer(){
-    if(this.selectedCategory.categorycode.categoria == 'RAGAZZI'){
+    if(this.selectedCategory.categorycode.categoria == 'UNDER 12'){
       this.countdown = 60;
     }else if(this.selectedCategory.categorycode.categoria == 'ESORDIENTI'){
       this.countdown = 90;
     }else{
       this.countdown =120;
     }
-    this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
-    this.localStorageService.set(monitor.ACTION, 'MODIFY');
+    
+    this.syncDataToDisplay('KUMITE_BRACKETS');
   }
 
   modifyTimer(operation){
@@ -1536,34 +780,49 @@ export class TatamiComponent {
     }else{
       this.countdown--;
     }
-    this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
-    this.localStorageService.set(monitor.ACTION, 'MODIFY');
+
+    this.syncDataToDisplay('KUMITE_BRACKETS');
   }
 
   // Popolo form KATA ADULTI - OK
-  buildKataAdutiForm(element){
+  buildJudgeForm(element){
 
     if (!element) return;
-    const kataAdultiGroup = new FormGroup({
+
+    //console.log(element);
+
+    // 1. Definisci i controlli base in un oggetto
+    const controlsConfig: any = {
       id: new FormControl(element.id),
       name: new FormControl({value: element.athlete_inscription.athlete.cognome + ' ' + element.athlete_inscription.athlete.nome, disabled: true}, Validators.required),
       athlete_inscription_id: new FormControl(element.athlete_inscription.id),
       user_id: new FormControl(this.currentUser.id),
-      kata_id: new FormControl(element.kata_id?? ''),
-      referee_1: new FormControl(element.referee_1?? '', Validators.compose(
-        [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      referee_2: new FormControl(element.referee_2?? '', Validators.compose(
-        [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      referee_3: new FormControl(element.referee_3?? '', Validators.compose(
-        [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      referee_4: new FormControl(element.referee_4?? '', Validators.compose(
-        [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      referee_5: new FormControl(element.referee_5?? '', Validators.compose(
-        [Validators.max(10.0), Validators.min(5.0), Validators.required])),
+      referee_1: new FormControl(element.referee_1 ?? '', [Validators.max(10.0), Validators.min(5.0), Validators.required]),
+      referee_2: new FormControl(element.referee_2 ?? '', [Validators.max(10.0), Validators.min(5.0), Validators.required]),
+      referee_3: new FormControl(element.referee_3 ?? '', [Validators.max(10.0), Validators.min(5.0), Validators.required]),
       total: new FormControl(element.total_score?? '')
-    });
+    };
 
-    return kataAdultiGroup;
+    // 2. Aggiungi le chiavi all'oggetto se la condizione è vera
+    if (this.typeForm == prova.KATA_ADULTI || this.typeForm == prova.KATA_SQUADRE) {
+      controlsConfig['referee_4'] = new FormControl(element.referee_4 ?? '', [Validators.max(10.0), Validators.min(5.0), Validators.required]);
+      controlsConfig['referee_5'] = new FormControl(element.referee_5 ?? '', [Validators.max(10.0), Validators.min(5.0), Validators.required]);
+      controlsConfig['kata_id'] = new FormControl(element.kata_id ?? '');
+    }
+
+    if (this.typeForm == prova.KATA_BAMBINI) {
+      controlsConfig['kata_id'] = new FormControl(element.kata_id ?? '');
+    }
+
+    if (this.typeForm == prova.PALLONCINO) {
+      controlsConfig['partial_score'] = new FormControl(element.partial_score ?? '');
+      controlsConfig['penalties_points'] = new FormControl(element.penalties_points ?? '');
+    }
+
+    // 3. Crea il FormGroup finale
+    const formControl = new FormGroup(controlsConfig);
+
+    return formControl;
 
   }
 
@@ -1580,304 +839,306 @@ export class TatamiComponent {
   }
   }
 
-    // Popolo form KATA BAMBINI
-  buildKataBambiniForm(element){
-    
-    const kataBambiniGroup = new FormGroup({
-      id: new FormControl(element.scores.id),
-      name: new FormControl({value: element.athlete.cognome + ' ' + element.athlete.nome, disabled: true}),
-      athlete_inscription_id: new FormControl(element.id),
-      user_id: new FormControl(this.currentUser.id),
-      kata_id: new FormControl(element.scores.kata_id?? ''),
-      referee_1: new FormControl(element.scores.referee_1?? '', Validators.compose(
-        [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      referee_2: new FormControl(element.scores.referee_2?? '', Validators.compose(
-        [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      referee_3: new FormControl(element.scores.referee_3?? '', Validators.compose(
-        [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      total: new FormControl(element.scores.total?? '')
-    });
-
-    return kataBambiniGroup;
-    //this.scoreForm.push(kataBambiniGroup);
-
-  }
 
       // Popolo form PERCORSO
-  buildPercorsoForm(element){
+  buildTimerForm(element){
 
     const percorsoGroup = new FormGroup({
-      id: new FormControl(element.scores.id),
-      name: new FormControl({value: element.athlete.cognome + ' ' + element.athlete.nome, disabled: true}),
-      athlete_inscription_id: new FormControl(element.id),
+      id: new FormControl(element.id),
+      name: new FormControl({value: element.athlete_inscription.athlete.cognome + ' ' + element.athlete_inscription.athlete.nome, disabled: true}, Validators.required),
+      athlete_inscription_id: new FormControl(element.athlete_inscription.id),
       user_id: new FormControl(this.currentUser.id),
-      minutes: new FormControl(element.scores.minutes?? ''),
-      seconds: new FormControl(element.scores.seconds?? ''),
-      milliseconds: new FormControl(element.scores.milliseconds?? ''),
-      penalty: new FormControl(element.scores.penalty?? ''),
-      total_time: new FormControl(element.scores.total_time?? '')
+      minutes: new FormControl(element.minutes?? ''),
+      seconds: new FormControl(element.seconds?? ''),
+      milliseconds: new FormControl(element.milliseconds?? ''),
+      penalties: new FormControl(element.penalties?? ''),
+      total_time: new FormControl(element.total_time ? formatDate(element.total_time, 'mm:ss:SSS', 'en-US', 'UTC') : '')
     });
 
     return percorsoGroup;
-    //this.scoreForm.push(percorsoGroup);
-  }
 
-    // Popolo form PALLONCINO
-  buildPalloncinoForm(element){
-
-    const palloncinoGroup = new FormGroup({
-      id: new FormControl(element.scores.id),
-      name: new FormControl({value: element.athlete.cognome + ' ' + element.athlete.nome, disabled: true}),
-      athlete_inscription_id: new FormControl(element.id),
-      user_id: new FormControl(this.currentUser.id),
-      referee_1: new FormControl(element.scores.referee_1?? '', Validators.compose(
-        [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      referee_2: new FormControl(element.scores.referee_2?? '', Validators.compose(
-        [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-      referee_3: new FormControl(element.scores.referee_3?? '', Validators.compose(
-        [Validators.max(10.0), Validators.min(5.0), Validators.required])),
-        total_without_penalties: new FormControl(element.scores.total_without_penalties?? ''),
-      penalty: new FormControl(element.scores.penalty?? ''),
-      total: new FormControl(element.scores.total?? '')
-    });
-
-    return palloncinoGroup;
-    
   }
 
 // ========================================================  KUMITE =======================================================================
 
   openMatch(data){
 
-    this.currentMatch = null;
-    let aka = null;
-    let ao = null;
-    if(this.kumiteAthleteList.length == 3){
-      
-      if(data.round == 1){
-        aka = this.kumiteAthleteList.find(x => x ? x.id == this.firstMatch[0].id : null);
-        ao = this.kumiteAthleteList.find(x => x ? x.id == this.firstMatch[1].id : null);
-      
-      }else if (data.round == 2){
-        aka = this.kumiteAthleteList.find(x => x ? x.id == this.secondMatch[0].id : null);
-        ao = this.kumiteAthleteList.find(x => x ? x.id == this.secondMatch[1].id : null);
-      }else{
-        aka = this.kumiteAthleteList.find(x => x ? x.id == this.thirdMatch[0].id : null);
-        ao = this.kumiteAthleteList.find(x => x ? x.id == this.thirdMatch[1].id : null);
+    console.log(data);
+    console.log(this.selectedCategory);
+
+    let dataDisplay = null;
+
+    this.currentMatch = data;
+
+    if(this.typeForm == prova.KATA_ADULTI){
+      if (this.currentMatch) {
+        this.loadHistory(this.currentMatch.athlete_aka_inscription_id, 'AKA');
+        this.loadHistory(this.currentMatch.athlete_ao_inscription_id, 'AO');
       }
 
-      aka.scores.color = 'AKA';
-      aka.scores.opponentid = ao.id;
-      ao.scores.color = 'AO';
-      ao.scores.opponentid = aka.id;
-
-      let request = [];
-      request.push(aka.scores);
-      request.push(ao.scores);
-      this.tatamiService.matchAthletes(request).subscribe((response: any) => {});
-  
+      dataDisplay = {
+          type: 'KATA_BRACKETS',
+          currentMatch: this.currentMatch,
+          category: this.selectedCategory
+        }
 
     }else{
-
-      console.log(this.kumiteAthleteList);
-      let selectedAthlete = this.kumiteAthleteList.find(x => x ? x.id == data.id : null);
-      let secondAthlete = this.kumiteAthleteList.find(x => x ? x.id == selectedAthlete.scores.opponentid : null);
-      console.log(selectedAthlete);
-      console.log(secondAthlete);
-
-      aka = selectedAthlete.scores.color == 'AKA' ? selectedAthlete : secondAthlete;
-      ao = secondAthlete.scores.color == 'AO' ? secondAthlete : selectedAthlete;  
-
-    }
-
-    this.currentMatch = {
-      aka: aka,
-      ao:ao
+      dataDisplay = {
+          type: 'KUMITE_BRACKETS',
+          currentMatch: this.currentMatch,
+          category: this.selectedCategory,
+          countdown: this.countdown
+        }
     }
     
-
-    console.log(this.currentMatch);
+    
     this.kumiteModal.show();
+    
+    console.log('Sending to display:', dataDisplay);
+    this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
 
-
-    this.localStorageService.set(monitor.KUMITE, this.currentMatch);
-    this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
-    this.localStorageService.set(monitor.ACTION, '');
-    this.openInfo(null, 'KUMITE');
   }
 
+  loadHistory(athleteId: number, side: 'AKA' | 'AO') {
+  if (!athleteId) return;
+
+  const payload = {
+    athlete_inscription_id: athleteId,
+    categorycode_id: this.currentMatch.categorycode_id
+  };
+
+  this.tatamiService.getAthleteHistory(payload).subscribe((res: any) => {
+    if (res.result.success) {
+      if (side === 'AKA') this.historyAka = res.result.data;
+      else this.historyAo = res.result.data;
+    }
+  });
+}
+
+
   closeMatch(){
-    //TODO: salavare punteggi e aggiornare griglia richiamando getAtleti
     this.kumiteModal.hide();
   }
 
-  editScoreAka(score, action){
+/**
+ * Gestisce l'aggiunta/rimozione punti per entrambi gli atleti.
+ * @param side 'aka' oppure 'ao'
+ * @param scoreType 1 (Yuko), 2 (Waza-ari), 3 (Ippon)
+ * @param action 'ADD' oppure 'REMOVE'
+ */
+editScore(side: 'aka' | 'ao', scoreType: number, action: 'ADD' | 'REMOVE') {
+  
+  // 1. Determina il nome della proprietà dinamica (es. 'yuko_ao', 'ippon_aka')
+  let techniquePrefix = '';
+  switch(scoreType) {
+      case 1: techniquePrefix = 'yuko'; break;
+      case 2: techniquePrefix = 'wazaari'; break;
+      case 3: techniquePrefix = 'ippon'; break;
+  }
+  
+  const fieldName = `${techniquePrefix}_${side}`; // es. 'wazaari_ao'
 
-    switch (score) {
-      case 1:
-        if(action == 'ADD'){
-          this.currentMatch.aka.scores.yuko++;
-        }else if (action == 'REMOVE' && this.currentMatch.aka.scores.total > 0){
-          this.currentMatch.aka.scores.yuko--;
-        }
-        break;
-      case 2:
-        if(action == 'ADD'){
-          this.currentMatch.aka.scores.wazaari++;
-        }else if (action == 'REMOVE' && this.currentMatch.aka.scores.total > 1){
-          this.currentMatch.aka.scores.wazaari--;
-        }
-        break;
-      case 3:
-        if(action == 'ADD'){
-          this.currentMatch.aka.scores.ippon++;
-        }else if (action == 'REMOVE' && this.currentMatch.aka.scores.total > 2){
-          this.currentMatch.aka.scores.ippon--;
-        }
-        break;
-      default:
-        break;
-    }
+  console.log(fieldName);
 
-    this.currentMatch.aka.scores.total = this.currentMatch.aka.scores.yuko + this.currentMatch.aka.scores.ippon*3 + this.currentMatch.aka.scores.wazaari*2;
-    this.localStorageService.set(monitor.KUMITE, this.currentMatch);
-
-    if(this.currentMatch.aka.scores.total > this.currentMatch.ao.scores.total && this.currentMatch.aka.scores.total - this.currentMatch.ao.scores.total >= 8){
-      this.winMatch('AKA');
+  // 2. Esegui l'azione
+  if (action === 'ADD') {
+    // Incrementa (gestisce anche il caso in cui sia undefined o null iniziando da 0)
+    this.currentMatch[fieldName] = (this.currentMatch[fieldName] || 0) + 1;
+  } 
+  else if (action === 'REMOVE') {
+    // FIX CRITICO: Controlla se QUESTA tecnica è > 0, non il totale!
+    if (this.currentMatch[fieldName] > 0) {
+      this.currentMatch[fieldName]--;
+    } else {
+      return; // Non fare nulla se siamo a 0, evita numeri negativi
     }
   }
 
-  editScoreAo(score, action){
-    switch (score) {
-      case 1:
-        if(action == 'ADD'){
-          this.currentMatch.ao.scores.yuko++;
-        }else if (action == 'REMOVE' && this.currentMatch.ao.scores.total > 0){
-          this.currentMatch.ao.scores.yuko--;
-        }
-        break;
-      case 2:
-        if(action == 'ADD'){
-          this.currentMatch.ao.scores.wazaari++;
-        }else if (action == 'REMOVE' && this.currentMatch.ao.scores.total > 1){
-          this.currentMatch.ao.scores.wazaari--;
-        }
-        break;
-      case 3:
-        if(action == 'ADD'){
-          this.currentMatch.ao.scores.ippon++;
-        }else if (action == 'REMOVE' && this.currentMatch.ao.scores.total > 2){
-          this.currentMatch.ao.scores.ippon--;
-        }
-        break;
-      default:
-        break;
-    }
+  // 3. Ricalcola il Totale per quel lato
+  // Recuperiamo i valori aggiornati (sicuri che siano numeri)
+  const yuko = this.currentMatch[`yuko_${side}`] || 0;
+  const wazaari = this.currentMatch[`wazaari_${side}`] || 0;
+  const ippon = this.currentMatch[`ippon_${side}`] || 0;
 
-    this.currentMatch.ao.scores.total = this.currentMatch.ao.scores.yuko + this.currentMatch.ao.scores.ippon*3 + this.currentMatch.ao.scores.wazaari*2;
-    this.localStorageService.set(monitor.KUMITE, this.currentMatch);
+  // Aggiorna il campo totale (es. score_ao)
+  this.currentMatch[`score_${side}`] = (yuko * POINTS[1]) + (wazaari * POINTS[2]) + (ippon * POINTS[3]);
 
-    if(this.currentMatch.ao.scores.total > this.currentMatch.aka.scores.total && this.currentMatch.ao.scores.total - this.currentMatch.aka.scores.total >= 8){
-      this.winMatch('AO');
-    }
+  // 4. Aggiorna Monitor Pubblico e Storage
+  let dataDisplay = {
+          type: 'KUMITE_BRACKETS',
+          currentMatch: this.currentMatch,
+          category: this.selectedCategory,
+          countdown: this.countdown
+        }
     
+    console.log('Sending to display:', dataDisplay);
+    this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+
+  // 5. Controllo Vittoria (Gap 8 punti)
+  this.checkVictoryByGap();
+}
+
+/**
+ * Controlla se c'è una vittoria per scarto (8 punti)
+ */
+checkVictoryByGap() {
+  const akaTot = this.currentMatch.score_aka || 0;
+  const aoTot = this.currentMatch.score_ao || 0;
+  const GAP_LIMIT = 8;
+
+  if (akaTot - aoTot >= GAP_LIMIT) {
+    this.winMatch('AKA');
+  } else if (aoTot - akaTot >= GAP_LIMIT) {
+    this.winMatch('AO');
   }
+}
 
   winMatch(color){
     if(color == 'AKA'){
-      this.currentMatch.aka.scores.win = 1;
-      this.currentMatch.ao.scores.win = 0;
+      this.currentMatch.winner_inscription_id = this.currentMatch.athlete_aka_inscription_id;
+      this.currentMatch.loser_inscription_id = this.currentMatch.athlete_ao_inscription_id;
       
     }else{
-      this.currentMatch.aka.scores.win = 0;
-      this.currentMatch.ao.scores.win = 1;
+      this.currentMatch.winner_inscription_id = this.currentMatch.athlete_ao_inscription_id;
+      this.currentMatch.loser_inscription_id = this.currentMatch.athlete_aka_inscription_id;
     }
 
-    console.log(this.currentMatch);
     this.countdown = 0;
-    this.localStorageService.set(monitor.ACTION, monitor.ACTION_PAUSE);
-    this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
-    this.localStorageService.set(monitor.KUMITE, this.currentMatch);
-    this.pauseTimer();
-  }
-
-  saveMatch(){
-
-    if(this.currentMatch.aka.scores.win == 1 && this.currentMatch.aka.scores.total <= this.currentMatch.ao.scores.total){
-      this.currentMatch.aka.scores.total = this.currentMatch.ao.scores.total +1;
-    }
-    if(this.currentMatch.ao.scores.win == 1 && this.currentMatch.aka.scores.total >= this.currentMatch.ao.scores.total){
-      this.currentMatch.ao.scores.total = this.currentMatch.aka.scores.total +1;
-    }
-    console.log(this.currentMatch);
-    this.checkCategoryStatus(categoryStatus.DOING);
-    this.tatamiService.saveAthleteScores(this.currentMatch).subscribe((response: any) => {
-      if(response.result.success){
-        if(this.selectedCategory.categorycode.categoria == 'ESORDIENTI'){
-          this.countdown = 90;
-        }else{
-          this.countdown =120;
+    let dataDisplay = {
+          type: 'KUMITE_BRACKETS',
+          currentMatch: this.currentMatch,
+          category: this.selectedCategory,
+          countdown: this.countdown
         }
-        this.getAtlheteList();
-      }
-    })
-    this.kumiteModal.hide();
-  }
-  
+    
+    console.log('Sending to display:', dataDisplay);
+    this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+    this.pauseTimer();
+  }  
 
   startTimer() {
     this.showStartButton = false;
-    this.localStorageService.set(monitor.ACTION, monitor.ACTION_START);
-    this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
+  
+  
+    this.syncDataToDisplay('KUMITE_BRACKETS');
+    
     if(this.countdown > 0) {
       this.countdown--;
+      this.syncDataToDisplay('KUMITE_BRACKETS');
     }
     this.interval = setInterval(() => {
       if(this.countdown > 0) {
         this.countdown--;
+        this.syncDataToDisplay('KUMITE_BRACKETS');
       } else {
-        if(this.currentMatch.aka.scores.total > this.currentMatch.ao.scores.total){
-          this.currentMatch.aka.scores.win = 1;
-          this.currentMatch.ao.scores.win = 0;
-        }else if(this.currentMatch.aka.scores.total < this.currentMatch.ao.scores.total){
-          this.currentMatch.aka.scores.win = 0;
-          this.currentMatch.ao.scores.win = 1;
-        }else{
-          if(this.currentMatch.aka.scores.senshu){
-            this.currentMatch.aka.scores.win = 1;
-            this.currentMatch.ao.scores.win = 0;
-            
-            this.currentMatch.aka.scores.total++;
-          }else if(this.currentMatch.ao.scores.senshu){
-            this.currentMatch.ao.scores.win = 1;
-            this.currentMatch.aka.scores.win = 0;
-            this.currentMatch.ao.scores.total++;
-          }
-        }
-        this.localStorageService.set(monitor.ACTION, monitor.ACTION_PAUSE);
-        this.localStorageService.set(monitor.COUNTDOWN, this.countdown);
-        this.localStorageService.set(monitor.KUMITE, this.currentMatch);
-        console.log('finitoooooooooooooooooooooooo');
         this.pauseTimer();
+        this.handleMatchEnd();            
       }
     },1000);
-
     
   }
+
+  handleMatchEnd() {
+
+  // 1. CONTROLLO PUNTEGGIO TOTALE
+  if(this.currentMatch.score_aka > this.currentMatch.score_ao){
+    this.winMatch('AKA');
+    return;
+  }
+  
+  if (this.currentMatch.score_aka < this.currentMatch.score_ao) {
+    this.winMatch('AO');
+    return;
+  }
+
+  // 2. CONTROLLO SENSHU (Vantaggio)
+  if (this.currentMatch.senshu_aka) {
+    console.log("Vittoria AKA per Senshu");
+    this.winMatch('AKA');
+    return;
+  } 
+  
+  if (this.currentMatch.senshu_ao) {
+    console.log("Vittoria AO per Senshu");
+    this.winMatch('AO');
+    return;
+  }
+
+  // LA PARITA CONTINUA
+
+  // 3. CONTROLLO IPPON (Chi ne ha di più vince)
+  if (this.currentMatch.ippon_aka > this.currentMatch.ippon_ao) {
+    console.log("Vittoria AKA per maggior numero di Ippon");
+    this.winMatch('AKA');
+    return;
+  }
+  
+  if (this.currentMatch.ippon_ao > this.currentMatch.ippon_aka) {
+    console.log("Vittoria AO per maggior numero di Ippon");
+    this.winMatch('AO');
+    return;
+  }
+
+  // 3. CONTROLLO WAZA-ARI (Chi ne ha di più vince)
+  // (Nota: se Ippon sono pari, guardiamo i Waza-ari)
+  if (this.currentMatch.wazaari_aka > this.currentMatch.wazaari_ao) {
+    console.log("Vittoria AKA per maggior numero di Waza-ari");
+    this.winMatch('AKA');
+    return;
+  }
+
+  if (this.currentMatch.wazaari_ao > this.currentMatch.wazaari_aka) {
+    console.log("Vittoria AO per maggior numero di Waza-ari");
+    this.winMatch('AO');
+    return;
+  } 
+
+  // 5. HANTEI (Decisione Arbitrale)
+  alert("PARITÀ ASSOLUTA (Hantei): Seleziona manualmente il vincitore.");
+}
+
+syncDataToDisplay(type: 'KUMITE_BRACKETS' | 'KATA_BRACKETS' | 'FINALIZED') {
+
+  let dataDisplay = null;
+
+  if (type == 'FINALIZED'){
+
+    dataDisplay = {
+      type: type,
+      athleteList: this.athleteList, 
+      category: this.selectedCategory
+    };
+
+  }else {
+
+    dataDisplay = {
+      type: type,
+      countdown: this.countdown, // Il tempo attuale
+      currentMatch: this.currentMatch, 
+      category: this.selectedCategory
+    };
+  }
+  
+    console.log('Sending to display:', dataDisplay);
+  
+  // Invia tramite BroadcastChannel (molto più veloce del LocalStorage)
+  this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+}
 
   pauseTimer() {
     this.showStartButton = true;
     clearInterval(this.interval);
-    this.localStorageService.set(monitor.ACTION, monitor.ACTION_PAUSE);
+    this.syncDataToDisplay('KUMITE_BRACKETS');
   }
 
   onCheckboxChange(){
-    this.localStorageService.set(monitor.KUMITE, this.currentMatch);
+    
+    this.syncDataToDisplay('KUMITE_BRACKETS');
 
-    if(this.currentMatch.aka.scores.H){
+    if(this.currentMatch.hans_aka){
       this.winMatch('AO');
     }
-    if(this.currentMatch.ao.scores.H){
+    if(this.currentMatch.hans_ao){
       this.winMatch('AKA');
     }
   }
@@ -1885,49 +1146,104 @@ export class TatamiComponent {
   // bracket-adapter.service.ts
 
 public transformForJQueryBracket(matches: any[]): any {
-    // 1. Trova il numero di round (log2 del numero di partecipanti iniziali)
-    // o semplicemente guarda il max(round) nei match
-    const maxRound = Math.max(...matches.map(m => m.round));
+
+  if (!matches || matches.length === 0) {
+    return { teams: [], results: [] };
+  }
+  // 1. APPIATTIMENTO (Flattening)
+    // Se i dati arrivano raggruppati per round (come da screenshot), dobbiamo estrarli.
+    this.allMatchesFlat = [];
+
+    // Controlliamo se inputData ha la struttura raggruppata
+    if (matches.length > 0 && matches[0].matches) {
+        // Estrai l'array 'matches' da ogni round e uniscili
+        matches.forEach(roundGroup => {
+            if (roundGroup.matches) {
+                this.allMatchesFlat = this.allMatchesFlat.concat(roundGroup.matches);
+            }
+        });
+    } else {
+        // Altrimenti assumiamo sia già piatto
+        this.allMatchesFlat = matches;
+    }
+
+    if (this.allMatchesFlat.length === 0) {
+        return { teams: [], results: [] };
+    }
+
+    // 2. Ora lavoriamo su 'allMatches' che è l'array piatto che ci aspettavamo
+    const rounds = this.allMatchesFlat.map(m => m.round);
+    const minRound = Math.min(...rounds);
     
     const teams = [];
     const results = [];
 
-    // 2. Popola 'teams' (Solo il Round 1 / Ottavi / Quarti iniziali)
-    const round1Matches = matches.filter(m => m.round === 1); // O il round più basso
+    // 2. Popola 'teams' usando SOLO i match del round più basso (il punto di partenza)
+    // Ordiniamo per match_number per garantire l'ordine corretto nel tabellone (1vs8, 2vs7...)
+    const startingMatches = this.allMatchesFlat
+        .filter(m => m.round === minRound)
+        .sort((a, b) => a.match_number - b.match_number);
     
-    round1Matches.forEach(match => {
-        const aka = match.athlete_aka_inscription ? match.athlete_aka_inscription.athlete.cognome : null;
-        const ao = match.athlete_ao_inscription ? match.athlete_ao_inscription.athlete.cognome : null;
-        teams.push([aka, ao]);
+    startingMatches.forEach(match => {
+        
+        const akaObj = match.athlete_aka_inscription ? { 
+            name: match.athlete_aka_inscription.athlete.cognome + ' ' + match.athlete_aka_inscription.athlete.nome + ' ' + match.athlete_aka_inscription.athlete.club.club_name, 
+            id: match.athlete_aka_inscription.id,
+            matchId: match.id // ID del primo incontro
+        } : null; // Usa null se BYE
+
+        const aoObj = match.athlete_ao_inscription ? { 
+            name: match.athlete_ao_inscription.athlete.cognome + ' ' + match.athlete_ao_inscription.athlete.nome + ' ' + match.athlete_ao_inscription.athlete.club.club_name, 
+            id: match.athlete_ao_inscription.id,
+            matchId: match.id
+        } : null;
+
+        teams.push([akaObj, aoObj]);
     });
 
-    // 3. Popola 'results' (Tutti i round)
-    // La struttura di jquery-bracket è: [ [ [score1, score2], [score3, score4] ], [ [semi1, semi2] ], ... ]
+    // 3. Popola 'results' per TUTTI i round
+    // jQuery Bracket si aspetta un array di array di array
+    // [ [ [1,0], [2,1] ], [ [3,2] ], ... ]
     
     // Raggruppa match per round
-    const matchesByRound = this.groupBy(matches, 'round'); 
+    const matchesByRound = this.groupBy(this.allMatchesFlat, 'round'); 
 
-    // Itera sui round ordinati
-    Object.keys(matchesByRound).sort().forEach(roundKey => {
+    // Importante: Dobbiamo iterare dai round più bassi a quelli più alti
+    const sortedRoundKeys = Object.keys(matchesByRound).map(Number).sort((a, b) => a - b);
+
+    sortedRoundKeys.forEach(roundKey => {
         const roundMatches = matchesByRound[roundKey];
-        const roundResults = [];
+        
+        if (roundMatches) {
+          // Ordina anche i match dentro il round! Altrimenti i punteggi si disallineano
+          roundMatches.sort((a, b) => a.match_number - b.match_number);
 
-        roundMatches.forEach(match => {
-            // Se c'è un vincitore o punteggi, mettili. Altrimenti [null, null]
-            if (match.score_aka !== null || match.score_ao !== null) {
-                roundResults.push([match.score_aka, match.score_ao]);
-            } else {
-                roundResults.push([null, null]);
-            }
-        });
+          const roundResults = [];
 
-        results.push(roundResults);
+          roundMatches.forEach(match => {
+              // Logica sicura per i punteggi:
+              // Se winner_id è null, significa che il match non è finito -> [null, null]
+              // Altrimenti usa i punteggi (anche se sono 0)
+              if (match.winner_inscription_id !== null && match.score_aka !== undefined) {
+                  // Converti in numeri per sicurezza
+                  roundResults.push([ Number(match.score_aka), Number(match.score_ao) ]);
+              } else {
+                  roundResults.push([null, null]);
+              }
+          });
+
+          results.push(roundResults);
+        }
     });
+
+    console.log('JQuery Bracket Data:', { teams, results }); // Debug utile
 
     return {
         teams: teams,
         results: results
     };
+
+
 }
 
 // Helper

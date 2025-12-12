@@ -1,7 +1,7 @@
-import { Component, ViewEncapsulation, OnInit, Pipe, PipeTransform } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, Pipe, PipeTransform, ChangeDetectorRef } from '@angular/core';
 import { DisplayInfoService } from './displayinfo.service';
 import { interval, Subscription} from 'rxjs';
-import {monitor} from '../../constants';
+import {categoryStatus, colorMapping, monitor, prova, categoryPhase, RoundMatch, RoundMatchTitles} from '../../constants';
 import { LocalStorageService } from 'angular-2-local-storage';
 declare var jQuery: any;
 
@@ -13,6 +13,13 @@ declare var jQuery: any;
 })
 
 export class DisplayInfoComponent implements OnInit {
+
+
+  athleteData: any = null;
+  categoryPhase = categoryPhase;
+  currentPhase = '';
+
+
 
   mySubscription: Subscription
   currentUser;
@@ -27,16 +34,34 @@ export class DisplayInfoComponent implements OnInit {
   displayName_1 = '';
 
   constructor(
-    protected localStorageService: LocalStorageService) {
+    protected localStorageService: LocalStorageService,
+    private displayService: DisplayInfoService,
+    private cd: ChangeDetectorRef // Importante per aggiornare la UI
+  ) {/*
       this.mySubscription= interval(500).subscribe((x =>{
         this.checkAthlete();
-    }));    
+    }));  */  
   }
   
   ngOnInit() {
+
+    // Ci iscriviamo all'Observable del servizio
+    this.displayService.data$.subscribe(data => {
+      console.log('Dati ricevuti sul monitor:', data);
+      
+      this.athleteData = data;
+      
+      // Forza l'aggiornamento della vista perché l'evento arriva dall'esterno di Angular
+      this.cd.detectChanges();
+    });
+
+    
+
+    this.currentUser = this.localStorageService.get('currentUser');
+
     
     /*var elem = document.documentElement;
-      elem.requestFullscreen();*/
+      elem.requestFullscreen();
     var card = jQuery('.card_body');
     this.currentUser = this.localStorageService.get('currentUser');
     if(this.localStorageService.get(monitor.ATHLETE_1)){
@@ -65,7 +90,7 @@ export class DisplayInfoComponent implements OnInit {
 
       this.displayName_1 = `${this.currentMatch.aka.categorycode.specialita} ${this.currentMatch.aka.categorycode.categoria}`;
 
-    }
+    }*/
   }
 
   ngAfterViewInit(){

@@ -39,9 +39,13 @@ export const categoryStatus = {
 export const categoryPhase = {
   PENDING: 'PENDING',
   JUDGING_PANEL: 'JUDGING_PANEL',
+  TIME_PANEL: 'TIME_PANEL',
   AWAITING_TIEBREAK: 'AWAITING_TIEBREAK',
   AWAITING_BRACKETS: 'AWAITING_BRACKETS',
   BRACKETS: 'BRACKETS',
+  JUDGING_FINALIZING: 'JUDGING_FINALIZING', //attesa classifica per palloncino e kata bambini
+  TIMED_FINALIZING: 'TIMED_FINALIZING', //attesa classifica per percorso
+  BRACKETS_FINALIZING: 'BRACKETS_FINALIZING',
   FINALIZED: 'FINALIZED'
 } as const;
 
@@ -61,7 +65,8 @@ export const RoundMatch = {
   OTTAVI: 1,
   QUARTI: 2,
   SEMIFINALE: 3,
-  FINALE: 4
+  FINALE: 4,
+  ROUNDROBIN: 10
 } as const;
 
 // Oggetto inverso per la traduzione nell'HTML
@@ -73,7 +78,14 @@ export const RoundJudgedPanelTitles: Record<number, string> = {
 
 export const RoundMatchTitles: Record<number, string> = {
   [RoundMatch.OTTAVI]: 'Ottavi di finale',
+  [RoundMatch.ROUNDROBIN]: 'Girone all italiana',
   [RoundMatch.QUARTI]: 'Quarti di Finale',
   [RoundMatch.SEMIFINALE]: 'Semifinale',
   [RoundMatch.FINALE]: 'Finale'
+};
+
+export const POINTS = {
+  1: 1,
+  2: 2,
+  3: 3
 };
