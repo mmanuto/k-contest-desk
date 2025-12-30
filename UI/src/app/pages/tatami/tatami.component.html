@@ -322,7 +322,7 @@
 
 
 
-                <div *ngIf="isRoundRobin && selectedCategory?.current_phase != categoryPhase.FINALIZED" class="round-robin-container mt-4">
+                <div *ngIf="isRoundRobin && (selectedCategory?.current_phase == categoryPhase.BRACKETS || selectedCategory?.current_phase == categoryPhase.BRACKETS_FINALIZING)"  class="round-robin-container mt-4">
     
                 <div class="row justify-content-center">
 
@@ -632,14 +632,14 @@
               </label>
             </div>
             <div class="row"  *ngIf="typeForm == prova.KUMITE || typeForm == prova.KUMITE_U12">
-              <button type="button" class="btn btn-outline-primary w-100p mb-1 mr-1" (click)="winMatch('AO')"> Vincitore</button>
+              <button type="button" class="btn btn-outline-primary w-100p mb-1 mr-1" (click)="winMatch('AO', methodOfWin.HANTEI)"> Vincitore</button>
               <button type="button" class="btn btn-outline-primary w-100p mb-1 mr-1" (click)="editScore('ao', 3, 'REMOVE')"> - Ippon</button>
               <button type="button" class="btn btn-outline-primary w-100p mb-1 mr-1" (click)="editScore('ao', 2, 'REMOVE')"> - Waza-ari</button>
               <button type="button" class="btn btn-outline-primary w-100p mb-1 mr-1" (click)="editScore('ao', 1, 'REMOVE')"> - Yuko</button>
               <button type="button" class="btn btn-outline-danger w-100p mb-1 mr-1 ml-4" (click)="editScore('aka', 1, 'REMOVE')"> - Yuko</button>
               <button type="button" class="btn btn-outline-danger w-100p mb-1 mr-1" (click)="editScore('aka', 2, 'REMOVE')"> - Waza-ari</button>
               <button type="button" class="btn btn-outline-danger w-100p mb-1 mr-1" (click)="editScore('aka', 3, 'REMOVE')"> - Ippon</button>
-              <button type="button" class="btn btn-outline-danger w-100p mb-1 mr-1" (click)="winMatch('AKA')"> Vincitore</button>
+              <button type="button" class="btn btn-outline-danger w-100p mb-1 mr-1" (click)="winMatch('AKA', methodOfWin.HANTEI)"> Vincitore</button>
             </div>
             <div class="row"  *ngIf="typeForm == prova.KUMITE || typeForm == prova.KUMITE_U12">
 
@@ -701,11 +701,11 @@
               
 
               <label class="btn btn-outline-danger w-100p mb-1 mr-1">
-                <input type="checkbox" name="checkboxes" id="aka2hansoku" autocomplete="off"
+                <input type="checkbox" name="checkboxes" autocomplete="off"
                 (change)="onCheckboxChange()"  [(ngModel)]="currentMatch.hans_chui_aka"> H Chui
             </label>
               <label class="btn btn-outline-danger w-100p mb-1 mr-1">
-                <input type="checkbox" name="checkboxes" id="aka1chukoku" autocomplete="off"
+                <input type="checkbox" name="checkboxes" autocomplete="off"
                 (change)="onCheckboxChange()"  [(ngModel)]="currentMatch.hans_aka"> Hansoku
               </label>
             </div>

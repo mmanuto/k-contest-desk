@@ -166,6 +166,11 @@ class ResultsMatchTable extends Table
         $validator
             ->allowEmptyString('hans_ao');
 
+        $validator
+            ->scalar('method_of_win')
+            ->maxLength('method_of_win', 15)
+            ->allowEmptyString('method_of_win');
+
         return $validator;
     }
 

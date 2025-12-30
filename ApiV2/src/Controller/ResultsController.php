@@ -290,10 +290,21 @@ class ResultsController extends ApiController
 
         // Salvataggio
         try {
-            if (!$this->ResultsMatch->saveMany($nuoviIncontri)) {
+            if ($this->ResultsMatch->saveMany($nuoviIncontri)) {
+
+                // POST-PROCESSING: Gestisci i BYE e fa avanzare chi passa il turno
+                foreach ($nuoviIncontri as $match) {
+        
+                    // Se il match è stato creato già vinto (BYE)
+                    if ($match->method_of_win === 'BYE' && !empty($match->winner_inscription_id)) {
+                        $this->_advanceWinnerToNextRound($match);
+                    }
+                }
+                $this->_updatePhase($stateRecord, Configure::read('PHASE_BRACKETS'));
+            }else{
                 throw new \Exception('Salvataggio incontri fallito.');
             }
-            $this->_updatePhase($stateRecord, Configure::read('PHASE_BRACKETS'));
+            
             
            return true;
         } catch (\Exception $e) {
@@ -319,7 +330,8 @@ class ResultsController extends ApiController
         // 2. Aggiorna i dati (punteggi, penalità, vincitore)
         $match = $this->ResultsMatch->patchEntity($match, $data);
 
-        if (isset($data['score_aka']) && isset($data['score_ao'])) {
+        // Se il frontend non manda il vincitore esplicito, calcolalo qui
+        if ($match->winner_inscription_id == null && isset($data['score_aka']) && isset($data['score_ao'])) {
             
             $scoreAka = $data['score_aka'];
             $scoreAo = $data['score_ao'];
@@ -332,7 +344,7 @@ class ResultsController extends ApiController
 
         }
 
-        // Se il frontend non manda il vincitore esplicito, calcolalo qui (opzionale)
+        
         // if ($match->score_aka > $match->score_ao) ...
 
         if ($this->ResultsMatch->save($match)) {
@@ -416,8 +428,7 @@ class ResultsController extends ApiController
         $this->_updatePhase($stateRecord, Configure::read('PHASE_FINALIZED'));
 
     }
-
-
+    
     // ========================================================================
     // PRIVATE HELPER METHODS (Il Motore)
     // ========================================================================
@@ -1409,6 +1420,20 @@ class ResultsController extends ApiController
         return $output;
 
         
+    }
+
+    public function getRankingData(){
+
+        $request = $this->request->getData();
+        $categorycode_id = $request['categorycode_id'];
+
+        $data = $this->_getFinalRankingData($categorycode_id);
+
+        $this->apiResponse['success'] = true;
+        $this->apiResponse['message'] =  'Classifica recuperato.';
+        $this->apiResponse['data'] = $data;
+
+
     }
 
     /**

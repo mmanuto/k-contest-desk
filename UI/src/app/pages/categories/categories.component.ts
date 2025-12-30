@@ -77,6 +77,7 @@ export class CategoriesComponent implements OnInit {
 
   @ViewChild('primaryModal') public primaryModal: ModalDirective;
   @ViewChild('listModal') public listModal: ModalDirective;
+  @ViewChild('rankingModal') public rankingModal: ModalDirective;
 
   public searchText: string;
   public p:any;
@@ -98,6 +99,9 @@ export class CategoriesComponent implements OnInit {
   public secondGirone = {};
   public thirdGirone = {};
   public dettaglio = false;
+
+  selectedCategoryForRanking: any = null;
+  rankingData: any[] = [];
 
   public tatamiForm: FormGroup;
   
@@ -507,13 +511,20 @@ export class CategoriesComponent implements OnInit {
   // Visualizza classifica
   //====================================================================================================
 
-  public openClassification(category_id){
-    console.log(category_id);
+    public openRankingModal(category){
+    this.selectedCategory = category;
 
-    this.categoriesService.getClassifiche({categorycode_id: category_id}).subscribe((response: any) => {
-    }
-  );
+    console.log(this.selectedCategory);
 
+    
+
+    this.categoriesService.getFinalRanking({categorycode_id: category.id}).subscribe((response: any) => {
+      if(response.result.success){
+        this.rankingData = response.result.data;
+        this.rankingModal.show();
+      }
+      
+    });
   }
 
   //====================================================================================================

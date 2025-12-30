@@ -38,6 +38,7 @@ use Cake\ORM\Entity;
  * @property int|null $hans_chui_ao
  * @property int|null $hans_aka
  * @property int|null $hans_ao
+ * @property string|null $method_of_win
  *
  * @property \App\Model\Entity\Categorycode $categorycode
  */
@@ -82,6 +83,7 @@ class ResultsMatch extends Entity
         'hans_chui_ao' => true,
         'hans_aka' => true,
         'hans_ao' => true,
+        'method_of_win' => true,
         'categorycode' => true,
     ];
 }

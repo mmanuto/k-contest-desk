@@ -89,3 +89,14 @@ export const POINTS = {
   2: 2,
   3: 3
 };
+
+export const MethodOfWin = {
+  BYE: 'BYE',
+  SCORE: 'SCORE',
+  SCORE_TYPE: 'SCORE_TYPE',
+  SENSHU: 'SENSHU',
+  HANTEI: 'HANTEI',
+  KIKEN: 'KIKEN',
+  HANSOKU: 'HANSOKU',
+  SHIKKAKU: 'SHIKKAKU'
+};

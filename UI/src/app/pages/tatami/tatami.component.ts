@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, ViewChild, Pipe, PipeTransform, ElementRe
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { LocalStorageService } from 'angular-2-local-storage';
 import { TatamiService } from './tatami.service';
-import { categoryStatus, colorMapping, monitor, prova, categoryPhase, RoundMatch, RoundMatchTitles, POINTS } from '../../constants';
+import { categoryStatus, colorMapping, MethodOfWin, prova, categoryPhase, POINTS } from '../../constants';
 import { interval,Subscription } from 'rxjs';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { environment } from '../../../environments/environment';
@@ -38,8 +38,7 @@ interface RoundGroup {
 @Component({
   selector: 'tatami',
   templateUrl: './tatami.component.html',
-  styleUrls: ['./tatami.component.scss'],
-  encapsulation: ViewEncapsulation.None
+  styleUrls: ['./tatami.component.scss']
 })
 
 export class TatamiComponent {
@@ -54,6 +53,7 @@ export class TatamiComponent {
   prova = prova;
   categoryStatus = categoryStatus;
   categoryPhase = categoryPhase;
+  methodOfWin = MethodOfWin;
 
   public searchText: string;      //barra di ricerca
   //categories: any[];            //elenco categorie
@@ -77,6 +77,9 @@ export class TatamiComponent {
   showStartButton = true;
   allMatchesFlat = [];            //elenco match eliminazione diretta (KUMITE o KATA a bandierine)
 
+  // GLOBAL MAP: Qui salviamo i dettagli veri di ogni incontro
+  // Key: Match ID (number), Value: Oggetto con i dati reali
+  public matchesMetadata: { [key: number]: any } = {};
   countdown: number = 120;
   interval;
 
@@ -92,7 +95,7 @@ export class TatamiComponent {
   public isLoading = false;
   historyAka: any[] = [];
   historyAo: any[] = [];
-  isRoundRobin: boolean;
+  isRoundRobin: boolean = false;
   roundRobinMatches: any;
   roundRobinStandings: any[];
 
@@ -145,6 +148,7 @@ export class TatamiComponent {
     this.athleteList = [];
     this.kumiteAthleteList = [];
     this.kumiteMatches = [];
+    this.isRoundRobin = false;
 
     this.checkCategoryStatus(categoryStatus.OPEN);
 
@@ -284,7 +288,6 @@ export class TatamiComponent {
               this.isRoundRobin = true;
               this.roundRobinMatches = flatMatches[0].matches;
               this.calculateRoundRobinStandings(); // Calcola classifica live
-              console.log(this.roundRobinStandings);
             }else{
               //popolo jquerybrackets
               const bracketData = this.transformForJQueryBracket(flatMatches);
@@ -294,12 +297,12 @@ export class TatamiComponent {
           
                 jQuery('#minimal').empty(); 
 
-                // 4. Inizializza la libreria (senza logica if/else infinita!)
+                // 4. Inizializza la libreria
                 jQuery('#minimal').bracket({
-                    teamWidth: 250,
-                    scoreWidth: 45,
-                    matchMargin: 70,
-                    roundMargin: 70,
+                    teamWidth: 260,
+                    scoreWidth: 30,
+                    matchMargin: 50,
+                    roundMargin: 50,
                     init: bracketData,
                     save: function(){},
                     decorator:{
@@ -447,57 +450,110 @@ calculateRoundRobinStandings() {
    * HELPER BRACKET MANAGER - OK
    * ==============================
    * */
-  render_fn(container, data, score, state) {
-              switch(state) {
-                case "empty-bye":
-                  container.append("--")
-                  return;
-                case "empty-tbd":
-                  container.append("In attesa")
-                  return;
-            
-                case "entry-no-score":
-                case "entry-default-win":
-                case "entry-complete":
-                  container.append(data.name)
-                  return;
-              }
-            }
-            
-  
-            /* Edit function is called when team label is clicked */
-            edit_fn(container, data, doneCb) {
-              if (!data || !data.id) return;
+  render_fn(container: any, data: any, score: any, state: any) {
+    container.empty();
 
-              // 1. Capiamo in che ROUND abbiamo cliccato
-              // jQuery Bracket usa classi .round per le colonne. L'indice 0 è il primo turno visualizzato.
-              // Nota: container è un oggetto jQuery.
+    // Gestione stati vuoti
+    if (state === "empty-bye" || state === "empty-tbd" || !data) {
+        container.append("<span style='color:#ccc; font-size:10px; padding-left:5px;'>--</span>");
+        return;
+    }
+
+    // 1. RECUPERO DATI REALI (Logica Global Map)
+    // Se score è decimale (vettore), recuperiamo l'ID
+    const matchId = (score !== null) ? Math.floor(Number(score)) : null;
+    const meta = matchId ? this.matchesMetadata[matchId] : null;
+
+     // 2. PREPARAZIONE DATI VISUALI
+    const name = typeof data === 'string' ? data : (data.name || '--');
+
+    // Determina punteggio e vincitore
+    let displayScore: any = '--';
+    let badgeHtml = '';  
+    
+    
+    console.log(meta);
+    console.log(data);
+
+    if (meta) {
+        // Logica per capire quale punteggio mostrare (Aka o Ao)
+        // Se il "vettore" score è > dell'ID pulito (es. 100.1 > 100), questo slot ha vinto
+        const isThisSlotWinner = Number(score) > matchId;
+
+        // Recuperiamo il valore grezzo dal metadata
+        let rawScore = data.id == meta.akaId ? meta.realScoreAka : meta.realScoreAo;
+        
+        if (isThisSlotWinner) {
+            
+            // Badge solo al vincitore
+            if (meta.method !== 'SCORE' && meta.method !== 'BYE') {
+                badgeHtml = `<span style="background-color: #ffc107; color: #000; font-size: 9px; padding: 1px 3px; border-radius: 3px; margin-right: 4px; font-weight: bold;">${meta.method}</span>`;
+            }
+        } 
+        
+        if (!isNaN(Number(rawScore))) {
+            displayScore = rawScore;
+        }
+    } else if (!isNaN(Number(score))) {
+        // Fallback per match vecchi/senza meta
+        displayScore = Math.floor(score);
+    }
+
+    // 3. HTML COMPATTO (Monoriga)
+    // Usiamo le classi definite nel CSS sopra
+    const html = `
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; height: 100%; overflow: hidden;">
+            
+            <div title="${name}" style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: bold; color: #333; margin-right: 5px;">
+                ${name}
+            </div>
+            
+            <div style="display: flex; align-items: center; flex-shrink: 0;">
+                 ${badgeHtml}
+                 <div style="font-size: 13px; font-weight: 800; color: #000; min-width: 20px; text-align: right; background-color: #e9ecef; padding: 2px 5px; border-radius: 4px;">
+                    ${displayScore}
+                 </div>
+            </div>
+        </div>
+    `;
+
+    container.append(html);
+}
+            
+  /* Edit function is called when team label is clicked */
+  edit_fn(container, data, doneCb) {
+
+    if (!data || !data.id) return;
+
+      // 1. Capiamo in che ROUND abbiamo cliccato
+      // jQuery Bracket usa classi .round per le colonne. L'indice 0 è il primo turno visualizzato.
+      // Nota: container è un oggetto jQuery.
               const roundIndex = container.closest('.round').index(); 
               
-              // 2. Calcoliamo il 'round' reale del backend
-              // Se minRound era 2 (Semifinali), l'index 0 corrisponde al round 2.
-              const minRound = Math.min(...this.allMatchesFlat.map(m => m.round));
-              const currentRealRound = minRound + roundIndex;
+      // 2. Calcoliamo il 'round' reale del backend
+      // Se minRound era 2 (Semifinali), l'index 0 corrisponde al round 2.
+      const minRound = Math.min(...this.allMatchesFlat.map(m => m.round));
+      const currentRealRound = minRound + roundIndex;
 
-              // 3. CERCHIAMO IL MATCH CORRETTO
-              // Cerchiamo nell'array di tutti i match quello che:
-              // - Appartiene a questo Round
-              // - Contiene questo Atleta (o come AKA o come AO)
-              const targetMatch = this.allMatchesFlat.find(m => 
-                  m.round === currentRealRound && 
-                  (m.athlete_aka_inscription_id === data.id || m.athlete_ao_inscription_id === data.id)
-              );
+      // 3. CERCHIAMO IL MATCH CORRETTO
+      // Cerchiamo nell'array di tutti i match quello che:
+      // - Appartiene a questo Round
+      // - Contiene questo Atleta (o come AKA o come AO)
+      const targetMatch = this.allMatchesFlat.find(m => 
+        m.round === currentRealRound && 
+        (m.athlete_aka_inscription_id === data.id || m.athlete_ao_inscription_id === data.id)
+      );
 
-              if (targetMatch) {
-                  console.log("Match Trovato:", targetMatch);
-                  // ORA HAI L'OGGETTO MATCH COMPLETO con il suo ID univoco!
-                  this.openMatch(targetMatch); 
-              } else {
-                  console.error("Impossibile trovare il match per questo atleta in questo round.");
-              }
+      if (targetMatch) {
+        console.log("Match Trovato:", targetMatch);
+        // ORA HAI L'OGGETTO MATCH COMPLETO con il suo ID univoco!
+        this.openMatch(targetMatch); 
+      } else {
+        console.error("Impossibile trovare il match per questo atleta in questo round.");
+      }
 
-              //doneCb(data);
-            }
+      doneCb(data);
+    }
 
 
   
@@ -715,22 +771,16 @@ calculateRoundRobinStandings() {
 
     }else {
 
-      if(this.currentMatch.winner_inscription_id == this.currentMatch.athlete_aka_inscription_id && this.currentMatch.score_aka <= this.currentMatch.score_ao){
-        this.currentMatch.score_aka = this.currentMatch.score_ao +1;
-        }
-        if(this.currentMatch.winner_inscription_id == this.currentMatch.athlete_ao_inscription_id && this.currentMatch.score_aka >= this.currentMatch.score_ao){
-          this.currentMatch.score_ao = this.currentMatch.score_aka +1;
-        }
-        formOk = true;
+      formOk = true;
   
-        this.checkCategoryStatus(categoryStatus.DOING);
+      this.checkCategoryStatus(categoryStatus.DOING);
 
-        dataDisplay = {
-          type: 'KUMITE_BRACKETS',
-          currentMatch: this.currentMatch,
-          category: this.selectedCategory,
-          countdown : this.countdown
-        }
+      dataDisplay = {
+        type: 'KUMITE_BRACKETS',
+        currentMatch: this.currentMatch,
+        category: this.selectedCategory,
+        countdown : this.countdown
+      }
 
     }
 
@@ -987,13 +1037,13 @@ checkVictoryByGap() {
   const GAP_LIMIT = 8;
 
   if (akaTot - aoTot >= GAP_LIMIT) {
-    this.winMatch('AKA');
+    this.winMatch('AKA', MethodOfWin.SCORE);
   } else if (aoTot - akaTot >= GAP_LIMIT) {
-    this.winMatch('AO');
+    this.winMatch('AO', MethodOfWin.SCORE);
   }
 }
 
-  winMatch(color){
+  winMatch(color, methodOfWin){
     if(color == 'AKA'){
       this.currentMatch.winner_inscription_id = this.currentMatch.athlete_aka_inscription_id;
       this.currentMatch.loser_inscription_id = this.currentMatch.athlete_ao_inscription_id;
@@ -1002,6 +1052,8 @@ checkVictoryByGap() {
       this.currentMatch.winner_inscription_id = this.currentMatch.athlete_ao_inscription_id;
       this.currentMatch.loser_inscription_id = this.currentMatch.athlete_aka_inscription_id;
     }
+
+    this.currentMatch.method_of_win = methodOfWin;
 
     this.countdown = 0;
     let dataDisplay = {
@@ -1042,25 +1094,25 @@ checkVictoryByGap() {
 
   // 1. CONTROLLO PUNTEGGIO TOTALE
   if(this.currentMatch.score_aka > this.currentMatch.score_ao){
-    this.winMatch('AKA');
+    this.winMatch('AKA', MethodOfWin.SCORE);
     return;
   }
   
   if (this.currentMatch.score_aka < this.currentMatch.score_ao) {
-    this.winMatch('AO');
+    this.winMatch('AO', MethodOfWin.SCORE);
     return;
   }
 
   // 2. CONTROLLO SENSHU (Vantaggio)
   if (this.currentMatch.senshu_aka) {
     console.log("Vittoria AKA per Senshu");
-    this.winMatch('AKA');
+    this.winMatch('AKA', MethodOfWin.SENSHU);
     return;
   } 
   
   if (this.currentMatch.senshu_ao) {
     console.log("Vittoria AO per Senshu");
-    this.winMatch('AO');
+    this.winMatch('AO', MethodOfWin.SENSHU);
     return;
   }
 
@@ -1069,13 +1121,13 @@ checkVictoryByGap() {
   // 3. CONTROLLO IPPON (Chi ne ha di più vince)
   if (this.currentMatch.ippon_aka > this.currentMatch.ippon_ao) {
     console.log("Vittoria AKA per maggior numero di Ippon");
-    this.winMatch('AKA');
+    this.winMatch('AKA', MethodOfWin.SCORE_TYPE);
     return;
   }
   
   if (this.currentMatch.ippon_ao > this.currentMatch.ippon_aka) {
     console.log("Vittoria AO per maggior numero di Ippon");
-    this.winMatch('AO');
+    this.winMatch('AO', MethodOfWin.SCORE_TYPE);
     return;
   }
 
@@ -1083,13 +1135,13 @@ checkVictoryByGap() {
   // (Nota: se Ippon sono pari, guardiamo i Waza-ari)
   if (this.currentMatch.wazaari_aka > this.currentMatch.wazaari_ao) {
     console.log("Vittoria AKA per maggior numero di Waza-ari");
-    this.winMatch('AKA');
+    this.winMatch('AKA', MethodOfWin.SCORE_TYPE);
     return;
   }
 
   if (this.currentMatch.wazaari_ao > this.currentMatch.wazaari_aka) {
     console.log("Vittoria AO per maggior numero di Waza-ari");
-    this.winMatch('AO');
+    this.winMatch('AO', MethodOfWin.SCORE_TYPE);
     return;
   } 
 
@@ -1136,10 +1188,10 @@ syncDataToDisplay(type: 'KUMITE_BRACKETS' | 'KATA_BRACKETS' | 'FINALIZED') {
     this.syncDataToDisplay('KUMITE_BRACKETS');
 
     if(this.currentMatch.hans_aka){
-      this.winMatch('AO');
+      this.winMatch('AO', MethodOfWin.HANSOKU);
     }
     if(this.currentMatch.hans_ao){
-      this.winMatch('AKA');
+      this.winMatch('AKA', MethodOfWin.HANSOKU);
     }
   }
 
@@ -1187,19 +1239,21 @@ public transformForJQueryBracket(matches: any[]): any {
     startingMatches.forEach(match => {
         
         const akaObj = match.athlete_aka_inscription ? { 
-            name: match.athlete_aka_inscription.athlete.cognome + ' ' + match.athlete_aka_inscription.athlete.nome + ' ' + match.athlete_aka_inscription.athlete.club.club_name, 
+            name: match.athlete_aka_inscription.athlete.cognome + ' ' + match.athlete_aka_inscription.athlete.nome, 
             id: match.athlete_aka_inscription.id,
             matchId: match.id // ID del primo incontro
         } : null; // Usa null se BYE
 
         const aoObj = match.athlete_ao_inscription ? { 
-            name: match.athlete_ao_inscription.athlete.cognome + ' ' + match.athlete_ao_inscription.athlete.nome + ' ' + match.athlete_ao_inscription.athlete.club.club_name, 
+            name: match.athlete_ao_inscription.athlete.cognome + ' ' + match.athlete_ao_inscription.athlete.nome, 
             id: match.athlete_ao_inscription.id,
             matchId: match.id
         } : null;
 
         teams.push([akaObj, aoObj]);
     });
+
+    this.matchesMetadata = {};
 
     // 3. Popola 'results' per TUTTI i round
     // jQuery Bracket si aspetta un array di array di array
@@ -1221,15 +1275,42 @@ public transformForJQueryBracket(matches: any[]): any {
           const roundResults = [];
 
           roundMatches.forEach(match => {
-              // Logica sicura per i punteggi:
-              // Se winner_id è null, significa che il match non è finito -> [null, null]
-              // Altrimenti usa i punteggi (anche se sono 0)
-              if (match.winner_inscription_id !== null && match.score_aka !== undefined) {
-                  // Converti in numeri per sicurezza
-                  roundResults.push([ Number(match.score_aka), Number(match.score_ao) ]);
-              } else {
-                  roundResults.push([null, null]);
-              }
+              
+            // Caso A: Match non ancora definito o non finito
+            if (!match.winner_inscription_id) {
+              roundResults.push([null, null]);
+              return;
+            }
+            // Caso B: Match Finito -> POPOLIAMO LA GLOBAL MAP
+            const realScoreAka = Number(match.score_aka || 0);
+            const realScoreAo = Number(match.score_ao || 0);
+
+            // Salviamo i dati VERI nella mappa usando l'ID del match come chiave
+            this.matchesMetadata[match.id] = {
+              realScoreAka: realScoreAka,
+              realScoreAo: realScoreAo,
+              akaId: match.athlete_aka_inscription_id,
+              aoId: match.athlete_ao_inscription_id,
+              method: match.method_of_win, // 'SCORE', 'SENSHU', 'HANTEI', 'HANSOKU'...
+              winnerId: match.winner_inscription_id,
+              isAkaWinner: (match.athlete_aka_inscription && match.winner_inscription_id == match.athlete_aka_inscription.id),
+              isAoWinner: (match.athlete_ao_inscription && match.winner_inscription_id == match.athlete_ao_inscription.id)
+            };
+
+            // GENERAZIONE "PUNTEGGIO VETTORE" (Shadow Score)
+            // Usiamo l'ID del match come base.
+            // Aggiungiamo 0.1 al vincitore per far disegnare la linea corretta alla libreria.
+                
+            let vectorScoreA = match.id;
+            let vectorScoreB = match.id;
+
+            if (this.matchesMetadata[match.id].isAkaWinner) {
+              vectorScoreA += 0.1; // Aka vince (ID.1 > ID)
+            } else {
+              vectorScoreB += 0.1; // Ao vince
+            }
+
+            roundResults.push([vectorScoreA, vectorScoreB]);
           });
 
           results.push(roundResults);

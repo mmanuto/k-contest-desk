@@ -410,3 +410,27 @@ $blue: #1976d2;
     border-radius: 5px;
     font-weight: bold;
 }
+
+/* FILE: tuo-componente.component.scss */
+
+
+::ng-deep .jQBracket .score {
+    display: none !important; /* Nasconde sempre il voto "finto" 189.1 */
+}
+
+::ng-deep .jQBracket .team {
+    /* Resetta il contenitore per accettare il nostro flex inline */
+    display: block !important; 
+    width: 100% !important;
+    padding: 2px 5px !important;
+    box-sizing: border-box !important;
+    /* Se i box sono troppo bassi, forza l'altezza qui */
+    height: 38px !important; 
+    min-height: 38px !important;
+    background-color: #f8f9fa; /* Grigio chiarissimo */
+}
+
+::ng-deep .jQBracket .teamContainer{
+      width: 100% !important;
+    }
+

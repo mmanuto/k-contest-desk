@@ -47,7 +47,7 @@ export class CategoriesService {
         return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/splitCategory', request);
     }
 
-    getClassifiche(request){
-        return this.http.post(environment.BASEAPPURL + 'scores/getClassifiche', request);
+    getFinalRanking(request){
+        return this.http.post(environment.BASEAPPURL + 'results/getRankingData', request);
     }
 } 

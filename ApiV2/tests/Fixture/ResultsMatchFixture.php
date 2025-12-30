@@ -55,6 +55,7 @@ class ResultsMatchFixture extends TestFixture
                 'hans_chui_ao' => 1,
                 'hans_aka' => 1,
                 'hans_ao' => 1,
+                'method_of_win' => 'Lorem ipsum d',
             ],
         ];
         parent::init();
