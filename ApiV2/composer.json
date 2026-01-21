@@ -11,6 +11,7 @@
         "cakephp/plugin-installer": "^1.3",
         "hidehalo/nanoid-php": "^2.0",
         "mobiledetect/mobiledetectlib": "^3.74",
+        "tecnickcom/tcpdf": "^6.10",
         "vudp/cakephp-rest-api": "^1.0"
     },
     "require-dev": {

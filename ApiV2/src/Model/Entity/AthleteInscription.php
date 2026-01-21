@@ -18,7 +18,7 @@ use Cake\ORM\Entity;
  * @property int $modificato
  * @property int $accorpamento
  * @property int $deleted
- * @property string $old_category
+ * @property string|null $old_category
  * @property \Cake\I18n\FrozenTime $created_date
  * @property \Cake\I18n\FrozenTime $modified_date
  * @property int|null $final_ranking
@@ -26,6 +26,8 @@ use Cake\ORM\Entity;
  * @property \App\Model\Entity\Athlete $athlete
  * @property \App\Model\Entity\Categorycode $categorycode
  * @property \App\Model\Entity\Competition $competition
+ * @property \App\Model\Entity\ResultsJudgedPanel[] $results_judged_panel
+ * @property \App\Model\Entity\ResultsTimed[] $results_timed
  * @property \App\Model\Entity\Score[] $scores
  * @property \App\Model\Entity\ScoresOld[] $scores_old
  */
@@ -57,6 +59,8 @@ class AthleteInscription extends Entity
         'athlete' => true,
         'categorycode' => true,
         'competition' => true,
+        'results_judged_panel' => true,
+        'results_timed' => true,
         'scores' => true,
         'scores_old' => true,
     ];

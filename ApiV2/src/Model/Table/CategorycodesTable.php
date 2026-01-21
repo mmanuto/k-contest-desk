@@ -11,10 +11,8 @@ use Cake\Validation\Validator;
 /**
  * Categorycodes Model
  *
- * @property \App\Model\Table\AgecategoriesTable&\Cake\ORM\Association\BelongsTo $Agecategories
  * @property \App\Model\Table\AthleteInscriptionsTable&\Cake\ORM\Association\HasMany $AthleteInscriptions
  * @property \App\Model\Table\ScoresTable&\Cake\ORM\Association\HasMany $Scores
- * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsToMany $Users
  *
  * @method \App\Model\Entity\Categorycode newEmptyEntity()
  * @method \App\Model\Entity\Categorycode newEntity(array $data, array $options = [])
@@ -46,16 +44,26 @@ class CategorycodesTable extends Table
         $this->setDisplayField('id');
         $this->setPrimaryKey('id');
 
+        $this->belongsTo('Agecategories', [
+            'foreignKey' => 'agecategory_id',
+        ]);
         $this->hasMany('AthleteInscriptions', [
+            'foreignKey' => 'categorycode_id',
+        ]);
+        $this->hasMany('ResultsJudgedPanel', [
+            'foreignKey' => 'categorycode_id',
+        ]);
+        $this->hasMany('ResultsMatch', [
+            'foreignKey' => 'categorycode_id',
+        ]);
+        $this->hasMany('ResultsTimed', [
             'foreignKey' => 'categorycode_id',
         ]);
         $this->hasMany('Scores', [
             'foreignKey' => 'categorycode_id',
         ]);
-        $this->belongsToMany('Users', [
+        $this->hasMany('TatamiAssignments', [
             'foreignKey' => 'categorycode_id',
-            'targetForeignKey' => 'user_id',
-            'joinTable' => 'users_categorycodes',
         ]);
     }
 
@@ -137,6 +145,10 @@ class CategorycodesTable extends Table
             ->requirePresence('order_number', 'create')
             ->notEmptyString('order_number');
 
+        $validator
+            ->integer('atleti_max')
+            ->allowEmptyString('atleti_max');
+
         return $validator;
     }
 
@@ -150,6 +162,7 @@ class CategorycodesTable extends Table
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->isUnique(['id']), ['errorField' => 'id']);
+        $rules->add($rules->existsIn('agecategory_id', 'Agecategories'), ['errorField' => 'agecategory_id']);
 
         return $rules;
     }

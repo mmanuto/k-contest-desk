@@ -123,188 +123,149 @@ class CompetitionsController extends ApiController
             
     }
 
-    protected function cleanTables(){
-
-        $this->loadModel('Athletes');
-        $this->loadModel('Categorycodes');
-        $this->loadModel('AthleteInscriptions');
-        $this->loadModel('Clubs');
-        $this->loadModel('ClubInscriptions');
-        $this->loadModel('Scores');
-        $this->loadModel('TatamiAssignments');
-
-        // ----------------------------------- COMPETITIONS ---------------------------------------------------------
-        $this->Competitions->getConnection()->transactional(function ($conn) {
-            $sqls = $this->Competitions->getSchema()->truncateSql($this->Competitions->getConnection());
-            foreach ($sqls as $sql) {
-                $this->Competitions->getConnection()->execute($sql)->execute();
-            }
-        });
-
-        // ----------------------------------- AthleteInscriptions ---------------------------------------------------------
-        $this->AthleteInscriptions->getConnection()->transactional(function ($conn) {
-            $sqls = $this->AthleteInscriptions->getSchema()->truncateSql($this->AthleteInscriptions->getConnection());
-            foreach ($sqls as $sql) {
-                $this->AthleteInscriptions->getConnection()->execute($sql)->execute();
-            }
-        });
-
-        // ----------------------------------- ClubInscriptions ---------------------------------------------------------
-        $this->ClubInscriptions->getConnection()->transactional(function ($conn) {
-            $sqls = $this->ClubInscriptions->getSchema()->truncateSql($this->ClubInscriptions->getConnection());
-            foreach ($sqls as $sql) {
-                $this->ClubInscriptions->getConnection()->execute($sql)->execute();
-            }
-        });
-
-        // ----------------------------------- Athletes ---------------------------------------------------------
-        $this->Athletes->getConnection()->transactional(function ($conn) {
-            $sqls = $this->Athletes->getSchema()->truncateSql($this->Athletes->getConnection());
-            foreach ($sqls as $sql) {
-                $this->Athletes->getConnection()->execute($sql)->execute();
-            }
-        });
-
-        // ----------------------------------- Clubs ---------------------------------------------------------
-        $this->Clubs->getConnection()->transactional(function ($conn) {
-            $sqls = $this->Clubs->getSchema()->truncateSql($this->Clubs->getConnection());
-            foreach ($sqls as $sql) {
-                $this->Clubs->getConnection()->execute($sql)->execute();
-            }
-        });
-
-        // ----------------------------------- Categorycodes ---------------------------------------------------------
-        $this->Categorycodes->getConnection()->transactional(function ($conn) {
-            $sqls = $this->Categorycodes->getSchema()->truncateSql($this->Categorycodes->getConnection());
-            foreach ($sqls as $sql) {
-                $this->Categorycodes->getConnection()->execute($sql)->execute();
-            }
-        });
-
-        // ----------------------------------- Scores ---------------------------------------------------------
-        $this->Scores->getConnection()->transactional(function ($conn) {
-            $sqls = $this->Scores->getSchema()->truncateSql($this->Scores->getConnection());
-            foreach ($sqls as $sql) {
-                $this->Scores->getConnection()->execute($sql)->execute();
-            }
-        });
-
-        // ----------------------------------- TatamiAssignments ---------------------------------------------------------
-        $this->TatamiAssignments->getConnection()->transactional(function ($conn) {
-            $sqls = $this->TatamiAssignments->getSchema()->truncateSql($this->TatamiAssignments->getConnection());
-            foreach ($sqls as $sql) {
-                $this->TatamiAssignments->getConnection()->execute($sql)->execute();
-            }
-        });
-
-        $this->apiResponse['success'] = true;
-
-    }
-
-
     public function importCompetitionData(){
+
+        set_time_limit(300); 
+        ini_set('memory_limit', '512M');
+
         $this->loadModel('Athletes');
         $this->loadModel('Categorycodes');
         $this->loadModel('AthleteInscriptions');
         $this->loadModel('Clubs');
         $this->loadModel('ClubInscriptions');
 
-
-        $this->cleanTables();
         $data = $this->request->getData();
+        $conn = $this->Competitions->getConnection();
 
-        $clubs = $data['clubs'];
-        $athletes = $data['athletes'];
-        $competition = $data['competition'];
-        $categoryCodes = $data['categorycodes'];
-        $clubInscirption = $data['clubInscirption'];
-        
-        //----------------------------------- COMPETITION ----------------------------------------------------
+        $response = ['success' => false, 'message' => ''];
 
-        
-        
-        $competition = $this->Competitions->newEmptyEntity();
-        $competition = $this->Competitions->patchEntity($competition, $data['competition']);
+        try {
+            // 1. Inizia la Transazione
+            $conn->begin();
 
-        $competition->id = $data['competition']['id'];
-        $competition->data_gara = new FrozenDate($data['competition']['data_gara']);
-        $competition->apertura_iscrizioni = new FrozenDate($data['competition']['apertura_iscrizioni']);
-        $competition->chiusura_iscrizioni = new FrozenDate($data['competition']['chiusura_iscrizioni']);
-        $competition->comp_status = 1;
+            // 2. Disabilita i controlli Chiave Esterna (MySQL)
+            // Questo permette di salvare in qualsiasi ordine e velocizza l'importazione
+            $conn->execute('SET FOREIGN_KEY_CHECKS = 0');
 
-        $this->Competitions->save($competition);
-        
-        //----------------------------------- CLUBS ----------------------------------------------------
-
-        foreach ($clubs as $entity) {
-            $newEntity = $this->Clubs->newEmptyEntity();
-            $newEntity = $this->Clubs->patchEntity($newEntity, $entity);
-            $newEntity->id = $entity['id'];
-            $newEntity->created_date = new FrozenTime($newEntity->created_date);
-            $newEntity->modified_date = new FrozenTime($newEntity->modified_date);
-             
-            
-            if($entity['last_login'] != null){
-                $newEntity->last_login = new FrozenTime($entity['last_login']); 
+            // 3. Pulisci le tabelle (Sposta qui la logica di cleanTables per sicurezza)
+            // Se qualcosa va storto prima, non avrai cancellato i dati vecchi invano.
+            $tables = ['athlete_inscriptions', 'club_inscriptions', 'athletes', 'clubs', 'categorycodes', 'competitions', 'tatami_assignments'];
+            foreach($tables as $table) {
+                $conn->execute("TRUNCATE TABLE $table");
             }
 
-            $this->Clubs->save($newEntity);
+            // Opzioni per forzare il salvataggio degli ID manualmente
+            $saveOptions = [
+                'validate' => false,
+                'accessibleFields' => ['id' => true],
+                'atomic' => false, 
+                'checkExisting' => false 
+            ];
+
+            // 4. Importazione Dati (Usando patchEntities e saveMany per velocità)
             
-        }
+            // Funzione Helper per pulire ID vuoti
+            $cleanData = function($items) {
+                if (empty($items)) return [];
+                return array_filter($items, function($item) {
+                    return !empty($item['id']) && $item['id'] !== '';
+                });
+            };
 
-        //----------------------------------- ATHETES ----------------------------------------------------
+            // --- 1. COMPETITION ---
+            if (!empty($data['competition']) && !empty($data['competition']['id'])) {
+                $compEntity = $this->Competitions->newEmptyEntity();
+                $compEntity = $this->Competitions->patchEntity($compEntity, $data['competition'], $saveOptions);
+                if (!$this->Competitions->save($compEntity, $saveOptions)) {
+                    throw new \Exception("Errore salvataggio Competition: " . json_encode($compEntity->getErrors()));
+                }
+            }
 
-        foreach ($athletes as $entity) {
-            $newEntity = $this->Athletes->newEmptyEntity();
-            $newEntity = $this->Athletes->patchEntity($newEntity, $entity);
-            $newEntity->id = $entity['id'];
-            $newEntity->deleted = 0;
-            $newEntity->created_date = new FrozenTime($newEntity->created_date);
-            $newEntity->modified_date = new FrozenTime($newEntity->modified_date);
+            // --- 2. CLUBS ---
+            $cleanClubs = $cleanData($data['clubs'] ?? []);
+            if (!empty($cleanClubs)) {
+                $entities = $this->Clubs->newEntities($cleanClubs, $saveOptions);
+                // saveMany restituisce le entità salvate o false in caso di fallimento grave
+                $result = $this->Clubs->saveMany($entities, $saveOptions);
+                
+                // Verifica errori specifici nelle entità
+                foreach ($entities as $entity) {
+                    if ($entity->hasErrors()) {
+                        throw new \Exception("Errore Club ID " . $entity->id . ": " . json_encode($entity->getErrors()));
+                    }
+                }
+            }
+
+            // --- 3. ATHLETES ---
+            $cleanAthletes = $cleanData($data['athletes'] ?? []);
+            if (!empty($cleanAthletes)) {
+                $entities = $this->Athletes->newEntities($cleanAthletes, $saveOptions);
+                $this->Athletes->saveMany($entities, $saveOptions);
+                foreach ($entities as $entity) {
+                    if ($entity->hasErrors()) {
+                        throw new \Exception("Errore Atleta ID " . $entity->id . ": " . json_encode($entity->getErrors()));
+                    }
+                }
+            }
+
+            // --- 4. CATEGORY CODES ---
+            $cleanCats = $cleanData($data['categorycodes'] ?? []);
+            if (!empty($cleanCats)) {
+                $entities = $this->Categorycodes->newEntities($cleanCats, $saveOptions);
+                $this->Categorycodes->saveMany($entities, $saveOptions);
+                foreach ($entities as $entity) {
+                    if ($entity->hasErrors()) {
+                        throw new \Exception("Errore Categoria ID " . $entity->id . ": " . json_encode($entity->getErrors()));
+                    }
+                }
+            }
+
+            // --- 5. CLUB INSCRIPTIONS ---
+            $cleanClubInscr = $cleanData($data['clubInscirption'] ?? []);
+            if (!empty($cleanClubInscr)) {
+                $entities = $this->ClubInscriptions->newEntities($cleanClubInscr, $saveOptions);
+                $this->ClubInscriptions->saveMany($entities, $saveOptions);
+                foreach ($entities as $entity) {
+                    if ($entity->hasErrors()) {
+                        throw new \Exception("Errore Club Inscription ID " . $entity->id . ": " . json_encode($entity->getErrors()));
+                    }
+                }
+            }
+
+            // --- 6. ATHLETE INSCRIPTIONS ---
+            $cleanAthInscr = $cleanData($data['atheleInscirption'] ?? []);
+            if (!empty($cleanAthInscr)) {
+                $entities = $this->AthleteInscriptions->newEntities($cleanAthInscr, $saveOptions);
+                $this->AthleteInscriptions->saveMany($entities, $saveOptions);
+                foreach ($entities as $entity) {
+                    if ($entity->hasErrors()) {
+                        throw new \Exception("Errore Athlete Inscription ID " . $entity->id . ": " . json_encode($entity->getErrors()));
+                    }
+                }
+            }
+
+            // Riabilita controlli e committa
+            $conn->execute('SET FOREIGN_KEY_CHECKS = 1');
+            $conn->commit();
+
+            $response['success'] = true;
+            $response['message'] = 'Importazione completata con successo.';
+
+        } catch (\Exception $e) {
+            // Se c'è un errore, annulla tutto e torna allo stato precedente
+            $conn->rollback();
+            // Riabilita sempre le chiavi esterne anche in caso di errore
+            $conn->execute('SET FOREIGN_KEY_CHECKS = 1');
             
-            $this->Athletes->save($newEntity);
-
-        }
-
-        //----------------------------------- CATEGORYCODES ----------------------------------------------------
-
-        foreach ($categoryCodes as $entity) {
-            $newEntity = $this->Categorycodes->newEmptyEntity();
-            $newEntity = $this->Categorycodes->patchEntity($newEntity, $entity);
-            $newEntity->id = $entity['id'];
-            $this->Categorycodes->save($newEntity);
-        }
-
-        //----------------------------------- CLUB INSCRIPTION ----------------------------------------------------
-
-        foreach ($clubInscirption as $entity) {
-            $newEntity = $this->ClubInscriptions->newEmptyEntity();
-            $newEntity = $this->ClubInscriptions->patchEntity($newEntity, $entity);
-            $newEntity->id = $entity['id'];
-            $newEntity->created_date = new FrozenTime($newEntity->created_date);
-        
-            $this->ClubInscriptions->save($newEntity);
-
-        }
-
-        //----------------------------------- ATHLETE INSCRIPTION ----------------------------------------------------
-
- 
-        foreach ($data['atheleInscirption'] as $entity) {
-
-            $inscription = $this->AthleteInscriptions->newEmptyEntity();
-            $inscription->id = $entity['id'];
-            $inscription->athlete_id = $entity['athlete_id'];
-            $inscription->categorycode_id = $entity['categorycode_id'];
-            $inscription->competition_id = $entity['competition_id'];
-            $inscription->modificato = $entity['modificato'];
-            $inscription->created_date = new FrozenTime($inscription->created_date);
-            $inscription->modified_date = new FrozenTime($inscription->modified_date);
+            // Logga l'errore per capire cosa non va
+            \Cake\Log\Log::error("Errore Importazione: " . $e->getMessage());
             
-            $this->AthleteInscriptions->save($inscription);
+            $response['success'] = false;
+            $response['message'] = 'Errore durante l\'importazione: ' . $e->getMessage();
+            $this->response = $this->response->withStatus(500);
         }
 
-        $this->apiResponse['success'] = true;
+        $this->apiResponse = $response;
 
     }
 

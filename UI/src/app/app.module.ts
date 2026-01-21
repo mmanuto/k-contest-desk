@@ -45,7 +45,6 @@ import { UserMenuComponent } from './theme/components/user-menu/user-menu.compon
 import { FlagsMenuComponent } from './theme/components/flags-menu/flags-menu.component';
 import { SideChatComponent } from './theme/components/side-chat/side-chat.component';
 import { FavoritesComponent } from './theme/components/favorites/favorites.component';
-import { BlankComponent } from './pages/blank/blank.component';
 import { SearchComponent } from './pages/search/search.component';
 import { NotFoundComponent } from './pages/errors/not-found/not-found.component';
 import { LocalStorageService } from 'angular-2-local-storage';
@@ -99,7 +98,6 @@ import { LocalStorageModule } from 'angular-2-local-storage';
     FlagsMenuComponent,
     SideChatComponent,
     FavoritesComponent,
-    BlankComponent,
     SearchComponent,
     NotFoundComponent
   ],

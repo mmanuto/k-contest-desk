@@ -137,39 +137,53 @@ class ResultsMatchTable extends Table
             ->allowEmptyString('ippon_ao');
 
         $validator
+            ->boolean('chui_1_aka')
             ->allowEmptyString('chui_1_aka');
 
         $validator
+            ->boolean('chui_1_ao')
             ->allowEmptyString('chui_1_ao');
 
         $validator
+            ->boolean('chui_2_aka')
             ->allowEmptyString('chui_2_aka');
 
         $validator
+            ->boolean('chui_2_ao')
             ->allowEmptyString('chui_2_ao');
 
         $validator
+            ->boolean('chui_3_aka')
             ->allowEmptyString('chui_3_aka');
 
         $validator
+            ->boolean('chui_3_ao')
             ->allowEmptyString('chui_3_ao');
 
         $validator
+            ->boolean('hans_chui_aka')
             ->allowEmptyString('hans_chui_aka');
 
         $validator
+            ->boolean('hans_chui_ao')
             ->allowEmptyString('hans_chui_ao');
 
         $validator
+            ->boolean('hans_aka')
             ->allowEmptyString('hans_aka');
 
         $validator
+            ->boolean('hans_ao')
             ->allowEmptyString('hans_ao');
 
         $validator
             ->scalar('method_of_win')
             ->maxLength('method_of_win', 15)
             ->allowEmptyString('method_of_win');
+
+        $validator
+            ->boolean('is_bronze_final')
+            ->notEmptyString('is_bronze_final');
 
         return $validator;
     }

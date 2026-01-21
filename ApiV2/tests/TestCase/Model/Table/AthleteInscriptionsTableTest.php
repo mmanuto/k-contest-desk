@@ -28,6 +28,8 @@ class AthleteInscriptionsTableTest extends TestCase
         'app.Athletes',
         'app.Categorycodes',
         'app.Competitions',
+        'app.ResultsJudgedPanel',
+        'app.ResultsTimed',
         'app.Scores',
         'app.ScoresOld',
     ];

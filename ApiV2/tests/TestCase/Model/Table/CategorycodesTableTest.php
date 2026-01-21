@@ -25,7 +25,6 @@ class CategorycodesTableTest extends TestCase
      */
     protected $fixtures = [
         'app.Categorycodes',
-        'app.Agecategories',
         'app.AthleteInscriptions',
         'app.Scores',
         'app.Users',

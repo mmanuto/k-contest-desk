@@ -19,7 +19,7 @@ class CategorycodesFixture extends TestFixture
     {
         $this->records = [
             [
-                'id' => '9167929c-e53d-4550-adde-8fa6d0b99626',
+                'id' => 'ac6f9e57-395a-4b33-a79e-6fbdd065d3e0',
                 'categoria' => 'Lorem ipsum dolor sit amet',
                 'agecategory_id' => 'Lorem ip',
                 'anno_min' => 1,
@@ -34,6 +34,7 @@ class CategorycodesFixture extends TestFixture
                 'costo_scontato' => 1,
                 'codiceTipoCategorie' => 1,
                 'order_number' => 1,
+                'atleti_max' => 1,
             ],
         ];
         parent::init();

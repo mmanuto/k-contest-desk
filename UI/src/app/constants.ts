@@ -42,6 +42,7 @@ export const categoryPhase = {
   TIME_PANEL: 'TIME_PANEL',
   AWAITING_TIEBREAK: 'AWAITING_TIEBREAK',
   AWAITING_BRACKETS: 'AWAITING_BRACKETS',
+  AWAITING_REPECHAGE: 'AWAITING_REPECHAGE',
   BRACKETS: 'BRACKETS',
   JUDGING_FINALIZING: 'JUDGING_FINALIZING', //attesa classifica per palloncino e kata bambini
   TIMED_FINALIZING: 'TIMED_FINALIZING', //attesa classifica per percorso
@@ -57,7 +58,7 @@ export const userRole = {
 // Mappa per i round di tipo "Punteggio"
 export const RoundJudgedPanel = {
   QUALIFICHE: 1,
-  SPAREGGIO: 2
+  SPAREGGIO: 99
 } as const;
 
 // Mappa per i round di tipo "Incontro"

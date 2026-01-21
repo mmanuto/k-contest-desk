@@ -9,56 +9,6 @@ import { InMemoryDatabase } from '../tatami/storage/memory';
 import { BracketsManager } from 'brackets-manager';
 import { ToastrService } from 'ngx-toastr';
 
-declare global {
-  interface JQuery {
-    (any): JQuery;
-    bracket(options: any): JQuery;
-  }
-}
-
-const TOURNAMENT_ID = 0;
-
-function getNearestPowerOfTwo(input: number): number {
-  return Math.pow(2, Math.ceil(Math.log2(input)));
-}
-
-async function process(dataset: Dataset) {
-  const db = new InMemoryDatabase();
-  const manager = new BracketsManager(db);
-
-  db.setData({
-    participant: dataset.roster.map((player) => ({
-      ...player,
-      tournament_id: TOURNAMENT_ID,
-    })),
-    stage: [],
-    group: [],
-    round: [],
-    match: [],
-    match_game: [],
-  });
-
-  await manager.create({
-    name: dataset.title,
-    tournamentId: TOURNAMENT_ID,
-    type: dataset.type,
-    seeding: dataset.roster.map((player) => player.name),
-    settings: {
-      seedOrdering: ['natural'],
-      size: getNearestPowerOfTwo(dataset.roster.length),
-    },
-  });
-
-  const data = await manager.get.stageData(0);
-
-  return {
-    stages: data.stage,
-    matches: data.match,
-    matchGames: data.match_game,
-    participants: data.participant,
-    data: data
-  };
-}
 
 @Component({
   selector: 'admin-panel',
@@ -73,8 +23,6 @@ export class AdminPanleComponent implements OnInit {
   competitionData;
   tabelloni = new jsPDF("p", "mm", "a4");
   frontespizi = new jsPDF("p", "mm", "a4");
-  matchList;
-  gironiList;
 
   constructor(public adminPanelService: AdminPanelService,
     public toastrService: ToastrService, 
@@ -92,7 +40,7 @@ export class AdminPanleComponent implements OnInit {
   syncCompetitionData(){
     this.adminPanelService.syncCompetitionData().subscribe((response:any) => {
       if(response.result.success){
-        
+        console.log(response.result.data);
         this.adminPanelService.importCompetitionData(response.result.data).subscribe((response:any) => {
 
           if(response.result.success){
@@ -333,341 +281,31 @@ export class AdminPanleComponent implements OnInit {
   
  
   generaTabKumite(){
-    this.matchList = [];
-    this.gironiList = [];
 
-    this.adminPanelService.getKumiteList().subscribe((response:any) =>{
-      console.log(response.result.data);
+    let payload = {
+      categoryId: null
+    }
+    this.adminPanelService.printBracketPdf(payload).subscribe((response:any) => {
+      // 1. Crea un oggetto Blob con i dati ricevuti
+            // response.body contiene i dati binari puri
+            const blob = new Blob([response.body], { type: 'application/pdf' });
 
-      if(response.result.success){
-        console.log(response.result.data.length);
-        this.tabelloni = new jsPDF("p", "mm", "a4");
-        let countCategories = response.result.data.length;
-        let countPdf = 0;
+            // 2. Crea un URL temporaneo per il browser
+            const url = window.URL.createObjectURL(blob);
 
-        response.result.data.forEach(element => {
-          
-          let nomeGara = this.competitionData.nome_gara;
-    
-          let lMargin = 15; //left margin in mm
-          let pdfInMM = 210;  // width of A4 in mm
-          let pageCenter = pdfInMM / 2;
-
-          let img = new Image();
-          img.src = "assets/img/logo/LogoCSEN.png";
-          
-          let imgData = this.getBase64Image(img);
-
-          this.tabelloni.setFont("times");
-          this.tabelloni.addImage(imgData, 'PNG', lMargin, 13, 28, 28);
-          this.tabelloni.addImage(imgData, 'PNG', 155, 13, 28, 28);
-
-          this.tabelloni.setFontSize(22);
-          this.tabelloni.text(nomeGara, pageCenter, 35, {align: 'center'});
-
-          if(element.athleteList.length == 3){
-
-            this.gironeItaliana(element.athleteList, countPdf);    
-    
-          }else{
+            // 3. Crea un link <a> invisibile nel DOM
+            const link = document.createElement('a');
+            link.href = url;
             
-            this.generateBrackets(element.athleteList, countPdf);
+            // 4. Imposta il nome del file (puoi prenderlo dagli header o metterne uno fisso)
+            link.download = payload.categoryId ? 'Tabellone_Singolo.pdf' : 'Tutti_Tabelloni.pdf';
             
-          }
-
-          countPdf++;
-          console.log(countPdf);
-        });
-
-        let loopLoading = true;
-      
-     while(loopLoading){
-        if(countPdf == countCategories){
-          loopLoading = false;
-          this.tabelloni.save('Kumite.pdf');
-        }
-      }
-
-
-      }
-
-      /*
-      */
-      
-    })
-
-  }
-
-  gironeItaliana(kumiteAthleteList, countPdf){
-
-    let firstMatch = [
-      {name: kumiteAthleteList[0]['athlete']['cognome'] + ' ' + kumiteAthleteList[0]['athlete']['nome'], id: kumiteAthleteList[0]['id'], round: 1},
-      {name: kumiteAthleteList[1]['athlete']['cognome'] + ' ' + kumiteAthleteList[1]['athlete']['nome'], id: kumiteAthleteList[1]['id'], round: 1}
-    ];
-    let firstResult = [null, null];
-
-    let secondMatch = [
-      {name: kumiteAthleteList[0]['athlete']['cognome'] + ' ' + kumiteAthleteList[0]['athlete']['nome'], id: kumiteAthleteList[0]['id'], round: 2},
-      {name: kumiteAthleteList[2]['athlete']['cognome'] + ' ' + kumiteAthleteList[2]['athlete']['nome'], id: kumiteAthleteList[2]['id'], round: 2}
-    ];
-    let secondResult = [null, null];
-
-    let thirdMatch = [
-      {name: kumiteAthleteList[1]['athlete']['cognome'] + ' ' + kumiteAthleteList[1]['athlete']['nome'], id: kumiteAthleteList[1]['id'], round: 3},
-      {name: kumiteAthleteList[2]['athlete']['cognome'] + ' ' + kumiteAthleteList[2]['athlete']['nome'], id: kumiteAthleteList[2]['id'], round: 3}
-    ];  
-    
-    let thirdResult = [null, null];
-
-    let minimalData = {
-        teams: [firstMatch],
-        results: firstResult
-    }
-
-    let secondGirone = {
-      teams: [secondMatch],
-      results: secondResult
-    }
-
-    let thirdGirone = {
-      teams: [thirdMatch],
-      results: thirdResult
-    }           
-
-      
-    function render_fn(container, data, score, state) {
-      switch(state) {
-        case "empty-bye":
-          container.append("--")
-          return;
-        case "empty-tbd":
-          container.append("--")
-          return;
-    
-        case "entry-no-score":
-        case "entry-default-win":
-        case "entry-complete":
-          container.append(data.name)
-          return;
-      }
-    }
-
-    /* Edit function is called when team label is clicked */
-    function edit_fn(container, data, doneCb) {
-      doneCb(data);
-    }
-
-    let match_a_name = "match-a-"+countPdf;
-    let match_b_name = "match-b-"+countPdf;
-    let match_c_name = "match-c-"+countPdf;
-    let match_container_name = "match-cont-"+countPdf;
-
-    let match_a = this.createElement("div",{"id":match_a_name},"");
-    let match_b = this.createElement("div",{"id":match_b_name},"");
-    let match_c = this.createElement("div",{"id":match_c_name},"");
-    let match_container = this.createElement("div",{"id":match_container_name},[match_a,match_b,match_c]);
-    document.body.appendChild(match_container);
-
-      jQuery('#'+match_a_name).bracket({
-            teamWidth: 250,
-            scoreWidth: 45,
-            matchMargin: 70,
-            roundMargin: 70,
-            init: minimalData,
-            save: function(){},
-            decorator:{edit:edit_fn, render: render_fn},
-        });
-
-        jQuery('#'+match_b_name).bracket({
-          teamWidth: 250,
-          scoreWidth: 45,
-          matchMargin: 70,
-          roundMargin: 70,
-          init: secondGirone,
-          save: function(){},
-          decorator:{edit:edit_fn, render: render_fn},
-      });
-
-      jQuery('#'+match_c_name).bracket({
-        teamWidth: 250,
-        scoreWidth: 45,
-        matchMargin: 70,
-        roundMargin: 70,
-        init: thirdGirone,
-        save: function(){},
-        decorator:{edit:edit_fn, render: render_fn},
+            // 5. Simula il click e rimuovi il link
+            link.click();
+            window.URL.revokeObjectURL(url); // Libera memoria
     });
-
-    let elementHTML = document.getElementById(match_container);
-
-    this.tabelloni.html(elementHTML, {
-        callback: function(doc) {
-            // Save the PDF
-            this.tabelloni.addPage();
-        },
-        x: 15,
-        y: 15,
-        width: 170, //target width in the PDF document
-        windowWidth: 650 //window width in CSS pixels
-    });      
   }
 
-  generateBrackets(kumiteAthleteList, countPdf){
-    let position = 1;
-        let dataset:Tabset = null;
-        let kumiteMatches = [];
-
-        switch (true) {
-          case (kumiteAthleteList.length == 2):
-            dataset = Dataset.dataset2;
-            break;
-          case (kumiteAthleteList.length == 4):
-            dataset = Dataset.dataset4;
-            break;
-          case (kumiteAthleteList.length <= 8):
-            dataset = Dataset.dataset8;
-            break;
-          case (kumiteAthleteList.length <= 16):
-            dataset = Dataset.dataset16;
-            break;
-          case (kumiteAthleteList.length <= 32):
-            dataset = Dataset.dataset32;
-            break;
-          default:
-            console.log('ERROREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE');
-            break;
-        }
-
-        while (position <= dataset.number) {
-          let index = position-1;
-          if(kumiteAthleteList[index]){
-            kumiteMatches.push({
-              position: position, 
-              id: kumiteAthleteList[index].id, 
-              name: kumiteAthleteList[index].athlete.cognome + ' ' + kumiteAthleteList[index].athlete.nome, 
-              club:kumiteAthleteList[index].athlete.club.club_name
-            })
-          }else{
-            kumiteMatches.push({
-              position: position, 
-              id: null, 
-              name: null, 
-              club: null
-            })
-          }
-          
-          position++;
-        }
-
-        kumiteMatches = this.sortMarkets(kumiteMatches, dataset.positions);
-
-        const datasetTemp: Dataset = {
-          title: 'Kumite',
-          type: 'single_elimination',
-          roster: kumiteMatches,
-        };
-        console.log(kumiteMatches);
-
-        
-        process(datasetTemp).then((data) => 
-        {
-
-          let teams = [];
-          let results = [];
-          results.push([]);
-          //console.log(data);
-          data.matches.forEach(match => {
-            
-            if(match.round_id == 0){
-
-              let opponent1 = null;
-                  let opponent2 = null;
-                  let result = [null,null];
-    
-                  if(match.opponent1 && match.opponent1.id){
-                    let firstAthlete = kumiteMatches.find(x => x.id == match.opponent1.id);
-                    opponent1 = firstAthlete.name + ' - ' + firstAthlete.club;
-                  }
-    
-                  if(match.opponent2 && match.opponent2.id){
-                    let firstAthlete = kumiteMatches.find(x => x.id == match.opponent2.id);
-                    opponent2 = firstAthlete.name + ' - ' + firstAthlete.club;
-                  }
-    
-                  teams.push([opponent1, opponent2]);
-                  results[0].push(result);
-            }
-            
-          });
-        
-
-          var customData = {
-            teams : teams,
-            results : []
-          }
-                
-    function render_fn(container, data, score, state) {
-      switch(state) {
-        case "empty-bye":
-          container.append("--")
-          return;
-        case "empty-tbd":
-          container.append("--")
-          return;
-     
-        case "entry-no-score":
-        case "entry-default-win":
-        case "entry-complete":
-          container.append(data.name)
-          return;
-      }
-    }
-
-    // Edit function is called when team label is clicked
-    function edit_fn(container, data, doneCb) {
-      doneCb(data);
-    }
-
-    let match_a_name = "match-a-"+countPdf;
-    let match_container_name = "match-cont-"+countPdf;
-
-    let match_a = this.createElement("div",{"id":match_a_name},"");
-    let match_container = this.createElement("div",{"id":match_container_name},[match_a]);
-    document.body.appendChild(match_container);
-
-
-
-      jQuery('#'+match_a_name).bracket({
-            teamWidth: 200,
-            scoreWidth: 45,
-            matchMargin: 70,
-            roundMargin: 70,
-            init: customData,
-            save: function(){},
-            decorator:{edit:edit_fn, render: render_fn},
-        })
-
-        let elementHTML = document.getElementById(match_container);
-
-        this.tabelloni.html(elementHTML, {
-            callback: function(doc) {
-                // Save the PDF
-                this.tabelloni.addPage();
-            },
-            x: 15,
-            y: 15,
-            width: 170, //target width in the PDF document
-            windowWidth: 650 //window width in CSS pixels
-        });      
-  
-        });
-  }
-
-  sortMarkets(array, sortArray){
-    return [...array].sort(
-      (a, b) => sortArray.indexOf(a.position) - sortArray.indexOf(b.position)
-    )
-  }
 
   createElement(element, attribute, inner) {
     if (typeof(element) === "undefined") {
@@ -693,6 +331,36 @@ export class AdminPanleComponent implements OnInit {
       }
     }
     return el;
+  }
+
+
+  // ========================================================================
+  // STAMPA CARTELLINI
+  // ========================================================================
+  downloadAllPassesZip(){
+    this.adminPanelService.downloadPassesZip().subscribe({
+      next: (blob: Blob) => {
+        // 1. Creiamo un oggetto URL per il file ricevuto
+        const url = window.URL.createObjectURL(blob);
+
+        // 2. Creiamo un link <a> invisibile
+        const link = document.createElement('a');
+        link.href = url;
+
+        // 3. Impostiamo il nome del file che verrà salvato sul PC
+        link.download = 'Tutti_Pass_Atleti.zip';
+
+        // 4. Simuliamo il click e poi rimuoviamo il link
+        link.click();
+        
+        // 5. Pulizia memoria (importante per non intasare il browser)
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Errore durante il download dello ZIP', err);
+        alert('Impossibile scaricare i pass. Verifica che ci siano iscritti.');
+      }
+    });
   }
 
 }

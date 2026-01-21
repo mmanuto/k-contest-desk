@@ -7,6 +7,11 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
+.ng-select .ng-select-container {
+    border: 1px solid #ccc !important; /* Forza il bordo per testare */
+    min-height: 36px;
+    border-radius: 4px;
+}
 .categoryList {
     margin: 0 0 2em 0;
     list-style-type: none;
@@ -120,11 +125,7 @@ h3 {
   display: none;
 }
 
-.jQBracket{
-  .tools{
-    display: none;
-  }
-}
+
 
 .finals-label{
   font-weight: bold;
@@ -251,14 +252,14 @@ $bg-gray: #f5f5f5;
 }
 
 .score-input {
-  width: 50px;
+  width: 60px;
   height: 40px;
   font-size: 1.2rem;
   text-align: center;
   border: 2px solid #ddd;
   border-radius: 6px;
   font-weight: bold;
-  margin: 0 10px;
+  margin: 0 5px;
 
   &:focus {
     outline: none;
@@ -434,3 +435,73 @@ $blue: #1976d2;
       width: 100% !important;
     }
 
+::ng-deep .jQBracket .tools{
+    display: none;
+  }
+
+  .monitor-label {
+    font-weight: 600;
+    color: #6c757d;
+    margin-right: 10px;
+    font-size: medium;
+}
+
+/* Rimuovi il background verde e usa questo stile */
+.card-athlete {
+  background-color: #fff;
+  /* 1. Aggiungiamo un bordo grigio chiaro su tutti i lati */
+  border: 1px solid #dee2e6; 
+  /* 2. Il bordo sinistro rimane trasparente per fare spazio al colore di stato, ma più spesso */
+  border-left: 5px solid transparent; 
+  /* 3. Aumentiamo lo spazio tra le card per separarle bene */
+  margin-bottom: 0.8rem; 
+  /* 4. Un'ombra leggera aiuta a farle "galleggiare" sullo sfondo */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border-radius: 0.35rem; /* Angoli leggermente arrotondati */
+  overflow: hidden;
+}
+
+/* Stile per chi ha un punteggio (Verde) */
+.scored-athlete {
+  border-left: 5px solid #28a745 !important; /* Striscia verde */
+  background-color: #fcfcfc; /* Grigio chiarissimo quasi bianco */
+}
+
+.card-athlete:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  border-color: #cbd3da;
+}
+
+/* Header Custom */
+.card-header-custom {
+  padding: 0.8rem 1.25rem;
+  /* 5. Sfondo GRIGIO CHIARO invece di bianco: questo è il trucco principale per distinguerle */
+  background-color: #eee !important; 
+  border-bottom: 1px solid rgba(0,0,0,.05);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.card-header-custom:hover {
+  background-color: #f8f9fa !important;
+}
+
+.tiebreak-athlete {
+  border-left-color: #ffc107 !important;
+  background-color: #fffbf0;
+}
+
+/* Link puliti */
+a.text-decoration-none:hover {
+    text-decoration: none;
+}
+
+/* Helper grafici */
+.box-shadow {
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important;
+}
+
+.monitor-toggle {
+  border: 1px solid lightgrey !important;
+}

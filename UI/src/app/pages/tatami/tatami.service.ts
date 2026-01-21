@@ -60,6 +60,10 @@ export class TatamiService
         return this.http.post(environment.BASEAPPURL + 'results/generateBrackets', request);
     }
 
+    generateRepechage(request){
+        return this.http.post(environment.BASEAPPURL + 'results/generateRepechage', request);
+    }
+
     updateCategoryStatus(request){
         return this.http.post(environment.BASEAPPURL + 'tatamiAssignments/updateCategoryStatus', request);
     }

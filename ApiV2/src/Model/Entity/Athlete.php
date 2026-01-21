@@ -19,6 +19,7 @@ use Cake\ORM\Entity;
  * @property string|null $n_tessera
  * @property int|null $peso
  * @property string|null $grado
+ * @property string|null $tesserino
  * @property \Cake\I18n\FrozenTime $created_date
  * @property \Cake\I18n\FrozenTime $modified_date
  *
@@ -48,6 +49,7 @@ class Athlete extends Entity
         'n_tessera' => true,
         'peso' => true,
         'grado' => true,
+        'tesserino' => true,
         'created_date' => true,
         'modified_date' => true,
         'club' => true,

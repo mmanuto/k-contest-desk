@@ -113,6 +113,11 @@ class AthletesTable extends Table
             ->allowEmptyString('grado');
 
         $validator
+            ->scalar('tesserino')
+            ->maxLength('tesserino', 50)
+            ->allowEmptyString('tesserino');
+
+        $validator
             ->dateTime('created_date')
             ->notEmptyDateTime('created_date');
 

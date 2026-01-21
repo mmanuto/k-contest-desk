@@ -14,6 +14,8 @@ use Cake\Validation\Validator;
  * @property \App\Model\Table\AthletesTable&\Cake\ORM\Association\BelongsTo $Athletes
  * @property \App\Model\Table\CategorycodesTable&\Cake\ORM\Association\BelongsTo $Categorycodes
  * @property \App\Model\Table\CompetitionsTable&\Cake\ORM\Association\BelongsTo $Competitions
+ * @property \App\Model\Table\ResultsJudgedPanelTable&\Cake\ORM\Association\HasMany $ResultsJudgedPanel
+ * @property \App\Model\Table\ResultsTimedTable&\Cake\ORM\Association\HasMany $ResultsTimed
  * @property \App\Model\Table\ScoresTable&\Cake\ORM\Association\HasMany $Scores
  * @property \App\Model\Table\ScoresOldTable&\Cake\ORM\Association\HasMany $ScoresOld
  *
@@ -120,8 +122,7 @@ class AthleteInscriptionsTable extends Table
         $validator
             ->scalar('old_category')
             ->maxLength('old_category', 15)
-            ->requirePresence('old_category', 'create')
-            ->notEmptyString('old_category');
+            ->allowEmptyString('old_category');
 
         $validator
             ->dateTime('created_date')

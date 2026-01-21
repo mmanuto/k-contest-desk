@@ -9,6 +9,7 @@ import { environment } from '../../../environments/environment';
 import { DisplayInfoService } from '../displayinfo/displayinfo.service'; 
 import { ToastrService } from 'ngx-toastr';
 import { formatDate } from '@angular/common';
+import { element } from 'protractor';
 
 declare global {
   interface JQuery {
@@ -83,12 +84,7 @@ export class TatamiComponent {
   countdown: number = 120;
   interval;
 
-  minimalData = {};
-  secondGirone = {};
-  thirdGirone = {};
-  firstMatch = [];
-  secondMatch = [];
-  thirdMatch = [];
+ isTieBreak: boolean = false;
   
   // Round Kata a bandierine
   public rounds: RoundGroup[] = [];
@@ -98,6 +94,13 @@ export class TatamiComponent {
   isRoundRobin: boolean = false;
   roundRobinMatches: any;
   roundRobinStandings: any[];
+  repechageMatchesA: any[];
+  repechageMatchesB: any[];
+  directBronzeA = null;
+  directBronzeB = null;
+  hasRepechages: boolean;
+
+  hasExternalMonitor: boolean = false;
 
   constructor(private tatamiService: TatamiService, 
     public fb: FormBuilder,
@@ -114,7 +117,8 @@ export class TatamiComponent {
   ngOnInit() {
 
     this.currentUser = this.localStorageService.get('currentUser');
-    //TODO - Da rivedere
+    const savedMonitor = localStorage.getItem('hasExternalMonitor');
+    this.hasExternalMonitor = savedMonitor === 'true';
     this.getTatamiStatus();
     this.tatamiService.getKataList().subscribe((response: any) => {
       if(response.result.success){
@@ -134,6 +138,12 @@ export class TatamiComponent {
     this.tatamiService.getTatamiStatus(request).subscribe((response: any) => {
       this.tatamiStatus = response.result.data;
     });
+  }
+
+  toggleMonitor() {
+    localStorage.setItem('hasExternalMonitor', String(this.hasExternalMonitor));
+    // Qui puoi anche chiamare un servizio se devi notificare il backend o Electron
+    console.log("Monitor Esterno:", this.hasExternalMonitor);
   }
 
   // ------------------------------------------------- SELEZIONE CATEGORIA ----------------------------------------
@@ -272,6 +282,8 @@ export class TatamiComponent {
         this.selectedCategory.current_phase = response.result.data.phase;
         this.selectedCategory.status = response.result.data.status;
 
+        this.isTieBreak = false;
+
         switch (this.selectedCategory.current_phase) {
           case categoryPhase.BRACKETS:
           case categoryPhase.BRACKETS_FINALIZING:
@@ -281,8 +293,6 @@ export class TatamiComponent {
 
             const isRoundRobin = flatMatches[0].matches.length === 3 && flatMatches[0].round === 10;
             
-            console.log(flatMatches);
-            console.log(isRoundRobin);
 
             if (isRoundRobin) {
               this.isRoundRobin = true;
@@ -291,6 +301,28 @@ export class TatamiComponent {
             }else{
               //popolo jquerybrackets
               const bracketData = this.transformForJQueryBracket(flatMatches);
+
+              // Quando carichi allMatchesFlat
+              this.repechageMatchesA = this.allMatchesFlat
+                .filter(m => m.round === 20 && m.method_of_win !== 'BYE') // Nascondi i bronzi diretti
+                .sort((a,b) => a.match_number - b.match_number);
+              this.repechageMatchesB = this.allMatchesFlat
+                .filter(m => m.round === 21 && m.method_of_win !== 'BYE')
+                .sort((a,b) => a.match_number - b.match_number);
+              
+              const bronzeMatchA = this.allMatchesFlat.find(m => m.round === 20 && m.method_of_win === 'BYE');
+              const bronzeMatchB = this.allMatchesFlat.find(m => m.round === 21 && m.method_of_win === 'BYE');
+
+              console.log(bronzeMatchA);
+              console.log(bronzeMatchB);
+
+              if (bronzeMatchA) {
+                  this.directBronzeA = bronzeMatchA;
+              }
+              if (bronzeMatchB) {
+                  this.directBronzeB = bronzeMatchB;
+              }
+              this.hasRepechages = (this.repechageMatchesA.length > 0 || this.repechageMatchesB.length > 0 || bronzeMatchA || bronzeMatchB);
 
               // FIX: Avvolgi l'inizializzazione in setTimeout
               setTimeout(() => {
@@ -337,21 +369,40 @@ export class TatamiComponent {
             if(this.typeForm != prova.PERCORSO){
               this.syncDataToDisplay('FINALIZED');
             } 
+            break;
 
           case categoryPhase.AWAITING_BRACKETS:
 
             this.athleteList = response.result.data.athleteList;
             this.syncDataToDisplay('FINALIZED');
-
+            break;
+            
+          case this.categoryPhase.AWAITING_TIEBREAK:
+                    this.isTieBreak = true;
           default:
-
-            this.athleteList = response.result.data.athleteList;
+            
+            let rawList = response.result.data.athleteList;
+            // *** FILTERING LOGIC FOR TIE-BREAK ***
+            if (this.isTieBreak) {
+              // If we are in tie-break, we only want to see the records created for this round (e.g., round 99)
+              // The backend sends everything, so we filter locally.
+                    
+              const tieBreakRound = 99; // Make sure this matches the constant in PHP
+                    
+              // Filter: keep only tie-break records
+              this.athleteList = rawList.filter(item => item.round === tieBreakRound);
+                    
+              // If for some reason the list is empty (maybe backend only sent round 1?), 
+              // fallback to rawList or handle error. But backend should send round 99.
+            } else {
+              // Normal case: show everything (usually round 1 records)
+              this.athleteList = rawList;
+            }
 
             this.athleteList.forEach(element => {
 
               element.show = false;
               
-              console.log(athleteId_info);
               if(athleteId_info && element.id == athleteId_info){
                 this.displayAthlete(element);
               }
@@ -683,30 +734,28 @@ calculateRoundRobinStandings() {
       });
   }
 
+  generateRepechage(){
+    this.tatamiService.generateRepechage({categoryId: this.selectedCategory.categorycode.id}).subscribe((response: any) => {
+        if(response.result.success){
+          this.getCategoryState();
+          //this.getAtlheteList();
+        }
+      });
+  }
+
   // ------------------------------------------------ KATA CONTROLS ----------------------------------------------------------
 
   getPreviousMatch(athlete, type){
+    console.log(athlete);
+    console.log(this.athleteList);
 
-    if(this.previousMatches[0] && 
-      this.previousMatches[0].athlete_inscription_id == athlete.athlete_inscription_id &&
-      this.previousMatches[0].categorycode_id == this.selectedCategory.categorycode.id){
-        this.matchModal.show();
-
-      }else{
-        let request = {
-          athlete_inscription_id: athlete.athlete_inscription_id,
-          categorycode_id: this.selectedCategory.categorycode.id
-        }
-    
-        this.tatamiService.getPreviousMatch(request).subscribe((response:any) => {
-          if(response.result.success){
-            this.previousMatches = response.result.data;
-            this.previousMatches.pop();
-            this.matchModal.show();
-          }
-        })
+    this.athleteList.forEach(element => {
+      if(element.athlete_inscription_id == athlete.athlete_inscription_id && element.round != athlete.round){
+          this.previousMatches[0] = element;
+          this.matchModal.show();
       }
-    
+    });   
+    console.log(this.previousMatches);
 
   }
 
@@ -714,9 +763,11 @@ calculateRoundRobinStandings() {
   displayAthlete(athlete){
 
     this.athleteList.forEach(element => {
-      element.show = false;
+      
       if(element.id == athlete.id){
-        element.show = true;
+        element.show = !element.show;
+      }else{
+        element.show = false;
       }
     });
 
@@ -725,6 +776,7 @@ calculateRoundRobinStandings() {
     switch (this.selectedCategory.current_phase) {
       case categoryPhase.JUDGING_PANEL:
       case categoryPhase.JUDGING_FINALIZING:
+      case categoryPhase.AWAITING_TIEBREAK:
         athlete.scoreForm = this.buildJudgeForm(athlete);
         
         let dataDisplay = {
@@ -735,7 +787,12 @@ calculateRoundRobinStandings() {
         }
 
         console.log('Sending to display:', dataDisplay);
-        this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+        console.log('toggleMonitor:', this.hasExternalMonitor);
+
+        if(this.hasExternalMonitor){
+          // Invia tramite BroadcastChannel (molto più veloce del LocalStorage)
+          this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+        }
         break;
       case categoryPhase.TIME_PANEL:
       case categoryPhase.TIMED_FINALIZING:
@@ -759,6 +816,17 @@ calculateRoundRobinStandings() {
 
       if(this.currentMatch.kata_id_aka && this.currentMatch.kata_id_ao && this.currentMatch.score_aka + this.currentMatch.score_ao > 0) {
         formOk = true;
+
+        if(this.currentMatch.score_aka > this.currentMatch.score_ao){
+          this.currentMatch.winner_inscription_id = this.currentMatch.athlete_aka_inscription_id;
+          this.currentMatch.loser_inscription_id = this.currentMatch.athlete_ao_inscription_id;
+        }else{
+          this.currentMatch.winner_inscription_id = this.currentMatch.athlete_ao_inscription_id;
+          this.currentMatch.loser_inscription_id = this.currentMatch.athlete_aka_inscription_id;
+        }
+        
+        this.currentMatch.method_of_win = MethodOfWin.SCORE;
+
         dataDisplay = {
           type: 'KATA_BRACKETS',
           currentMatch: this.currentMatch,
@@ -766,8 +834,12 @@ calculateRoundRobinStandings() {
         } 
 
         console.log('Sending to display:', dataDisplay);
-        this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
-      }      
+        if(this.hasExternalMonitor){
+          // Invia tramite BroadcastChannel (molto più veloce del LocalStorage)
+          this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+        }
+      }    
+      
 
     }else {
 
@@ -945,7 +1017,10 @@ calculateRoundRobinStandings() {
     this.kumiteModal.show();
     
     console.log('Sending to display:', dataDisplay);
-    this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+    if(this.hasExternalMonitor){
+      // Invia tramite BroadcastChannel (molto più veloce del LocalStorage)
+      this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+    }
 
   }
 
@@ -1022,7 +1097,10 @@ editScore(side: 'aka' | 'ao', scoreType: number, action: 'ADD' | 'REMOVE') {
         }
     
     console.log('Sending to display:', dataDisplay);
-    this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+    if(this.hasExternalMonitor){
+      // Invia tramite BroadcastChannel (molto più veloce del LocalStorage)
+      this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+    }
 
   // 5. Controllo Vittoria (Gap 8 punti)
   this.checkVictoryByGap();
@@ -1064,7 +1142,10 @@ checkVictoryByGap() {
         }
     
     console.log('Sending to display:', dataDisplay);
-    this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+    if(this.hasExternalMonitor){
+      // Invia tramite BroadcastChannel (molto più veloce del LocalStorage)
+      this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+    }
     this.pauseTimer();
   }  
 
@@ -1172,9 +1253,11 @@ syncDataToDisplay(type: 'KUMITE_BRACKETS' | 'KATA_BRACKETS' | 'FINALIZED') {
   }
   
     console.log('Sending to display:', dataDisplay);
+    if(this.hasExternalMonitor){
+      // Invia tramite BroadcastChannel (molto più veloce del LocalStorage)
+      this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
+    }
   
-  // Invia tramite BroadcastChannel (molto più veloce del LocalStorage)
-  this.displayService.updateDisplay(dataDisplay, environment.DISPLYINFO_URL);
 }
 
   pauseTimer() {

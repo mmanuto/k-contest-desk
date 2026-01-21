@@ -23,8 +23,8 @@ use Cake\ORM\Entity;
  * @property float $costo_scontato
  * @property int $codiceTipoCategorie
  * @property int $order_number
+ * @property int|null $atleti_max
  *
- * @property \App\Model\Entity\Agecategory $agecategory
  * @property \App\Model\Entity\AthleteInscription[] $athlete_inscriptions
  * @property \App\Model\Entity\Score[] $scores
  * @property \App\Model\Entity\User[] $users
@@ -55,7 +55,7 @@ class Categorycode extends Entity
         'costo_scontato' => true,
         'codiceTipoCategorie' => true,
         'order_number' => true,
-        'agecategory' => true,
+        'atleti_max' => true,
         'athlete_inscriptions' => true,
         'scores' => true,
         'users' => true,

@@ -31,7 +31,7 @@ export class AdminPanelService {
     }
 
     syncCompetitionData(){
-        return this.http.post(environment.ISCRIZIONI_URL + 'competitions/syncCompetitionData', {competition_id:'DKKC-2025'});
+        return this.http.post(environment.ISCRIZIONI_URL + 'competitions/syncCompetitionData', {competition_id:'GTTMLT-2026'});
     }
 
     importCompetitionData(request){
@@ -50,5 +50,18 @@ export class AdminPanelService {
 
     getKumiteList(){
         return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/getKumiteList', {});
+    }
+
+    printBracketPdf(request){
+        return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/printBracketPdf', request, {
+            responseType: 'blob' as 'json', // "as json" è un trucco per TypeScript, ma a runtime passa 'blob'
+            observe: 'response' // Utile per leggere eventuali header se servono
+        });
+    }
+
+    downloadPassesZip(): Observable<Blob> {
+        return this.http.post(`${environment.BASEAPPURL}athleteInscriptions/downloadAllPassesZip`, {}, {
+        responseType: 'blob' // Dice ad Angular che ci aspettiamo un file binario
+        });
     }
 } 

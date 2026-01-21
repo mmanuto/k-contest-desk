@@ -1,0 +1,61 @@
+<div class="monitor-container">
+  <header class="monitor-header">
+    <h1>Monitor Gara</h1>
+    <span class="last-update">Aggiornato: {{ lastUpdate | date:'HH:mm:ss' }}</span>
+  </header>
+
+  <div class="tatami-grid">
+    <div *ngFor="let t of tatamis" 
+         class="tatami-card" 
+         [ngClass]="{'is-free': t.status === 'LIBERO', 'is-closing': t.isClosing}">
+
+      <div class="card-header">
+        <h2>{{ t.name }}</h2>
+        <span class="badge" [ngClass]="t.status === 'LIBERO' ? 'badge-free' : 'badge-busy'">
+          {{ t.status === 'LIBERO' ? 'LIBERO' : 'IN CORSO' }}
+        </span>
+      </div>
+
+      <div class="card-body" *ngIf="t.status === 'OCCUPATO'; else freeTemplate">
+        
+        <h3 class="category-title">{{ t.categoryName }}</h3>
+        <div class="specialty-tag">{{ t.specialty }}</div>
+
+        <div class="progress-container">
+          <div class="progress-bar" 
+               [style.width.%]="t.percent"
+               [style.background-color]="getProgressColor(t.percent, t.isClosing)">
+          </div>
+        </div>
+        <div class="progress-text">{{ t.percent }}% Completato</div>
+
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-label">Fatti</span>
+            <span class="stat-value">{{ t.done }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Mancano</span>
+            <span class="stat-value highlight">{{ t.remaining }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Stima</span>
+            <span class="stat-value time">{{ getEstimatedTime(t) }}</span>
+          </div>
+        </div>
+
+        <div class="closing-alert" *ngIf="t.isClosing">
+          ⚠️ Si sta liberando
+        </div>
+      </div>
+
+      <ng-template #freeTemplate>
+        <div class="free-body">
+          <div class="icon-check">✔</div>
+          <p>Nessuna categoria assegnata</p>
+        </div>
+      </ng-template>
+
+    </div>
+  </div>
+</div>

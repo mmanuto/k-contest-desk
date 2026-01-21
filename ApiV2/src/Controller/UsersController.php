@@ -110,65 +110,62 @@ class UsersController extends ApiController
 
         $entity = $this->Users->newEntity($this->request->getData());
     
-            $user = $this->Users->find()
-                ->where([
-                    'username' => $entity->username,
-                    'password' => md5($entity->password)
-                ])
-                ->first();
+        $user = $this->Users->find()
+            ->where([
+                'username' => $entity->username,
+                'password' => md5($entity->password)
+            ])
+            ->first();
     
-            if (empty($user)) {
-                $this->apiResponse['success'] = false;
-                $this->apiResponse['error'] = 'Username o password errati';
+        if (empty($user)) {
+            $this->apiResponse['success'] = false;
+            $this->apiResponse['error'] = 'Username o password errati';
     
-                return;
-            }
+            return;
+        }
     
-                //$this->apiResponse['token'] = JwtToken::generateToken($user);
-                $this->apiResponse['data'] = $user;
-                $this->apiResponse['success'] = true;
-                $this->apiResponse['message'] = 'Logged in successfully.';
+        $this->apiResponse['data'] = $user;
+        $this->apiResponse['success'] = true;
+        $this->apiResponse['message'] = 'Logged in successfully.';
     
-                unset($user);
+        unset($user);
             
+    }
+
+
+    public function updateUserData(){
+        $data = $this->request->getData();
+           
+        if(isset($data['password'])){
+            $data['password'] = md5($data['password']);
         }
 
+        $user = $this->Users->get($data['id'], [
+            'contain' => []
+        ]);
+        
+        $user = $this->Users->patchEntity($user, $data);
+        if ($this->Users->save($user)) {
+            $this->apiResponse['success'] = true;
+        }else{
+            $this->apiResponse['success'] = false;
+        }                
+    }
 
-        public function updateUserData(){
-            $data = $this->request->getData();
-            /* print_r("dati: ");
-            print_r($data); */
-            if(isset($data['password'])){
-                $data['password'] = md5($data['password']);
-            }
-
-            $user = $this->Users->get($data['id'], [
-                'contain' => []
-            ]);
-                $user = $this->Users->patchEntity($user, $data);
-                if ($this->Users->save($user)) {
-                    $this->apiResponse['success'] = true;
-                }else{
-                    $this->apiResponse['success'] = false;
-                }
-                
-        }
-
-        public function getTatami(){
-            $tatamiList = $this->Users->find()
+    public function getTatami(){
+        $tatamiList = $this->Users->find()
             ->where([
                 'username !=' => 'Admin'
             ])
             ->toArray();
 
-            $this->apiResponse['data'] = $tatamiList;
-	        $this->apiResponse['success'] = true;
-        }
+        $this->apiResponse['data'] = $tatamiList;
+	    $this->apiResponse['success'] = true;
+    }
         
 
     public function addTatami()
     {
-
         for ($i=1; $i<9 ; $i++) { 
             $user = $this->Users->newEmptyEntity();
             $user->name = 'Tatami '.$i;
@@ -178,28 +175,19 @@ class UsersController extends ApiController
 
             $this->set(compact('user'));
             $this->set('_serialize', ['user']);
-        }
-        
-
-        
+        }           
     }
 
     public function addAdmin()
     {
+        $user = $this->Users->newEmptyEntity();
+        $user->name = 'Admin';
+        $user->username = 'Admin';
+        $user->password = md5('CsenVeneto!');
+        $this->Users->save($user);
 
-
-            $user = $this->Users->newEmptyEntity();
-            $user->name = 'Admin';
-            $user->username = 'Admin';
-            $user->password = md5('CsenVeneto!');
-            $this->Users->save($user);
-
-            $this->set(compact('user'));
-            $this->set('_serialize', ['user']);
-
-        
-
-        
+        $this->set(compact('user'));
+        $this->set('_serialize', ['user']);             
     }
 
 }

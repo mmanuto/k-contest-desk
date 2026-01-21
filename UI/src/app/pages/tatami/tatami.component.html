@@ -31,43 +31,95 @@
               <h4 class="card-title mb-0">Classifica finale - {{labelCategory}}</h4>
             </div>
             
-            <div id="accordion" role="tablist" aria-multiselectable="true">
-              <!-- BARRA DI RICERCA PER NOME -->
-                <div class="row mb-1" *ngIf="athleteList && selectedCategory?.current_phase == categoryPhase.JUDGING_PANEL || selectedCategory?.current_phase == categoryPhase.TIME_PANEL">
-                    <div class="col">
-                        <div class="input-group mb-3 box-shadow"> 
-                            <div class="input-group-prepend">
-                                <span class="input-group-text border-top-0 border-left-0 border-bottom-0"><i class="fa fa-search"></i></span>
-                            </div>                   
-                            <input type="text" [(ngModel)]="searchText" placeholder="Cerca per nome o cognome" class="form-control border-0">
-                        </div>
-                    </div>
+            <!-- BARRA DI RICERCA PER NOME -->
+              <div class="row mt-3 mb-3 align-items-center">
+                <div class="col-md-9">
+                  <div class="input-group monitor-toggle mb-3 mt-2 ml-3 box-shadow" 
+                    *ngIf="athleteList && (selectedCategory?.current_phase == categoryPhase.JUDGING_PANEL || 
+                      selectedCategory?.current_phase == categoryPhase.TIME_PANEL || 
+                      selectedCategory?.current_phase == categoryPhase.JUDGING_FINALIZING ||
+                      selectedCategory?.current_phase == categoryPhase.TIMED_FINALIZING)"> 
+
+                    <div class="input-group-prepend">
+                      <span class="input-group-text border-top-0 border-left-0 border-bottom-0 bg-white"><i class="fa fa-search text-muted"></i></span>
+                    </div>                   
+                    <input type="text" [(ngModel)]="searchText" placeholder="Cerca per nome o cognome" class="form-control border-0">
+                  </div>
                 </div>
 
-                <div *ngIf="athleteList && selectedCategory?.current_phase == categoryPhase.JUDGING_PANEL || 
+                <div class="col-md-3 text-right">
+
+                  <div class="d-inline-flex align-items-center bg-white p-2 monitor-toggle rounded box-shadow mr-3">
+                    <span class="monitor-label mr-3 text-muted font-weight-bold"><i class="fa fa-desktop mr-1"></i> Monitor Esterno</span>
+                    <div class="custom-control custom-switch">
+                      <input type="checkbox" class="custom-control-input" id="monitorSwitch" [(ngModel)]="hasExternalMonitor" (change)="toggleMonitor()">
+                      <label class="custom-control-label" for="monitorSwitch"></label>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            <div id="accordion" role="tablist" aria-multiselectable="true">
+              
+
+                <div *ngIf="athleteList && (selectedCategory?.current_phase == categoryPhase.JUDGING_PANEL || 
                 selectedCategory?.current_phase == categoryPhase.TIME_PANEL  || 
                 selectedCategory?.current_phase == categoryPhase.JUDGING_FINALIZING ||
-                selectedCategory?.current_phase == categoryPhase.TIMED_FINALIZING">
-                  <div class="card border-0" *ngFor="let athlete of athleteList | CategorySearchPipe : searchText; index as i ">
-                    <div class="card-header" [ngStyle]="{'background-color': athlete.total_score || athlete.total_time ? 'lightgreen' : '' }" role="tab" id="headingOne">
-                      <h6 class="ml-4 mb-0">
-                        <a class="text-primary row" data-toggle="collapse" href="#" aria-expanded="false" aria-controls="collapseOne" (click)="displayAthlete(athlete)">
+                selectedCategory?.current_phase == categoryPhase.TIMED_FINALIZING || 
+                  selectedCategory?.current_phase == categoryPhase.AWAITING_TIEBREAK)">
+
+                  <div *ngIf="isTieBreak" class="alert alert-warning text-center font-weight-bold shadow-sm mb-3" role="alert">
+                    <i class="fa fa-exclamation-triangle mr-2"></i>
+                    SPAREGGIO: Valutare nuovamente gli atleti indicati per determinare il passaggio del turno.
+                  </div>
+                  <div class="card border-0 mb-2 shadow-sm card-athlete" *ngFor="let athlete of athleteList | CategorySearchPipe : searchText; index as i"
+                    [ngClass]="{'scored-athlete': (athlete.total_score || athlete.total_time) && !isTieBreak, 'tiebreak-athlete': isTieBreak && athlete.show}">
+                    <div class="card-header card-header-custom" role="tab" id="headingOne">
+                      <h6 class="mb-0 w-100">
+                        <a class="text-dark d-flex align-items-center justify-content-between text-decoration-none" (click)="displayAthlete(athlete)">
                           
-                          
-                          <div class="mr-2" style="font-weight: bold; font-size: large;">{{athlete.pool_ranking ? athlete.pool_ranking + ' - ' : ''}}</div>                     
-                          
-                          {{athlete.athlete_inscription.athlete.cognome}} {{athlete.athlete_inscription.athlete.nome}} - {{athlete.athlete_inscription.athlete.data_nascita}} -  {{athlete.athlete_inscription.athlete.club.club_name}}
-                          
-                  
-                          
+                          <div class="d-flex align-items-center">
+                           <span *ngIf="athlete.pool_ranking" class="badge badge-secondary mr-3" style="font-size: 0.9em; min-width: 30px;">
+                               #{{athlete.pool_ranking}}
+                           </span>
+
+                           <div class="d-flex flex-column">
+                               <span style="font-weight: 600; font-size: 1.05rem;">
+                                   {{athlete.athlete_inscription.athlete.cognome}} {{athlete.athlete_inscription.athlete.nome}}
+                               </span>
+                               <small class="text-muted">
+                                   {{athlete.athlete_inscription.athlete.club.club_name}}
+                                   <span *ngIf="athlete.athlete_inscription.athlete.data_nascita"> - {{athlete.athlete_inscription.athlete.data_nascita}}</span>
+                               </small>
+                           </div>
+                          </div>  
+                          <div class="d-flex align-items-center">
+                            <div *ngIf="athlete.total_score || athlete.total_time" class="d-flex align-items-center text-success">
+                                <span class="mr-2" style="font-size: 1.3rem; font-weight: 700;">
+                                    {{ athlete.total_score || athlete.total_time }}
+                                </span>
+                                <i class="fa fa-check-circle fa-lg"></i>
+                            </div>
+
+                            <div *ngIf="isTieBreak && !athlete.total_score && !athlete.total_time" class="text-warning">
+                                <span class="badge badge-warning text-white p-2 shadow-sm">Spareggio</span>
+                            </div>
+
+                             <div *ngIf="!athlete.total_score && !athlete.total_time && !isTieBreak">
+                                <span class="text-muted small"><i class="fa fa-chevron-down"></i></span>
+                            </div>
+                          </div>                      
                         </a>
                       </h6>
                     </div>
 
-                    <div [id]="'collapseOne'+i" class="collapse" [class.show]="athlete.show" data-parent="#accordion" role="tabpanel" aria-labelledby="headingOne">
+                    <div class="collapse" [class.show]="athlete.show" data-parent="#accordion" role="tabpanel" aria-labelledby="headingOne">
                       <div class="card-body">
                         <!-- FROM A PUNTEGGIO -->
-                          <form *ngIf="athlete.scoreForm && (selectedCategory?.current_phase == categoryPhase.JUDGING_PANEL || selectedCategory?.current_phase == categoryPhase.JUDGING_FINALIZING)" [formGroup]="athlete.scoreForm" method="post" enctype="multipart/form-data" class="form-horizontal">
+                          <form *ngIf="athlete.scoreForm && (selectedCategory?.current_phase == categoryPhase.JUDGING_PANEL || 
+                            selectedCategory?.current_phase == categoryPhase.JUDGING_FINALIZING || 
+                            selectedCategory?.current_phase == categoryPhase.AWAITING_TIEBREAK)" 
+                            [formGroup]="athlete.scoreForm" method="post" enctype="multipart/form-data" class="form-horizontal">
                         
                               
                               <div class="row">
@@ -75,7 +127,7 @@
                                   
                                 <label class="col-form-label" for="kata">Kata</label>
         
-                                <ng-select id="kata" formControlName="kata_id" required>
+                                <ng-select id="kata" formControlName="kata_id" appendTo="body" required>
                                   <ng-option *ngFor="let kata of kataList" [value]="kata.id">{{kata.kata_name}}</ng-option>
                               </ng-select>
                               </div>
@@ -143,14 +195,6 @@
                               </div>
 
                               </div>
-                              <div class="row">
-                              <div class="col-md-3">
-                                <div *ngIf="athlete.round > 1" class="row">
-                                  <button type="button" class="btn btn-primary ml-3" (click)="getPreviousMatch(athlete, 'SHOW')"><i class="fa fa-dot-circle-o"></i> Vedi prove precedenti</button>
-                                </div>
-                              </div>
-                              
-                            </div>
                             <div class="row">
                             <div class="row col-md-6"></div>
                             <div class="row col-md-6">
@@ -398,13 +442,135 @@
                   <div id="minimal"></div>
                 </div>
               </div>
-                <div class="row mt-4">
-                    <div class="col-md-9"></div>
-                    <button type="button" *ngIf="selectedCategory?.current_phase == categoryPhase.AWAITING_BRACKETS" class="btn btn-warning ml-3" (click)="generateBrackets()"><i class="fa fa-dot-circle-o"></i> Genera tabelloni</button>
-                    <button type="button" *ngIf="selectedCategory?.current_phase == categoryPhase.JUDGING_FINALIZING || selectedCategory?.current_phase == categoryPhase.TIMED_FINALIZING" class="btn btn-warning ml-3" (click)="finalizeScoreAndTimedCategory(selectedCategory.categorycode_id)"><i class="fa fa-dot-circle-o"></i> Elabora punteggi</button>
-                    <button *ngIf="selectedCategory?.current_phase === categoryPhase.BRACKETS_FINALIZING" type="button" class="btn btn-warning ml-3" (click)="getKumiteFinalRanking(selectedCategory.categorycode_id)"><i class="fa fa-dot-circle-o"></i> Genera classifica</button>
-                    <button *ngIf="selectedCategory?.current_phase === categoryPhase.FINALIZED" type="button" class="btn btn-danger ml-3" (click)="closeCategory()"><i class="fa fa-dot-circle-o"></i> Chiudi categoria</button>
-                  </div>
+
+              <div class="row mt-5" *ngIf="hasRepechages && selectedCategory?.current_phase != categoryPhase.FINALIZED">
+                <div class="col-12 text-center mb-3">
+                    <h3>Ripescaggi & Finali 3° Posto</h3>
+                </div>
+
+                <div class="col-md-6">
+                    <h5 class="text-center text-danger">Pool Ripescaggio A</h5>
+
+                    <div *ngIf="repechageMatchesA.length > 0">
+                        <div *ngFor="let match of repechageMatchesA" class="card mb-3 shadow-sm"
+                            [ngClass]="match.winner_inscription_id ? 'border-success' : 'border-danger'">
+                            
+                            <div class="card-body p-2">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge badge-secondary">{{ match.match_number }}</span>
+                                    <span *ngIf="match.is_bronze_final" class="badge badge-warning">Finale Bronzo</span>
+                                    <span *ngIf="match.winner_inscription_id" class="badge badge-success">Terminato</span>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center py-2">
+                                    
+                                    <strong>
+                                        {{ match.athlete_aka_inscription?.athlete?.cognome || 'In attesa' }}
+                                        <i *ngIf="match.winner_inscription_id && match.winner_inscription_id == match.athlete_aka_inscription?.id" class="fa fa-trophy"></i>
+                                    </strong>
+
+                                    <span class="px-2 small text-muted">VS</span>
+
+                                    <strong [ngClass]="{
+                                        'text-success': match.winner_inscription_id && match.winner_inscription_id == match.athlete_ao_inscription?.id,
+                                        'text-muted line-through': match.winner_inscription_id && match.winner_inscription_id != match.athlete_ao_inscription?.id
+                                    }">
+                                        {{ match.athlete_ao_inscription?.athlete?.cognome || 'In attesa' }}
+                                        <i *ngIf="match.winner_inscription_id && match.winner_inscription_id == match.athlete_ao_inscription?.id" class="fa fa-trophy"></i>
+                                    </strong>
+                                </div>
+
+                                <div class="mt-2">
+                                    <ng-container *ngIf="!match.winner_inscription_id; else matchFinishedA">
+                                        <button class="btn btn-sm btn-outline-dark btn-block" (click)="openMatch(match)">
+                                            Gestisci Incontro
+                                        </button>
+                                    </ng-container>
+                                    <ng-template #matchFinishedA>
+                                        <button class="btn btn-sm btn-outline-secondary btn-block" (click)="openMatch(match)">
+                                            <i class="fa fa-edit"></i> Modifica Risultato
+                                        </button>
+                                    </ng-template>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div *ngIf="directBronzeA && directBronzeA.athlete_aka_inscription" class="alert alert-warning text-center">
+                        <i class="fa fa-trophy"></i>
+                        <strong> {{ directBronzeA.athlete_aka_inscription.athlete.cognome }}</strong>
+                        ha vinto il Bronzo (Pool A)
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h5 class="text-center text-primary">Pool Ripescaggio B</h5>
+
+                    <div *ngIf="repechageMatchesB.length > 0">
+                        <div *ngFor="let match of repechageMatchesB" class="card mb-3 shadow-sm"
+                            [ngClass]="match.winner_inscription_id ? 'border-success' : 'border-primary'">
+                            
+                            <div class="card-body p-2">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge badge-secondary">{{ match.match_number }}</span>
+                                    <span *ngIf="match.is_bronze_final" class="badge badge-warning">Finale Bronzo</span>
+                                    <span *ngIf="match.winner_inscription_id" class="badge badge-success">Terminato</span>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center py-2">
+                                    
+                                    <strong [ngClass]="{
+                                        'text-success': match.winner_inscription_id && match.winner_inscription_id == match.athlete_aka_inscription?.id,
+                                        'text-muted line-through': match.winner_inscription_id && match.winner_inscription_id != match.athlete_aka_inscription?.id
+                                    }">
+                                        {{ match.athlete_aka_inscription?.athlete?.cognome || 'In attesa' }}
+                                        <i *ngIf="match.winner_inscription_id && match.winner_inscription_id == match.athlete_aka_inscription?.id" class="fa fa-trophy"></i>
+                                    </strong>
+
+                                    <span class="px-2 small text-muted">VS</span>
+
+                                    <strong [ngClass]="{
+                                        'text-success': match.winner_inscription_id && match.winner_inscription_id == match.athlete_ao_inscription?.id,
+                                        'text-muted line-through': match.winner_inscription_id && match.winner_inscription_id != match.athlete_ao_inscription?.id
+                                    }">
+                                        {{ match.athlete_ao_inscription?.athlete?.cognome || 'In attesa' }}
+                                        <i *ngIf="match.winner_inscription_id && match.winner_inscription_id == match.athlete_ao_inscription?.id" class="fa fa-trophy"></i>
+                                    </strong>
+                                </div>
+
+                                <div class="mt-2">
+                                    <ng-container *ngIf="!match.winner_inscription_id; else matchFinishedB">
+                                        <button class="btn btn-sm btn-outline-dark btn-block" (click)="openMatch(match)">
+                                            Gestisci Incontro
+                                        </button>
+                                    </ng-container>
+                                    <ng-template #matchFinishedB>
+                                        <button class="btn btn-sm btn-outline-secondary btn-block" (click)="openMatch(match)">
+                                            <i class="fa fa-edit"></i> Modifica Risultato
+                                        </button>
+                                    </ng-template>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div *ngIf="directBronzeB && directBronzeB.athlete_aka_inscription" class="alert alert-warning text-center">
+                        <i class="fa fa-trophy"></i>
+                        <strong> {{ directBronzeB.athlete_aka_inscription.athlete.cognome }}</strong>
+                        ha vinto il Bronzo (Pool B)
+                    </div>
+                </div>
+            </div>
+              <div class="row mt-4 mr-4 float-right">
+                <div class="col-md-6 mt-4"></div>
+                <button type="button" *ngIf="selectedCategory?.current_phase == categoryPhase.AWAITING_BRACKETS" class="btn btn-warning ml-3" (click)="generateBrackets()"><i class="fa fa-dot-circle-o"></i> Genera tabelloni</button>
+                <button type="button" *ngIf="selectedCategory?.current_phase == categoryPhase.JUDGING_FINALIZING || selectedCategory?.current_phase == categoryPhase.TIMED_FINALIZING" class="btn btn-warning ml-3" (click)="finalizeScoreAndTimedCategory(selectedCategory.categorycode_id)"><i class="fa fa-dot-circle-o"></i> Elabora punteggi</button>
+                <button *ngIf="typeForm == prova.KUMITE && !isRoundRobin && !hasRepechages && (selectedCategory?.current_phase == categoryPhase.BRACKETS_FINALIZING || selectedCategory?.current_phase == categoryPhase.BRACKETS)" type="button" class="btn btn-warning ml-3" (click)="generateRepechage()"><i class="fa fa-dot-circle-o"></i> Genera Ripescaggi</button>
+                <button *ngIf="selectedCategory?.current_phase === categoryPhase.BRACKETS_FINALIZING" type="button" class="btn btn-warning ml-3" (click)="getKumiteFinalRanking(selectedCategory.categorycode_id)"><i class="fa fa-dot-circle-o"></i> Genera classifica</button>
+                <button *ngIf="selectedCategory?.current_phase === categoryPhase.FINALIZED" type="button" class="btn btn-danger ml-3" (click)="closeCategory()"><i class="fa fa-dot-circle-o"></i> Chiudi categoria</button>
+              </div>
                
             </div>
            

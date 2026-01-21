@@ -28,17 +28,18 @@ use Cake\ORM\Entity;
  * @property int|null $wazaari_ao
  * @property int|null $ippon_aka
  * @property int|null $ippon_ao
- * @property int|null $chui_1_aka
- * @property int|null $chui_1_ao
- * @property int|null $chui_2_aka
- * @property int|null $chui_2_ao
- * @property int|null $chui_3_aka
- * @property int|null $chui_3_ao
- * @property int|null $hans_chui_aka
- * @property int|null $hans_chui_ao
- * @property int|null $hans_aka
- * @property int|null $hans_ao
+ * @property bool|null $chui_1_aka
+ * @property bool|null $chui_1_ao
+ * @property bool|null $chui_2_aka
+ * @property bool|null $chui_2_ao
+ * @property bool|null $chui_3_aka
+ * @property bool|null $chui_3_ao
+ * @property bool|null $hans_chui_aka
+ * @property bool|null $hans_chui_ao
+ * @property bool|null $hans_aka
+ * @property bool|null $hans_ao
  * @property string|null $method_of_win
+ * @property bool $is_bronze_final
  *
  * @property \App\Model\Entity\Categorycode $categorycode
  */
@@ -84,6 +85,7 @@ class ResultsMatch extends Entity
         'hans_aka' => true,
         'hans_ao' => true,
         'method_of_win' => true,
+        'is_bronze_final' => true,
         'categorycode' => true,
     ];
 }

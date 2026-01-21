@@ -90,3 +90,115 @@ $card-height: 220px;
     }
   }
 
+/* Container: Bianco puro, ombra leggerissima solo per stacco */
+.table-container {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03); /* Ombra quasi invisibile */
+  border: 1px solid #eaeaea; /* Bordo grigio perla molto chiaro */
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.table {
+  width: 100%;
+  margin-bottom: 0;
+  color: #212529;
+  border-collapse: collapse;
+}
+
+/* Header: Bianco (non più grigio), testo più scuro e compatto */
+.table thead th {
+  background-color: #ffffff; /* Sfondo bianco */
+  color: #444; /* Testo grigio scuro */
+  text-transform: uppercase;
+  font-size: 1rem; /* Testo piccolo */
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #f0f0f0; /* Linea di separazione un po' più marcata */
+  padding: 12px 15px; /* Padding verticale ridotto */
+  border-top: none;
+}
+
+/* Corpo della tabella */
+.table tbody tr {
+  background-color: #ffffff;
+  border-bottom: 1px solid #f5f5f5; /* Linea separatrice sottilissima */
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Effetto Hover: Un grigio chiarissimo, appena percettibile */
+.table tbody tr:hover {
+  background-color: #fbfbfb;
+}
+
+/* Celle: Qui riduciamo l'altezza delle righe */
+.table td {
+  padding: 8px 15px; /* <--- QUESTO riduce l'altezza (era 15px) */
+  vertical-align: middle;
+  font-size: 1rem;
+  color: #555;
+  border-top: none; /* Lasciamo gestire il bordo al tr */
+}
+
+/* Colonna Codice: Colore distintivo ma elegante */
+.table td:first-child {
+  font-weight: 600;
+  color: #007bff; /* Blu standard o il tuo colore primario */
+}
+
+
+/* Badge stile "Pillola" */
+.badge {
+  padding: 0.5em 0.8em;
+  font-size: 75%;
+  font-weight: 600;
+  border-radius: 50rem; /* Li rende perfettamente rotondi */
+  letter-spacing: 0.5px;
+}
+
+/* Se vuoi varianti di colore più soft (opzionale) */
+.badge-secondary {
+  background-color: #e2e6ea;
+  color: #6c757d;
+}
+/* Esempio per stato attivo se ne hai */
+.badge-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+/* Stile per i bottoni nelle azioni */
+.btn-outline {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #6c757d; /* Grigio chiaro di default */
+  border-radius: 50%; /* Bottoni rotondi */
+  width: 35px;
+  height: 35px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+/* Azioni: Rimpiccioliamo i bottoni per stare nelle righe basse */
+.btn-outline, .btn-primary, .btn-warning {
+  padding: 2px 6px; /* Bottoni più piccoli */
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin-right: 4px;
+}
+
+/* Hover sui bottoni azioni */
+.btn-outline:hover {
+  background-color: #e9ecef;
+  color: #5e72e4; /* Colore primario al passaggio del mouse */
+  transform: translateY(-2px);
+}
+
+/* Distanza tra icone */
+.mr-1 {
+  margin-right: 5px;
+}
+

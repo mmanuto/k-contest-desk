@@ -7,6 +7,7 @@ return [
     "PHASE_TIME_PANEL" => 'TIME_PANEL', //tabella punteggi
     "PHASE_AWAITING_TIEBREAK" => 'AWAITING_TIEBREAK', //attesa spareggio
     "PHASE_AWAITING_BRACKETS" => 'AWAITING_BRACKETS', //attesa tabellone eliminazione diretta
+    'AWAITING_REPECHAGE'=> 'AWAITING_REPECHAGE',
     "PHASE_BRACKETS" => 'BRACKETS', //tabellone eliminazione diretta
     "JUDGING_FINALIZING" => 'JUDGING_FINALIZING', //attesa classifica per palloncino e kata bambini
     "TIMED_FINALIZING" => 'TIMED_FINALIZING', //attesa classifica per percorso
@@ -21,7 +22,7 @@ return [
     "STATUS_AWARD" => 'CAT_AWARD',
     // Round
     "ROUND_KATA_QUALIFICA" => 1,
-    "ROUND_KATA_SPAREGGIO" => 2,    
+    "ROUND_KATA_SPAREGGIO" => 99,    
     "ROUND_MATCH_OTTAVI" => 1,
     "ROUND_MATCH_QUARTI" => 2,
     "ROUND_MATCH_SEMI" => 3,
