@@ -19,7 +19,7 @@ export class TatamiMonitorComponent {
 
   ngOnInit(): void {
     // Esegue la chiamata subito (0) e poi ogni 30 secondi (30000)
-    this.subscription = timer(0, 30000).pipe(
+    this.subscription = timer(0, 25000).pipe(
       switchMap(() => this.tatamiMonitorService.getTatamiStatus())
     ).subscribe({
       next: (data) => {
@@ -36,24 +36,79 @@ export class TatamiMonitorComponent {
     }
   }
 
-  // Helper per calcolare il colore della progress bar
-  getProgressColor(percent: number, isClosing: boolean): string {
-    if (isClosing) return 'var(--warning-color)'; // Arancione se sta finendo
-    if (percent < 50) return 'var(--primary-color)';
-    return 'var(--success-color)';
+  // Traduce lo stato tecnico del DB in etichetta leggibile
+  getPhaseLabel(phase: string): string {
+    if (!phase) return '';
+
+    switch (phase) {
+      case 'judgePannel':
+      case 'judgePanel': // Gestiamo eventuali typo storici
+        return 'Punteggi'; // O "Gironi"
+        
+      case 'brackets':
+      case 'ResultsMatch': // Se usi questo termine per i match
+        return 'Scontri Diretti'; // O "Tabellone"
+        
+      case 'awaitingBrackets':
+        return 'Attesa Tabellone';
+
+      case 'finalized':
+        return 'Terminata';
+        
+      default:
+        return phase; // Se non lo conosciamo, mostriamo quello che arriva
+    }
   }
 
-  // Helper per stimare il tempo (opzionale)
+
   getEstimatedTime(t: TatamiStatus): string {
+    // Se è libero, non c'è tempo da stimare
     if (t.status === 'LIBERO') return '';
-    
-    // Stima minuti per incontro/atleta
-    let minutesPerUnit = 2; 
-    if (t.specialty === 'KUMITE') minutesPerUnit = 3;
-    if (t.specialty === 'KATA') minutesPerUnit = 4;
-    
-    const totalMinutes = t.remaining * minutesPerUnit;
+
+    let totalMinutes = 0;
+
+    // 1. Uniamo le liste per calcolare tutto in un unico ciclo
+    // (Usiamo lo spread operator ... per combinare gli array)
+    const allCategories = [...t.active_categories, ...t.queued_categories];
+
+    // 2. Cicliamo su ogni categoria per sommare i minuti
+    for (const cat of allCategories) {
+      let minutesPerUnit = 2; // Default (Percorso, Palloncino, ecc.)
+
+
+      if (cat.label === 'Incontri' || cat.label.includes('Match')) {
+        minutesPerUnit = 5; // Un match di Kata dura un po' di più (saluto, esecuzione, bandierine)
+      } else if (cat.specialty.includes('KATA')) {
+        minutesPerUnit = 4; // Esecuzione singola a punteggio
+      }
+
+      // Aggiungi al totale: (rimanenti * minuti_per_unità)
+      totalMinutes += (cat.remaining * minutesPerUnit);
+    }
+
+    // Se per qualche motivo il totale è 0 (es. tutto finito ma non ancora chiuso), non mostrare nulla
+    if (totalMinutes <= 0) return '';
+
     return `~${totalMinutes} min`;
+  }
+
+  // Helper per assegnare un colore alla badge in base al testo della specialità
+  getSpecialtyClass(specialty: string): string {
+    if (!specialty) return 'badge-secondary'; // Default Grigio
+
+    const s = specialty.toUpperCase();
+/*
+    if (s.includes('KUMITE')) {
+      return 'badge-kumite'; // Rosso per combattimento
+    } 
+    else if (s.includes('KATA')) {
+      return 'badge-kata'; // Azzurro per forma (text-white per sicurezza)
+    } 
+    else if (s.includes('PALLONCINO') || s.includes('PERCORSO')) {
+      return 'badge-combinata'; // Verde per i giochi bambini
+    }*/
+
+    return 'specialty-label'; // Grigio per altro
   }
 
 

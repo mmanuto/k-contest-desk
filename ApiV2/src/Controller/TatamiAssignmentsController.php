@@ -270,7 +270,9 @@ class TatamiAssignmentsController extends ApiController
 
         $this->loadModel('Users');
         $this->loadModel('ResultsMatch'); 
-        $this->loadModel('ResultsJudgedPanel'); 
+        $this->loadModel('ResultsJudgedPanel');
+        $this->loadModel('ResultsTimed');
+        $this->loadModel('AthleteInscriptions'); 
         // 1. Recupera la lista dei Tatami dalla tabella Users
         // Filtriamo per ID che inizia con 'T' (o usa is_admin = 0 se preferisci)
         // Dallo screenshot vedo che i tatami hanno ID 'T1', 'T2', ecc.
@@ -279,8 +281,11 @@ class TatamiAssignmentsController extends ApiController
             ->order(['id' => 'ASC'])      // Ordina per ID
             ->all();
         
-        // Stato che indica che la categoria è attiva (modifica se necessario)
-        $activeStatus = 'CAT_RUNNING'; 
+        $runningStatuses = ['CAT_DOING', 'IN_PROGRESS']; // Quelli attivi
+        $queuedStatuses  = ['CAT_TODO', 'CAT_OPEN']; // Quelli in coda/assegnati
+
+        // Uniamo gli stati per la query
+        $allBusyStatuses = array_merge($runningStatuses, $queuedStatuses);
 
         $dashboardData = [];
 
@@ -289,128 +294,128 @@ class TatamiAssignmentsController extends ApiController
             $tatamiName = $user->name; // es: "Tatami 1" (preso dal DB)
 
             // 2. Cerca se questo tatami ha una categoria ATTIVA ora
-            $currentTask = $this->TatamiAssignments->find()
+            $tasks = $this->TatamiAssignments->find()
                 ->contain(['Categorycodes']) 
                 ->where([
                     'user_id' => $tatamiId,
-                    'status' => $activeStatus
+                    'status IN' => $allBusyStatuses
                 ])
-                ->first();
+                ->order(['TatamiAssignments.id' => 'ASC'])
+                ->all();
 
-            // --- CASO 1: TATAMI LIBERO ---
-            if (!$currentTask) {
-                // Cerca il prossimo task in coda (opzionale)
-                $nextTask = $this->TatamiAssignments->find()
-                    ->where(['user_id' => $tatamiId, 'status' => 'CAT_OPEN'])
-                    ->first();
+                // Preparo i contenitori
+                $activeCategories = [];
+                $queuedCategories = [];
+
+                foreach ($tasks as $task) {
+
+                    $category = $task->categorycode;
+                    $catId = $task->categorycode_id;
+                    $specialty = $category->specialita ?? $this->_guessSpecialtyFromCode($catId);
+                    
+                    // --- CALCOLO STATISTICHE (Uguale a prima) ---
+                    $totalItems = 0; $doneItems = 0; $label = "";
+                    $type = strtoupper($specialty);
+                    
+                    if (strpos($type, 'KUMITE') !== false || strpos($catId, 'KUA') !== false || strpos($catId, 'KUG') !== false) {
+                        $totalItems = $this->ResultsMatch->find()->where(['categorycode_id' => $catId])->count();
+                        $doneItems = $this->ResultsMatch->find()->where(['categorycode_id' => $catId, 'winner_inscription_id IS NOT NULL'])->count();
+                        $label = "Incontri";
+                    } else if(strpos($type, 'PERCORSO') !== false || strpos($catId, 'PER') !== false){
+                        $totalItems = $this->ResultsTimed->find()->where(['categorycode_id' => $catId])->count();
+                        $doneItems = $this->ResultsTimed->find()->where(['categorycode_id' => $catId, 'total_time IS NOT NULL'])->count();
+                        $label = "Prove";
+                    } else{
+                        // 1. Conta le prove a PUNTEGGIO (Fase eliminatoria / Pool)
+                        $totalPanel = $this->ResultsJudgedPanel->find()
+                            ->where(['categorycode_id' => $catId])
+                            ->count();
+
+                        $donePanel = $this->ResultsJudgedPanel->find()
+                            ->where(['categorycode_id' => $catId, 'total_score IS NOT NULL'])
+                            ->count();
+
+                        // 2. Conta gli SCONTRI DIRETTI (Fase finale / Medal Matches)
+                        // Utile per il Kata Adulti che finisce a scontri
+                        $totalMatch = $this->ResultsMatch->find()
+                            ->where(['categorycode_id' => $catId])
+                            ->count();
+
+                        // NOTA: Verifica se nel tuo DB usi 'winner_id' o 'winner_inscription_id'
+                        $doneMatch = $this->ResultsMatch->find()
+                            ->where([
+                                'categorycode_id' => $catId, 
+                                'winner_inscription_id IS NOT NULL' 
+                            ])
+                            ->count();
+
+                        // 3. SOMMA TOTALE (Punteggi + Match)
+                        $totalItems = $totalPanel + $totalMatch;
+                        $doneItems = $donePanel + $doneMatch;
+
+                        // 4. Etichetta Dinamica per capire cosa sta succedendo
+                        if ($totalMatch > 0 && $totalPanel > 0) {
+                            $label = "Prove + Match"; // Fase mista
+                        } elseif ($totalMatch > 0) {
+                            $label = "Incontri"; // Solo scontri (es. finali)
+                        } else {
+                            $label = "Prove"; // Solo punteggio
+                        }
+                    }
+                    
+                    $remaining = $totalItems - $doneItems;
+                    $percent = ($totalItems > 0) ? round(($doneItems / $totalItems) * 100) : 0;
+                    $isClosing = ($remaining <= 3 || $percent >= 90);
+
+                    // Creo l'oggetto dati per questa singola categoria
+                    $categoryData = [
+                        'category_id' => $catId,
+                        'category_name' => $category->categoria.' '.$category->sesso.' '.$category->grado.' '.$category->cat_peso,
+                        'specialty' => $specialty,
+                        'current_phase' => $task->current_phase,
+                        'total' => $totalItems,
+                        'done' => $doneItems,
+                        'remaining' => $remaining,
+                        'percent' => $percent,
+                        'is_closing' => $isClosing,
+                        'label' => $label
+                    ];
+
+                    // --- SMISTAMENTO (In Corso vs Coda) ---
+                    if (in_array($task->status, $runningStatuses)) {
+                        $activeCategories[] = $categoryData;
+                    } else {
+                        $queuedCategories[] = $categoryData;
+                    }
+                }
+
+                // Determino lo stato globale del Tatami
+                $globalStatus = 'LIBERO';
+                if (count($activeCategories) > 0) $globalStatus = 'OCCUPATO';
+                elseif (count($queuedCategories) > 0) $globalStatus = 'IN ATTESA';
 
                 $dashboardData[] = [
                     'id' => $tatamiId,
-                    'name' => $tatamiName, // <--- ECCO IL NOME DA MOSTRARE
-                    'status' => 'LIBERO',
-                    'category_name' => $nextTask ? 'In attesa: ' . $nextTask->categorycode_id : 'Nessuna coda',
-                    'progress' => 0,
-                    'is_closing' => false,
-                    // Campi vuoti per evitare errori nel frontend
-                    'specialty' => '',
-                    'total' => 0,
-                    'done' => 0,
-                    'remaining' => 0,
-                    'percent' => 0
+                    'name' => $user->name,
+                    'status' => $globalStatus,
+                    'active_categories' => $activeCategories, // Array di oggetti
+                    'queued_categories' => $queuedCategories  // Array di oggetti
                 ];
-                continue;
             }
+            return $this->response->withType('application/json')
+                          ->withStringBody(json_encode($dashboardData));
 
-            // --- CASO 2: TATAMI OCCUPATO ---
-            $catCode = $currentTask->categorycode;
-            $catId = $currentTask->categorycode_id;
             
-            $specialty = $catCode->specialty ?? $this->_guessSpecialtyFromCode($catId);
-
-            $stats = [
-                'id' => $tatamiId,
-                'name' => $tatamiName, // <--- ECCO IL NOME DA MOSTRARE
-                'category_name' => $catCode->description ?? $catId,
-                'specialty' => $specialty,
-                'status' => 'OCCUPATO',
-                'current_phase' => $currentTask->current_phase,
-                'is_closing' => false,
-            ];
-
-            // 3. Calcolo Progresso
-            $totalItems = 0;
-            $doneItems = 0;
-            $label = "";
-
-            // Normalizziamo la specialità per lo switch
-            $type = strtoupper($specialty);
-            
-            // Logica per distinguere Kumite (Match) da Percorso (Punteggi)
-            // Se il codice inizia con KUM o la specialità è KUMITE
-            if (strpos($type, 'KUMITE') !== false || strpos($catId, 'KUM') !== false) {
-                
-                // CONTEGGIO MATCH (Eliminazione diretta)
-                // Conta tutti i match di questa categoria
-                $totalItems = $this->ResultsMatch->find()
-                    ->where(['categorycode_id' => $catId])
-                    ->count();
-                
-                // Conta i match che hanno un vincitore
-                $doneItems = $this->ResultsMatch->find()
-                    ->where([
-                        'categorycode_id' => $catId, 
-                        'winner_id IS NOT NULL'
-                    ])
-                    ->count();
-                
-                $label = "Incontri";
-
-            } else {
-                
-                // CONTEGGIO ATLETI (Percorso, Palloncino, Kata a punteggio)
-                // Conta gli iscritti a questa categoria
-                $totalItems = $this->AthleteInscriptions->find()
-                    ->where(['categorycode_id' => $catId, 'deleted' => 0])
-                    ->count();
-
-                // Conta quanti hanno ricevuto un voto (tabella Scores)
-                $doneItems = $this->ResultsJudgedPanel->find()
-                    ->where(['categorycode_id' => $catId])
-                    ->distinct(['athlete_id']) // Importante per non contare doppi voti dei giudici
-                    ->count();
-                    
-                $label = "Atleti";
-            }
-
-            // Calcoli finali
-            $remaining = $totalItems - $doneItems;
-            // Evitiamo divisione per zero
-            $percent = ($totalItems > 0) ? round(($doneItems / $totalItems) * 100) : 0;
-
-            // Logica "Tatami si sta liberando"
-            if ($remaining <= 4 || $percent >= 90) {
-                $stats['is_closing'] = true;
-            }
-
-            $stats['total'] = $totalItems;
-            $stats['done'] = $doneItems;
-            $stats['remaining'] = $remaining;
-            $stats['percent'] = $percent;
-            $stats['label'] = $label;
-
-            $dashboardData[] = $stats;
-        }
-
-        return $this->response->withType('application/json')
-                            ->withStringBody(json_encode($dashboardData));
     }
 
     // Funzione helper se non hai il campo specialty nel DB
     private function _guessSpecialtyFromCode($code) {
         if (strpos($code, 'PER') === 0) return 'PERCORSO';
         if (strpos($code, 'PAL') === 0) return 'PALLONCINO';
-        if (strpos($code, 'KAG') === 0) return 'KATA GIOVANI'; // Kata Giovani?
-        if (strpos($code, 'KUM') === 0) return 'KUMITE';
+        if (strpos($code, 'KAG') === 0) return 'KATA BAMBINI'; // Kata Giovani?
+        if (strpos($code, 'KIA') === 0) return 'KATA ADULTI'; // Kata Giovani?
+        if (strpos($code, 'KUA') === 0) return 'KUMITE';
+        if (strpos($code, 'KUG') === 0) return 'KUMITE';
     return 'KATA';
 }   
 }

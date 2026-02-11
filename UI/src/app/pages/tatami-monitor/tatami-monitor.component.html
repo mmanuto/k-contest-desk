@@ -1,61 +1,87 @@
 <div class="monitor-container">
-  <header class="monitor-header">
-    <h1>Monitor Gara</h1>
-    <span class="last-update">Aggiornato: {{ lastUpdate | date:'HH:mm:ss' }}</span>
-  </header>
-
   <div class="tatami-grid">
-    <div *ngFor="let t of tatamis" 
-         class="tatami-card" 
-         [ngClass]="{'is-free': t.status === 'LIBERO', 'is-closing': t.isClosing}">
+    <div *ngFor="let t of tatamis" class="tatami-card">
 
-      <div class="card-header">
-        <h2>{{ t.name }}</h2>
-        <span class="badge" [ngClass]="t.status === 'LIBERO' ? 'badge-free' : 'badge-busy'">
-          {{ t.status === 'LIBERO' ? 'LIBERO' : 'IN CORSO' }}
-        </span>
+      <div class="card-header d-flex justify-content-between">
+        <h2 class="m-0">{{ t.name }}</h2>
+        <span class="badge" [ngClass]="{
+            'badge-success': t.status === 'LIBERO',
+            'badge-danger': t.status === 'OCCUPATO',
+            'badge-warning': t.status === 'IN ATTESA'
+        }">{{ t.status }}</span>
       </div>
 
-      <div class="card-body" *ngIf="t.status === 'OCCUPATO'; else freeTemplate">
+      <div class="card-body p-0">
         
-        <h3 class="category-title">{{ t.categoryName }}</h3>
-        <div class="specialty-tag">{{ t.specialty }}</div>
+        <div *ngIf="t.active_categories.length > 0" class="p-3 bg-white">
+          <h6 class="text-danger font-weight-bold mb-3">🔥 IN CORSO</h6>
+          
+          <div *ngFor="let cat of t.active_categories" class="mb-4 border-bottom pb-2">
+            <div class="font-weight-bold text-truncate" title="{{cat.category_name}}">
+                      {{ cat.category_name }}
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <div style="max-width: 65%; overflow: hidden;">
+                  <div class="font-weight-bold text-truncate" title="{{cat.category_id}}">
+                      {{ cat.category_id }}
+                  </div>
+                  
+                  <small class="text-muted">
+                      <i class="fa fa-info-circle"></i> {{ getPhaseLabel(cat.current_phase) }}
+                  </small>
+              </div>
+                <span class="badge" [ngClass]="getSpecialtyClass(cat.specialty)">{{ cat.specialty }}</span>
+            </div>
 
-        <div class="progress-container">
-          <div class="progress-bar" 
-               [style.width.%]="t.percent"
-               [style.background-color]="getProgressColor(t.percent, t.isClosing)">
+            <div class="progress" style="height: 15px;">
+              <div class="progress-bar" 
+                   [class.bg-warning]="cat.is_closing"
+                   [class.bg-primary]="!cat.is_closing"
+                   [style.width.%]="cat.percent">
+                   {{ cat.percent }}%
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between small text-muted mt-1">
+                <span>Fatti: <b>{{ cat.done }}</b>/{{ cat.total }}</span>
+                <span [class.text-danger]="cat.is_closing" [class.font-weight-bold]="cat.is_closing">
+                    Mancano: {{ cat.remaining }}
+                </span>
+            </div>
+            
+            <div *ngIf="cat.is_closing" class="text-center mt-1">
+                <small class="text-danger pulsante">⚠️ Sta finendo</small>
+            </div>
           </div>
         </div>
-        <div class="progress-text">{{ t.percent }}% Completato</div>
 
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-label">Fatti</span>
-            <span class="stat-value">{{ t.done }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Mancano</span>
-            <span class="stat-value highlight">{{ t.remaining }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Stima</span>
-            <span class="stat-value time">{{ getEstimatedTime(t) }}</span>
-          </div>
+        <div *ngIf="t.queued_categories.length > 0" class="p-3 bg-light border-top">
+          <h6 class="text-muted mb-2"><i class="fa fa-list"></i> In Coda / Prossime</h6>
+          
+          <ul class="list-unstyled m-0">
+            <li *ngFor="let q of t.queued_categories" class="py-1 d-flex justify-content-between align-items-center">
+               <span class="text-truncate small" style="max-width: 65%;">{{ q.category_name }}</span>
+               <span class="badge badge-secondary badge-pill">{{ q.total }} {{ q.label }}</span>
+            </li>
+          </ul>
         </div>
 
-        <div class="closing-alert" *ngIf="t.isClosing">
-          ⚠️ Si sta liberando
+        <div *ngIf="t.active_categories.length === 0 && t.queued_categories.length === 0" class="p-5 text-center text-success">
+            <i class="fa fa-check-circle fa-3x mb-2"></i>
+            <p class="m-0">Nessuna categoria assegnata</p>
         </div>
+
       </div>
-
-      <ng-template #freeTemplate>
-        <div class="free-body">
-          <div class="icon-check">✔</div>
-          <p>Nessuna categoria assegnata</p>
-        </div>
-      </ng-template>
-
     </div>
   </div>
 </div>
+
+<style>
+/* Piccolo CSS per pulire la visualizzazione */
+.card-header { background: #f8f9fa; border-bottom: 1px solid #ddd; padding: 10px 15px; }
+.badge-success { background-color: #28a745; color: white; }
+.badge-danger { background-color: #dc3545; color: white; }
+.badge-warning { background-color: #ffc107; color: black; }
+.pulsante { animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+</style>

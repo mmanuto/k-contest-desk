@@ -725,6 +725,8 @@ private function _createRepechageChain($categoryId, $winnerId, $repechageRoundCo
     $fighterA = array_shift($victims); // V1
     $fighterB = array_shift($victims); // V2
 
+    $remainingVictimsCount = count($victims);
+
     // Creiamo il primo scontro
     $match = $this->ResultsMatch->newEntity([
         'categorycode_id' => $categoryId,
@@ -733,15 +735,21 @@ private function _createRepechageChain($categoryId, $winnerId, $repechageRoundCo
         'athlete_aka_inscription_id' => $fighterA,
         'athlete_ao_inscription_id' => $fighterB,
         // Se è l'ultimo della lista (es. erano solo 2 vittime), è per il bronzo
-        'is_bronze_final' => (count($victims) == 0) 
+        'is_bronze_final' => ($remainingVictimsCount == 0) 
     ]);
     $this->ResultsMatch->save($match);
     
     $previousMatchId = $match->id;
     $matchCounter = 2;
 
+    $i = 0; 
     // Cicliamo le vittime rimanenti (es. V3, il semifinalista)
     foreach ($victims as $nextVictim) {
+        $i++;
+
+        // Siamo all'ultima iterazione se il contatore eguaglia il numero totale
+        $isLastIteration = ($i === $remainingVictimsCount);
+
         $nextMatch = $this->ResultsMatch->newEntity([
             'categorycode_id' => $categoryId,
             'round' => $repechageRoundCode,
@@ -749,7 +757,7 @@ private function _createRepechageChain($categoryId, $winnerId, $repechageRoundCo
             'athlete_aka_inscription_id' => null, // Vuoto! Aspetta il vincente di previousMatchId
             'athlete_ao_inscription_id' => $nextVictim, // Il semifinalista aspetta
             'parent_match_id' => $previousMatchId, // Fondamentale per l'avanzamento
-            'is_bronze_final' => (count($victims) == 0) // Se è l'ultimo
+            'is_bronze_final' => $isLastIteration // Se è l'ultimo
         ]);
         $this->ResultsMatch->save($nextMatch);
         

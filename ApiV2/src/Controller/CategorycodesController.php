@@ -160,40 +160,4 @@ class CategorycodesController extends ApiController
 	    $this->apiResponse['success'] = true;
     }
 
-    /**
-     * Get all categories with athleteList (Stampa sintetico categoria)
-     */
-    public function getCategoriesWithAthletes(){
-        $this->loadModel('AthleteInscriptions');
-        $this->loadModel('TatamiAssignments');
-        
-        $conn = ConnectionManager::get('default');
-        $stmt = $conn->execute("SELECT categorycodes.*, COUNT(athlete_inscriptions.id) AS n_athletes FROM athlete_inscriptions 
-                                JOIN categorycodes ON categorycodes.id = athlete_inscriptions.categorycode_id 
-                                WHERE categorycodes.codiceTipoCategorie = 3 AND athlete_inscriptions.deleted = 0
-                                GROUP BY categorycodes.id");
-
-        $categories = $stmt->fetchAll('assoc');
-
-        $newCategories = [];
-
-        foreach ($categories as $category) {
-       
-            $athleteList = $this->AthleteInscriptions->find()
-            ->where([
-                'categorycode_id' => $category['id'],
-                'deleted' => 0
-            ])
-            ->contain(['Athletes' => ['Clubs'], 'Categorycodes'])
-            ->order(['Clubs.id', 'Athletes.id'])
-            ->toArray();
-
-            $category['athletes'] = $athleteList;
-            
-            array_push($newCategories, $category);
-        }
-
-        $this->apiResponse['data'] = $newCategories;
-	    $this->apiResponse['success'] = true;
-    }
 }

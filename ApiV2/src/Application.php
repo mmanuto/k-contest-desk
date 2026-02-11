@@ -65,6 +65,7 @@ class Application extends BaseApplication
 
         // Load more plugins here
         $this->addPlugin('RestApi');
+        $this->addPlugin('TournamentPdf');
     }
 
     /**

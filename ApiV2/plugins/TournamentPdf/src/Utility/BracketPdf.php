@@ -1,5 +1,5 @@
 <?php
-namespace App\Controller\Component;
+namespace TournamentPdf\Utility;
 
 use TCPDF;
 

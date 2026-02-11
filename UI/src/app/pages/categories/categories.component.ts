@@ -66,6 +66,7 @@ async function process(dataset: Dataset) {
     data: data
   };
 }
+
 @Component({
   selector: 'app-membership',
   templateUrl: './categories.component.html',
@@ -78,6 +79,7 @@ export class CategoriesComponent implements OnInit {
   @ViewChild('primaryModal') public primaryModal: ModalDirective;
   @ViewChild('listModal') public listModal: ModalDirective;
   @ViewChild('rankingModal') public rankingModal: ModalDirective;
+  @ViewChild('modalClassifica') public modalClassifica: ModalDirective;
 
   public searchText: string;
   public p:any;
@@ -102,6 +104,8 @@ export class CategoriesComponent implements OnInit {
 
   selectedCategoryForRanking: any = null;
   rankingData: any[] = [];
+
+  rankingList: any[] = []; // Qui salviamo i dati
 
   public tatamiForm: FormGroup;
   
@@ -604,6 +608,22 @@ export class CategoriesComponent implements OnInit {
         break;
       }
     }
+  }
+
+  openClassificaModal() {
+    // Mostra un loading se vuoi, poi chiama il backend
+    this.categoriesService.getClassificaSocieta().subscribe(
+      (data) => {
+        this.rankingList = data;
+        console.log(this.rankingList);
+        // Apre il modale Bootstrap
+        this.modalClassifica.show();
+      },
+      (error) => {
+        console.error("Errore recupero classifica", error);
+        alert("Impossibile caricare la classifica al momento.");
+      }
+    );
   }
 
 }

@@ -166,16 +166,16 @@ class UsersController extends ApiController
 
     public function addTatami()
     {
-        for ($i=1; $i<9 ; $i++) { 
+
             $user = $this->Users->newEmptyEntity();
-            $user->name = 'Tatami '.$i;
-            $user->username = 'Tatami_'.$i;
-            $user->password = md5('Tatami'.$i.'!');
+            $user->name = 'Tatami 9';
+            $user->username = 'Tatami_9';
+            $user->password = md5('Tatami!');
             $this->Users->save($user);
 
             $this->set(compact('user'));
             $this->set('_serialize', ['user']);
-        }           
+         
     }
 
     public function addAdmin()

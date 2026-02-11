@@ -1,7 +1,9 @@
 <div class="col-lg-12 mb-4">
   <h2 *ngIf="athletestNumber">Totale Iscritti: {{athletestNumber.athletes}} - Totale Categorie {{athletestNumber.categories}}</h2>
 <br/>
-
+<button class="btn btn-warning ml-2 mb-3" (click)="openClassificaModal()">
+    <i class="fa fa-trophy"></i> Classifica Società
+</button>
 <div class="row mb-1">
   <div class="col">
       <div class="input-group mb-3 box-shadow"> 
@@ -311,6 +313,56 @@
       
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="rankingModal.hide()" data-dismiss="modal">Chiudi</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div bsModal #modalClassifica="bs-modal" class="modal fade" id="modalClassifica" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title"><i class="fa fa-trophy"></i> Classifica Società</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" (click)="modalClassifica.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped text-center">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Pos</th>
+                        <th class="text-left">Società</th>
+                        <th>Atleti (x2pt)</th>
+                        <th class="text-warning"><i class="fa fa-medal"></i> Oro (10pt)</th>
+                        <th class="text-secondary"><i class="fa fa-medal"></i> Arg (8pt)</th>
+                        <th class="text-danger"><i class="fa fa-medal"></i> Bro (6pt)</th>
+                        <th class="bg-primary text-white">TOTALE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let row of rankingList; let i = index" [ngClass]="{'font-weight-bold': i < 4}">
+                        <td>
+                            <span *ngIf="i==0">🥇</span>
+                            <span *ngIf="i==1">🥈</span>
+                            <span *ngIf="i==2">🥉</span>
+                            <span *ngIf="i==3">🥉</span>
+                            <span *ngIf="i>3">{{ i + 1 }}</span>
+                        </td>
+                        <td class="text-left">{{ row.club_name }}</td>
+                        <td>{{ row.athletes_count }}</td>
+                        <td>{{ row.golds }}</td>
+                        <td>{{ row.silvers }}</td>
+                        <td>{{ row.bronzes }}</td>
+                        <td class="bg-light font-weight-bold text-primary">{{ row.points }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
       </div>
 
     </div>

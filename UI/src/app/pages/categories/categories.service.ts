@@ -50,4 +50,8 @@ export class CategoriesService {
     getFinalRanking(request){
         return this.http.post(environment.BASEAPPURL + 'results/getRankingData', request);
     }
+
+    getClassificaSocieta(): Observable<any[]> {
+        return this.http.get<any[]>(environment.BASEAPPURL + '/clubs/getClassificaSocieta');
+}
 } 

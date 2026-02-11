@@ -1,17 +1,22 @@
-export interface TatamiStatus {
-  id: string;   // Es: "T1"
-  name: string; // Es: "Tatami 1" <--- Nuovo campo
-  status: 'LIBERO' | 'OCCUPATO';
-  
-  // Opzionali perché se è libero potrebbero essere vuoti o null
-  categoryName?: string; 
-  specialty?: string;
-  currentPhase?: string;
-
+export interface CategoryProgress {
+  category_name: string;
+  category_id: string;
+  specialty: string;
+  current_phase: string;
   total: number;
   done: number;
   remaining: number;
   percent: number;
-  isClosing: boolean;
-  label?: string; // Es: "Incontri" o "Atleti"
+  is_closing: boolean;
+  label: string;
+}
+
+export interface TatamiStatus {
+  id: string;
+  name: string;
+  status: 'LIBERO' | 'OCCUPATO' | 'IN ATTESA';
+  
+  // Ora sono liste!
+  active_categories: CategoryProgress[];
+  queued_categories: CategoryProgress[];
 }

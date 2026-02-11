@@ -101,6 +101,8 @@ export class TatamiComponent {
   hasRepechages: boolean;
 
   hasExternalMonitor: boolean = false;
+  mainList: any[] = [];      // Lista principale (Qualifiche)
+  tieBreakList: any[] = [];  // Lista spareggi (Round 99)
 
   constructor(private tatamiService: TatamiService, 
     public fb: FormBuilder,
@@ -159,6 +161,9 @@ export class TatamiComponent {
     this.kumiteAthleteList = [];
     this.kumiteMatches = [];
     this.isRoundRobin = false;
+    this.hasRepechages = false;
+    this.directBronzeA = null;
+    this.directBronzeB = null;
 
     this.checkCategoryStatus(categoryStatus.OPEN);
 
@@ -331,7 +336,7 @@ export class TatamiComponent {
 
                 // 4. Inizializza la libreria
                 jQuery('#minimal').bracket({
-                    teamWidth: 260,
+                    teamWidth: 200,
                     scoreWidth: 30,
                     matchMargin: 50,
                     roundMargin: 50,
@@ -380,21 +385,26 @@ export class TatamiComponent {
           case this.categoryPhase.AWAITING_TIEBREAK:
                     this.isTieBreak = true;
           default:
-            
+            const tieBreakRound = 99;
+
             let rawList = response.result.data.athleteList;
             // *** FILTERING LOGIC FOR TIE-BREAK ***
             if (this.isTieBreak) {
               // If we are in tie-break, we only want to see the records created for this round (e.g., round 99)
               // The backend sends everything, so we filter locally.
                     
-              const tieBreakRound = 99; // Make sure this matches the constant in PHP
+               // Make sure this matches the constant in PHP
                     
               // Filter: keep only tie-break records
               this.athleteList = rawList.filter(item => item.round === tieBreakRound);
+              this.mainList =  rawList.filter(item => item.round === tieBreakRound);
                     
               // If for some reason the list is empty (maybe backend only sent round 1?), 
               // fallback to rawList or handle error. But backend should send round 99.
             } else {
+
+              this.mainList = rawList.filter(a => a.round !== tieBreakRound);
+              this.tieBreakList = rawList.filter(a => a.round === tieBreakRound);
               // Normal case: show everything (usually round 1 records)
               this.athleteList = rawList;
             }

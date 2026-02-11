@@ -15,21 +15,6 @@ export class AdminPanelService {
 
     }
 
-    getCategories()
-     {
-        console.log('entra');
-         return this.http.post(environment.BASEAPPURL + 'categorycodes/getCategories', {});
-                 
-    }
-
-    getCategoriesWithAthletes(){
-        return this.http.post(environment.BASEAPPURL + 'categorycodes/getCategoriesWithAthletes', {});
-    }
-
-    getAthleteList(request){
-        return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/getAthleteListSintetico', request);
-    }
-
     syncCompetitionData(){
         return this.http.post(environment.ISCRIZIONI_URL + 'competitions/syncCompetitionData', {competition_id:'GTTMLT-2026'});
     }
@@ -46,21 +31,35 @@ export class AdminPanelService {
         return this.http.post(environment.ISCRIZIONI_URL + 'athletesInscriptions/updateCompetitionData', request);
     }
 
-    //--------------------------------------------------- PRINT KUMITE ------------------------------------------------------------------
+    //--------------------------------------------------- PRINT PDF ------------------------------------------------------------------
+
+    generaSinteticoCategoria(request){
+        return this.http.get(environment.BASEAPPURL + 'prints/downloadAthleteList', { 
+            responseType: 'blob', // Fondamentale per i file binari
+            params: request
+        });
+    }
+
+    generaFrontespizi(request){
+        return this.http.get(environment.BASEAPPURL + 'prints/downloadCoverPages', { 
+            responseType: 'blob', // Fondamentale per i file binari
+            params: request
+        });
+    }
 
     getKumiteList(){
         return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/getKumiteList', {});
     }
 
     printBracketPdf(request){
-        return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/printBracketPdf', request, {
+        return this.http.post(environment.BASEAPPURL + 'prints/printBracketPdf', request, {
             responseType: 'blob' as 'json', // "as json" è un trucco per TypeScript, ma a runtime passa 'blob'
             observe: 'response' // Utile per leggere eventuali header se servono
         });
     }
 
     downloadPassesZip(): Observable<Blob> {
-        return this.http.post(`${environment.BASEAPPURL}athleteInscriptions/downloadAllPassesZip`, {}, {
+        return this.http.post(`${environment.BASEAPPURL}prints/downloadAllPassesZip`, {}, {
         responseType: 'blob' // Dice ad Angular che ci aspettiamo un file binario
         });
     }
