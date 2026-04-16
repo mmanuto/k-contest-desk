@@ -505,3 +505,17 @@ a.text-decoration-none:hover {
 .monitor-toggle {
   border: 1px solid lightgrey !important;
 }
+
+.thead-light-modern {
+    background-color: #f8fbff !important; /* Azzurro chiarissimo */
+    th {
+        color: #5e72e4 !important;      /* Testo colorato (Primary) invece di bianco */
+        background-color: #f8fbff !important;
+        font-weight: 800 !important;
+        text-transform: uppercase;
+        font-size: 0.8rem !important;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid #e9ecef !important;
+        padding: 12px 15px !important;
+    }
+}

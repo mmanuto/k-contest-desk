@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 use RestApi\Controller\ApiController;
+use Cake\Datasource\ConnectionManager;
 
 /**
  * Athletes Controller
@@ -201,7 +202,9 @@ class AthletesController extends ApiController
         
         $data = $this->request->getData();
         $conn = ConnectionManager::get('default');
-        $stmt = $conn->execute("SELECT DISTINCT categoria FROM categorycodes WHERE codiceTipoCategorie =" . $data['categorycode_type'] . " AND " . $data['anno'] . " BETWEEN anno_min AND anno_max");
+        $stmt = $conn->execute("SELECT DISTINCT categoria 
+                                    FROM categorycodes 
+                                    WHERE codiceTipoCategorie =" . $data['categorycode_type'] . " AND " . $data['anno'] . " BETWEEN anno_min AND anno_max AND specialita <> 'Kata Squadre'");
         
         
         $categoria = $stmt->fetchAll('assoc');

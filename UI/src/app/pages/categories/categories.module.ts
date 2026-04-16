@@ -11,6 +11,7 @@ import { PipesModule } from '../../theme/pipes/pipes.module';
 import { CategoriesComponent } from './categories.component';
 import { CategoriesService } from './categories.service';
 import { ModalModule, BsModalService } from 'ngx-bootstrap/modal';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 export const routes: Routes = [
   { path: '', component: CategoriesComponent, pathMatch: 'full' }
@@ -28,7 +29,8 @@ export const routes: Routes = [
     NgbModule,
     MultiselectDropdownModule,
     NgxPaginationModule,
-    PipesModule
+    PipesModule,
+    NgSelectModule
   ],
   declarations: [
     CategoriesComponent

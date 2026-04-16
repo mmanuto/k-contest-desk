@@ -17,8 +17,11 @@ class PassPdf
         $pdf->SetMargins(10, 10, 10);
         $pdf->SetAutoPageBreak(true, 5);
 
-        foreach ($inscriptions as $ins) {
-            $pdf->AddPage();
+        foreach ($inscriptions as $atleta) {
+        $ins = $atleta['info'];
+        $codes = $atleta['codes'];    
+        
+        $pdf->AddPage();
             
             // Recupero Dati
             $nome = strtoupper($ins->athlete->cognome . ' ' . $ins->athlete->nome);
@@ -101,10 +104,25 @@ class PassPdf
             $pdf->Cell($wNum, $hScoreRow, "TOTALI", 1, 1, 'L', 1);
 
             // Righe Attività
-            $activities = ['PERCORSO', 'PALLONCINO', 'KATA'];
+            $activities = [
+                'PERCORSO' => 'PERCORSO',
+                'PALLONCINO' => 'PALLONCINO',
+                'KATA' => 'KATA'
+            ];
             
-            foreach($activities as $act) {
-                $pdf->Cell($wSpec, $hScoreRow, $act, 1, 0, 'L', 0); // 0 = no fill
+            $pdf->SetFont('helvetica', '', 8);
+            foreach($activities as $key => $label) {
+
+                // Cerchiamo se l'atleta ha un codice per questa attività
+                // Usiamo una ricerca flessibile per trovare il codice corrispondente
+                $currentCode = "";
+                foreach($codes as $spec => $c) {
+                    if(strpos($spec, $key) !== false) {
+                        $currentCode = $c;
+                        break;
+                    }
+                }
+                $pdf->Cell($wSpec, $hScoreRow, $currentCode. ' - '.$label, 1, 0, 'L', 0);
                 $pdf->Cell($wNum, $hScoreRow, "", 1, 0, 'C', 0);
                 $pdf->Cell($wNum, $hScoreRow, "", 1, 0, 'C', 0);
                 $pdf->Cell($wNum, $hScoreRow, "", 1, 1, 'C', 0);

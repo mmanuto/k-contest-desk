@@ -9,16 +9,13 @@ import { ModalDirective } from 'ngx-bootstrap/modal';
 import {interval,Subscription} from 'rxjs';
 import {categoryStatus} from '../../constants';
 
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import * as Dataset from '../tatami/datasets';
 import { InMemoryDatabase } from '../tatami/storage/memory';
 import { BracketsManager } from 'brackets-manager';
-import html2canvas from 'html2canvas';
  
 declare global {
   interface JQuery {
-    (any): JQuery;
+    (arg0: any): JQuery;
     bracket(options: any): JQuery;
   }
 }
@@ -76,21 +73,22 @@ async function process(dataset: Dataset) {
 })
 export class CategoriesComponent implements OnInit {
 
-  @ViewChild('primaryModal') public primaryModal: ModalDirective;
-  @ViewChild('listModal') public listModal: ModalDirective;
-  @ViewChild('rankingModal') public rankingModal: ModalDirective;
-  @ViewChild('modalClassifica') public modalClassifica: ModalDirective;
+  @ViewChild('primaryModal') public primaryModal: ModalDirective | undefined;
+  @ViewChild('listModal') public listModal: ModalDirective | undefined;
+  @ViewChild('rankingModal') public rankingModal: ModalDirective | undefined;
+  @ViewChild('modalClassifica') public modalClassifica: ModalDirective | undefined;
 
-  public searchText: string;
+  public searchText: string = '';
   public p:any;
   public type:string = 'list';
   
 
-  categories: any[];
-  athleteList: any[];
-  tatamiList: any[];
-  tatamiStatus: any[];
+  categories: any[] = [];
+  athleteList: any[] = [];
+  tatamiList: any[] = [];
+  tatamiStatus: any[] = [];
   public athletestNumber = null;
+  public totaleProve = null
   selectedCategory: any = null;
   mySubscription: Subscription;
   categoryStatus = categoryStatus;
@@ -132,6 +130,10 @@ export class CategoriesComponent implements OnInit {
       this.athletestNumber = response.result.data;
     });
 
+    this.categoriesService.getTotaleProve().subscribe((response: any) => {
+      this.totaleProve = response.result.data;
+    });
+
     this.getCategories();
 
     this.categoriesService.getTatami().subscribe((response: any) => {
@@ -153,7 +155,7 @@ export class CategoriesComponent implements OnInit {
     });
   }
 
-  public toggle(type){
+  public toggle(type: string){
     this.type = type;
   }
 
@@ -171,7 +173,7 @@ export class CategoriesComponent implements OnInit {
   // Dividi categoria
   //====================================================================================================
 
-  splitCategory(category){
+  splitCategory(category: { specialita: any; categoria: any; grado: any; sesso: any; }){
     console.log(category);
     if (window.confirm(`Proseguendo con l'operazione, la categoria ${category.specialita} - ${category.categoria} - ${category.grado} ${category.sesso} verrà divisa in Maschile e Femminile. Continuare?`)){
       this.categoriesService.splitCategory(category).subscribe((response: any) => {
@@ -184,7 +186,7 @@ export class CategoriesComponent implements OnInit {
   //====================================================================================================
   // Assegna a tatami
   //====================================================================================================
-  openTatamiModal(category_id){
+  openTatamiModal(category_id: any){
     this.message = '';
     this.getTatamiStatus();
 
@@ -194,7 +196,7 @@ export class CategoriesComponent implements OnInit {
     });
 
     this.tatamiStatus.forEach(tatami => {
-      tatami.userCategories.forEach(category => {
+      tatami.userCategories.forEach((category: { id: any; status: string; }) => {
           if(category.id == this.tatamiForm.value.categorycode_id){
             this.message = 'La categoria selezionata è già assegnata al ' + tatami.name;
             if(category.status == categoryStatus.DOING){
@@ -206,8 +208,10 @@ export class CategoriesComponent implements OnInit {
       });
     });
 
+    if(this.primaryModal){
+      this.primaryModal.show();
+    }
     
-    this.primaryModal.show();
   }
 
   assignTatami(){
@@ -220,13 +224,26 @@ export class CategoriesComponent implements OnInit {
     this.categoriesService.saveTatamiAssegnee(request).subscribe((response: any) => {
 
       if(response.result.success){
+
+        let requestWeb = {
+          tatami: this.tatamiForm.value.user_id,
+          competition_id: 'GTTMLT-2026',
+          categorycode_id: this.tatamiForm.value.categorycode_id,
+          status: categoryStatus.TODO
+        }
+
+        this.categoriesService.updateTatamiWeb(requestWeb).subscribe((response: any) => {
+
+        });
+
         this.alertsDismiss.push({
           type: 'success',
           msg: `Categoria assegnata al tatami ${new Date().toLocaleTimeString()})`,
           timeout: 5000
         });
-        this.primaryModal.hide();
-        console.log('ANDATA');
+        if(this.primaryModal)
+          this.primaryModal.hide();
+
         this.getCategories();
       }else{
         this.alertsDismiss.push({
@@ -234,7 +251,7 @@ export class CategoriesComponent implements OnInit {
           msg: `Operazione non andata a buon fine`,
           timeout: 5000
         });
-        console.log('ERROR');
+
       }
       
     });
@@ -249,20 +266,20 @@ export class CategoriesComponent implements OnInit {
    * Sintetico categoria
    * @param category 
    */
-  openCategory(category){
+  openCategory(category: { id: any; }){
     this.categoriesService.getAthleteList({categorycode_id: category.id, readonly: true}).subscribe((response: any) => {
       this.athleteList = response.result.data;
       this.selectedCategory = category;
     });
-
-    this.listModal.show();
+    if(this.listModal)
+      this.listModal.show();
   }
 
   /**
    * Tabellone kumite
    * @param category 
    */
-  openKumiteBrackets(category){
+  openKumiteBrackets(category: { id: any; }){
     this.dettaglio = true;
     this.selectedCategory = category;
     this.categoriesService.getAthleteList({categorycode_id: category.id, readonly: true}).subscribe((response: any) => {
@@ -309,7 +326,7 @@ export class CategoriesComponent implements OnInit {
           results: thirdResult
         }  
 
-        function render_fn(container, data, score, state) {
+        function render_fn(container: { append: (arg0: string) => void; }, data: any, score: any, state: any) {
           switch(state) {
             case "empty-bye":
               container.append("--")
@@ -340,7 +357,7 @@ export class CategoriesComponent implements OnInit {
           decorator:{edit:edit_fn, render: render_fn},
         });
 
-        function edit_fn(container, data, doneCb) {
+        function edit_fn(container: any, data: any, doneCb: (arg0: any) => void) {
           
           doneCb(data);
         }
@@ -368,7 +385,7 @@ export class CategoriesComponent implements OnInit {
 
       }else{
         let position = 1;
-        let dataset:Tabset = null;
+        let dataset:Tabset;
         
         console.log(this.athleteList.length);
         switch (true) {
@@ -388,6 +405,7 @@ export class CategoriesComponent implements OnInit {
             dataset = Dataset.dataset32;
             break;
           default:
+            dataset = Dataset.dataset8;
             console.log('ERROREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE');
             break;
         }
@@ -425,7 +443,7 @@ export class CategoriesComponent implements OnInit {
 
         process(datasetTemp).then((data) =>
           {
-              let teams = [];
+              let teams: (string | null)[][] = [];
               let results = [];
               results.push([]);
   
@@ -455,7 +473,7 @@ export class CategoriesComponent implements OnInit {
               });
               console.log(teams);
   
-              function render_fn(container, data, score, state) {
+              function render_fn(container: { append: (arg0: string) => void; }, data: any, score: any, state: any) {
                 switch(state) {
                   case "empty-bye":
                     container.append("--")
@@ -472,7 +490,7 @@ export class CategoriesComponent implements OnInit {
                 }
               }
   
-              function edit_fn(container, data, doneCb) {
+              function edit_fn(container: any, data: any, doneCb: any) {
                 return;
               }
   
@@ -500,7 +518,7 @@ export class CategoriesComponent implements OnInit {
     });
   }
 
-  sortMarkets(array, sortArray){
+  sortMarkets(array: any[], sortArray: string | any[]){
     return [...array].sort(
       (a, b) => sortArray.indexOf(a.position) - sortArray.indexOf(b.position)
     )
@@ -515,7 +533,7 @@ export class CategoriesComponent implements OnInit {
   // Visualizza classifica
   //====================================================================================================
 
-    public openRankingModal(category){
+    public openRankingModal(category: { id: any; }){
     this.selectedCategory = category;
 
     console.log(this.selectedCategory);
@@ -525,68 +543,18 @@ export class CategoriesComponent implements OnInit {
     this.categoriesService.getFinalRanking({categorycode_id: category.id}).subscribe((response: any) => {
       if(response.result.success){
         this.rankingData = response.result.data;
-        this.rankingModal.show();
+        if(this.rankingModal)
+          this.rankingModal.show();
       }
       
     });
   }
 
-  //====================================================================================================
-  // Stampa pdf
-  //====================================================================================================
-  public async generatePdf(category){
-
-    let tabelloni = new jsPDF("p", "mm", "a4");
-    let nomeGara = 'Trofeo Gattamelata';
-    
-    let lMargin = 15; //left margin in mm
-    let pdfInMM = 210;  // width of A4 in mm
-    let pageCenter = pdfInMM / 2;
-
-    let img = new Image();
-    img.src = "assets/img/logo/LogoCSEN.png";
-    
-    let imgData = this.getBase64Image(img);
-    
-    tabelloni.setFont("times");
-    tabelloni.addImage(imgData, 'PNG', lMargin, 13, 28, 28);
-    tabelloni.addImage(imgData, 'PNG', 155, 13, 28, 28);
-
-    tabelloni.setFontSize(22);
-    tabelloni.text(nomeGara, pageCenter, 35, {align: 'center'});
-    tabelloni.setFontSize(18);
-    let categoria = this.selectedCategory.specialita + ' ' + this.selectedCategory.categoria 
-    
-    let categoria2 = this.selectedCategory.grado + this.selectedCategory.cat_peso + '- ' + this.selectedCategory.sesso;
-    tabelloni.text(categoria, pageCenter, 70, {align: 'center'});
-    tabelloni.text(categoria2, pageCenter, 75, {align: 'center'});
-    let element = document.getElementById('kumite');
-    const canvas = await html2canvas(element, {scale: 3});
-    const imgDataKumite = canvas.toDataURL('image/png');
-
-    const imgWidth = 190; // mm (A4 width)
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    tabelloni.addImage(imgDataKumite, 'PNG', 15, 100, imgWidth, imgHeight);
-    
-    tabelloni.save('Kumite.pdf');
-
-      
-  }
-
-  getBase64Image(img: HTMLImageElement) {
-    var canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-    var ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0);
-    return canvas.toDataURL("image/png");
-  }
 
   //====================================================================================================
   // Gestore Cards
   //====================================================================================================
-  public openMenuAssign(event){
+  public openMenuAssign(event: { target: { parentNode: any; }; }){
     let parent = event.target.parentNode;
     while (parent){
       parent = parent.parentNode;
@@ -598,7 +566,7 @@ export class CategoriesComponent implements OnInit {
     }
   }
 
-  public closeMenuAssign(event){
+  public closeMenuAssign(event: { target: { parentNode: any; }; }){
     let parent = event.target.parentNode;
     while (parent){
       parent = parent.parentNode;
@@ -617,7 +585,8 @@ export class CategoriesComponent implements OnInit {
         this.rankingList = data;
         console.log(this.rankingList);
         // Apre il modale Bootstrap
-        this.modalClassifica.show();
+        if(this.modalClassifica)
+          this.modalClassifica.show();
       },
       (error) => {
         console.error("Errore recupero classifica", error);

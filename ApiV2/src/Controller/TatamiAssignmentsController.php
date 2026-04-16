@@ -205,59 +205,59 @@ class TatamiAssignmentsController extends ApiController
      */
 
     public function checkCategoryStatus(){
-        Configure::load('constants');
-        $categoryList = $this->request->getData();
-        $response = [
-            'safety' => false,
-            'message' => 'Una o più categorie coninvolte sono già in corso sul tatami a cui sono state assegnate. non è possibile proseguire con l\'operazione.'
-        ];
-        
-        $categoryStatus = $this->TatamiAssignments->find()
-            ->where([
-                'categorycode_id IN' => $categoryList
-            ])->toArray();
-        
-        if(sizeof($categoryStatus) == 0){
-            $response['safety'] = true;
-            $response['message'] = 'sei sicuro di voler procedere alla cancellazione?';
-        }else{
-            
-            switch ($categoryStatus[0]['status']) {
-                case Configure::read('STATUS_BACKLOG'):
-                case Configure::read('STATUS_TODO'):
-                    $response['message'] = "sei sicuro di voler procedere alla cancellazione?";
-                    $response['safety'] = true;
-                case Configure::read('STATUS_OPEN'):
-                    $response['message'] = "La categoria è già stata aperta ma non iniziata sul tatami a cui è assegnata. Proseguendo il tabellone sarà cancellato e ricreato Sicuro di voler procedere? ";
-                    $response['safety'] = true;
-                    if(sizeof($categoryStatus) == 1){
-                        break;
-                    }else if($categoryStatus[1]['status'] == Configure::read('STATUS_BACKLOG') ||
-                        $categoryStatus[1]['status'] == Configure::read('STATUS_TODO') ||
-                        $categoryStatus[1]['status'] == Configure::read('STATUS_OPEN')){
 
-                            if($categoryStatus[1]['status'] == Configure::read('STATUS_OPEN')){
-                                $response['message'] = "La categoria di destinazione è già stata aperta ma non iniziata sul tatami a cui è assegnata. Proseguendo il tabellone sarà cancellato e ricreato Sicuro di voler procedere? ";
-                            }
-                            $response['safety'] = true;
-                    }else{
-                        $response = [
-                            'safety' => false,
-                            'messsage' => 'Una o più categorie coninvolte sono già in corso sul tatami a cui sono state assegnate. non è possibile proseguire con l\'operazione.'
-                        ];
-                    }
-                default:
-                    # code...
-                    break;
+        Configure::load('constants');
+        $categoryIds = $this->request->getData();
+
+        foreach ($categoryIds as $catId) {
+            $assignment = $this->TatamiAssignments->find()
+                ->where(['categorycode_id' => $catId])
+                ->first();
+
+            // 1. Se non assegnata o stato TODO (0) -> SICURO
+            if (!$assignment || $assignment->status == Configure::read('STATUS_TODO')) {
+                continue; 
             }
-}
-        
+
+            // 2. Se stato OPEN (1) -> AVVISO + RESET TOTALE
+            if ($assignment->status == Configure::read('STATUS_OPEN')) {
+                $this->apiResponse['success'] = true;
+                $this->apiResponse['data'] = [
+                    'safety' => false,
+                    'status' => Configure::read('STATUS_OPEN'),
+                    'message' => "La categoria $catId è già stata APERTA sul Tatami. Continuando, tutti i record di gara verranno resettati e la categoria tornerà in stato 'Da Iniziare'. Vuoi procedere?"
+                ];
+                return;
+            }
+
+            // 3. Se stato DOING (2) -> CONTROLLO SPECIALITÀ
+            if ($assignment->status == Configure::read('STATUS_DOING')) {
+                if ($this->_isKumite($catId)) {
+                    $this->apiResponse['success'] = true;
+                    $this->apiResponse['data'] = ['safety' => false];
+                    $this->apiResponse['message'] = "ERRORE: La categoria Kumite $catId è già iniziata. Non è possibile modificare le iscrizioni durante il corso della gara.";
+                    return;
+                } else {
+                    $this->apiResponse['success'] = true;
+                    $this->apiResponse['data'] = [
+                        'safety' => false,
+                        'status' => Configure::read('STATUS_DOING'),
+                        'message' => "La categoria $catId è già IN CORSO. Continuando, verrà aggiunto/rimosso solo il singolo atleta dai risultati. Vuoi procedere?"
+                    ];
+                    return;
+                }
+            }
+        }
         
         $this->apiResponse['success'] = true;
-        $this->apiResponse['data'] = $response;
+        $this->apiResponse['data'] = ['safety' => true];
         
     } 
 
+    private function _isKumite($categorycode_id)
+    {
+        return (strpos($categorycode_id, 'KU') !== false); 
+    }
 
     public function getKataList(){
         $this->loadModel('Katas');

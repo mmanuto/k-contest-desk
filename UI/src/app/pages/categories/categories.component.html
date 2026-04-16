@@ -1,370 +1,435 @@
-<div class="col-lg-12 mb-4">
-  <h2 *ngIf="athletestNumber">Totale Iscritti: {{athletestNumber.athletes}} - Totale Categorie {{athletestNumber.categories}}</h2>
-<br/>
-<button class="btn btn-warning ml-2 mb-3" (click)="openClassificaModal()">
-    <i class="fa fa-trophy"></i> Classifica Società
-</button>
-<div class="row mb-1">
-  <div class="col">
-      <div class="input-group mb-3 box-shadow"> 
-          <div class="input-group-prepend">
-              <span class="input-group-text border-top-0 border-left-0 border-bottom-0"><i class="fa fa-search"></i></span>
-          </div>                   
-          <input type="text" [(ngModel)]="searchText" placeholder="Search user by name..." class="form-control border-0">
-          <div class="input-group-append">
-              <span class="input-group-text border-top-0 border-right-0 border-bottom-0"><i class="fa fa-user-plus"></i></span>
-              <span (click)="toggle('grid')" class="input-group-text border-top-0 border-right-0 border-bottom-0"><i class="fa fa-th"></i></span>
-              <span (click)="toggle('list')" class="input-group-text border-top-0 border-right-0 border-bottom-0"><i class="fa fa-list"></i></span>
-          </div>
-      </div>
-  </div>
+<div class="row mb-4 pt-3" *ngIf="athletestNumber">
+    <div class="col-md-3">
+        <div class="card border-0 box-shadow rounded-lg bg-white overflow-hidden info-card">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="rounded-circle icon-shape bg-soft-primary text-primary mr-3">
+                    <i class="fa fa-users fa-lg"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0 text-muted text-uppercase small font-weight-bold">Iscritti</h6>
+                    <h3 class="mb-0 font-weight-bold text-dark">{{athletestNumber.athletes}}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 box-shadow rounded-lg bg-white overflow-hidden info-card">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="rounded-circle icon-shape bg-soft-success text-success mr-3">
+                    <i class="fa fa-check-square-o fa-lg"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0 text-muted text-uppercase small font-weight-bold">Totale Prove</h6>
+                    <h3 class="mb-0 font-weight-bold text-dark">{{totaleProve}}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 box-shadow rounded-lg bg-white overflow-hidden info-card">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="rounded-circle icon-shape bg-soft-info text-info mr-3">
+                    <i class="fa fa-list-ul fa-lg"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0 text-muted text-uppercase small font-weight-bold">Categorie</h6>
+                    <h3 class="mb-0 font-weight-bold text-dark">{{athletestNumber.categories}}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 d-flex align-items-center justify-content-end">
+        <button class="btn btn-warning btn-hero rounded-pill box-shadow hover-lift" (click)="openClassificaModal()">
+            <i class="fa fa-trophy mr-2"></i> Classifica Società
+        </button>
+    </div>
 </div>
 
-<div *ngIf="type=='list'  && !dettaglio" class="row">
-  <div class="col-12 table-container">
-
-          <table class="table align-items-center table-flush">
-              <thead>
-                <tr>
-                  <th>Codice</th>
-                  <th>Categoria</th>
-                  <th>Specialità</th>
-                  <th>Genere</th>
-                  <th>N. Atleti</th>
-                  <th>Stato</th>
-                  <th>Azioni</th>
-                </tr>
-              </thead>
-              <tbody>
-                  <tr *ngFor="let category of categories | paginate: { itemsPerPage: 25, currentPage: p }">                        
-                    <td class="align-middle">{{category.id}}</td>
-                    <td class="align-middle">{{category.categoria}} - {{category.grado}} {{category.cat_peso}}</td>
-                    <td class="align-middle">{{category.specialita}}</td>
-                    <td class="align-middle">{{category.sesso}}</td>
-                    <td class="align-middle">{{category.n_athletes}}</td>
-                    <td class="align-middle">
-    
-                    <span *ngIf="category.status == categoryStatus.TODO" class="badge badge-success code">Attiva</span>
-                    <span *ngIf="category.status == categoryStatus.OPEN" class="badge badge-primary code">Aperta</span>
-                    <span *ngIf="category.status == categoryStatus.DOING" class="badge badge-warning code">In corso</span>
-                    <span *ngIf="category.status == categoryStatus.BACKLOG" class="badge badge-secondary code"> Non assegnata </span>
-                    <span *ngIf="category.status == categoryStatus.CLOSED" class="badge badge-danger code">Chiusa</span>
-                    <span *ngIf="category.tatami" class="badge badge-info code ml-2">{{category.tatami}}</span>
-                    </td>
-                    <td class="align-middle">
-                      <button *ngIf="category.status != categoryStatus.CLOSED" type="button" class="btn btn-outline mr-1" data-toggle="tooltip" data-placement="top" title="Assegna a tatami"  (click)="openTatamiModal(category.id)">
-                        <i class="fa fa-upload"></i>
-                      </button>
-                      <button type="button" data-toggle="tooltip" data-placement="top" title="Visualizza categoria" class="btn btn-outline tt mr-1" data-animation="false" (click)="openCategory(category)">
-                        <i class="fa fa-file-text"></i>
-                      </button>
-                      <button type="button" data-toggle="tooltip"  class="btn btn-primary btn-sm tt mr-1" 
-                      *ngIf="category.id.includes('KU')" (click)="openKumiteBrackets(category)">
-                        Tabellone
-                      </button>
-                      <button *ngIf="category.status == categoryStatus.CLOSED" type="button" class="btn btn-sm btn-warning text-dark ml-1" data-toggle="modal" (click)="openRankingModal(category)">
-                        <i class="fa fa-trophy" tooltip="Visualizza classifica"></i>
-                      </button>
-                      <button *ngIf="category.status == categoryStatus.BACKLOG && category.sesso == 'M/F'" type="button" class="btn btn-outline mr-1" data-toggle="tooltip" data-placement="top" title="Dividi categoria"  (click)="splitCategory(category)">
-                        <i class="fa fa-files-o"></i>
-                      </button>
-                    </td>
-                  </tr>
-              </tbody>
-          </table>
-
-  </div>
+<div class="card border-0 box-shadow mb-4 rounded-lg">
+    <div class="card-body p-2 d-flex justify-content-between align-items-center">
+        <div class="input-group w-50 ml-2">
+            <div class="input-group-prepend">
+                <span class="input-group-text border-0 bg-transparent"><i class="fa fa-search text-muted"></i></span>
+            </div>
+            <input type="text" [(ngModel)]="searchText" placeholder="Cerca categoria o codice..." class="form-control border-0 bg-transparent shadow-none">
+        </div>
+        <div class="btn-group p-1 bg-light rounded-pill mr-2">
+            <button (click)="toggle('list')" class="btn btn-sm px-3 rounded-pill" [ngClass]="type == 'list' ? 'btn-white box-shadow' : 'btn-light text-muted'">
+                <i class="fa fa-list mr-1"></i> Lista
+            </button>
+            <button (click)="toggle('grid')" class="btn btn-sm px-3 rounded-pill" [ngClass]="type == 'grid' ? 'btn-white box-shadow' : 'btn-light text-muted'">
+                <i class="fa fa-th-large mr-1"></i> Tatami
+            </button>
+        </div>
+    </div>
 </div>
 
-<div *ngIf="type=='grid'  && !dettaglio" class="row">
-  <div *ngFor="let tatami of tatamiStatus; let i = index;" class="col-xl-4 col-lg-6 mb-4">
-      <div class="flip">
-          <div class="content">
-              <div class="front">
-                  <div class="card border-0 box-shadow rounded-0">
-                      <div class="card-header border-0 rounded-0 text-muted">
-                          <h5 class="mb-0">
-                             <i class="fa fa-user mr-2 text-success" placement="bottom" [ngbTooltip]="'deleted'"></i>
-                             {{tatami.name}}
-                          </h5>
-                          <div class="widget-controls"> 
-                              <a (click)="openMenuAssign($event)" href="javascript:void(0);" class="transition"><i class="fa fa-bars"></i></a> 
-                              <a href="javascript:void(0);" class="transition"><i class="fa fa-pencil"></i></a>             
-                          </div>        
-                      </div>
-                      <div class="card-body pt-3">
-                          
-                          <div class="media">                
-                              <div class="media-body">
-                                  <div class="row" *ngFor="let category of tatami.userCategories">  
-                                      <div class="col-2 text-gray text-right pr-0 font-italic">
-                                        <span *ngIf="category.status == categoryStatus.TODO" class="badge badge-success code">{{category.categorycode.id}}</span>
-                                        <span *ngIf="category.status == categoryStatus.OPEN" class="badge badge-primary code">{{category.categorycode.id}}</span>
-                                        <span *ngIf="category.status == categoryStatus.DOING" class="badge badge-warning code">{{category.categorycode.id}}</span>
-                                        <span *ngIf="category.status == categoryStatus.BACKLOG" class="badge badge-secondary code">{{category.categorycode.id}}</span>
-                                      </div>
-                                      <div class="col-10 pl-2">
-                                        <span *ngIf="category.status == categoryStatus.TODO">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
-                                        <span *ngIf="category.status == categoryStatus.OPEN">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
-                                        <span *ngIf="category.status == categoryStatus.DOING">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
-                                        <span *ngIf="category.status == categoryStatus.BACKLOG">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}} {{category.categorycode.cat_peso}}</span>
-                                      </div>                          
-                                  </div>
-                              </div>
-                          </div>
 
-                      </div>
-                  </div>
-              </div>
-              <div class="back">
-                  <div class="card border-0 box-shadow rounded-0">
-                      <div class="card-header border-0 rounded-0 text-muted">
-                          <h5 class="mb-0">
-                            {{tatami.name}} - Categorie concluse
-                          </h5>
-                          <div class="widget-controls"> 
-                              <a (click)="closeMenuAssign($event)" href="javascript:void(0);" class="transition"><i class="fa fa-times"></i></a>
-                          </div>        
-                      </div>
-                      <div class="card-body pt-3"> 
-                        <div class="row" *ngFor="let category of tatami.userCategories">  
-                          <div class="col-2 text-gray text-right pr-0 font-italic">
-                            <span *ngIf="category.status == categoryStatus.CLOSED" class="badge badge-danger code">{{category.categorycode.id}}</span>
-                          </div>
-                          <div class="col-10 pl-2">
-                            <span *ngIf="category.status == categoryStatus.CLOSED">{{category.categorycode.specialita}} - {{category.categorycode.categoria}} {{category.categorycode.grado}} - {{category.categorycode.sesso}}</span>
-                          </div>                          
-                      </div>                             
-                      </div>
-                  </div>
-              </div>
-          </div>
-      </div>
-  </div>
+<div *ngIf="type=='list' && !dettaglio" class="row">
+    <div class="col-12">
+        <div class="table-responsive table-categories box-shadow">
+            <table class="table align-items-center mb-0">
+                <thead class="thead-light-modern">
+                    <tr>
+                        <th>Codice</th>
+                        <th>Categoria</th>
+                        <th>Specialità</th>
+                        <th>Genere</th>
+                        <th class="text-center">Atleti</th>
+                        <th>Stato</th>
+                        <th class="text-right pr-4">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let category of categories | paginate: { itemsPerPage: 25, currentPage: p }">
+                        <td class="align-middle font-weight-bold text-primary">{{category.id}}</td>
+                        <td class="align-middle">
+                            <div class="font-weight-bold text-dark">{{category.categoria}}</div>
+                            <div class="text-muted">{{category.grado}} {{category.cat_peso}}</div>
+                        </td>
+                        <td class="align-middle">{{category.specialita}}</td>
+                        <td class="align-middle"><span class="badge badge-light border">{{category.sesso}}</span></td>
+                        <td class="align-middle text-center font-weight-bold">{{category.n_athletes}}</td>
+                        <td class="align-middle">
+                            <span *ngIf="category.status == categoryStatus.TODO" class="badge badge-status todo">Attiva</span>
+                            <span *ngIf="category.status == categoryStatus.OPEN" class="badge badge-status open">Aperta</span>
+                            <span *ngIf="category.status == categoryStatus.DOING" class="badge badge-status doing">In corso</span>
+                            <span *ngIf="category.status == categoryStatus.BACKLOG" class="badge badge-status backlog">Non assegnata</span>
+                            <span *ngIf="category.status == categoryStatus.CLOSED" class="badge badge-status closed">Chiusa</span>
+                            
+                            <span *ngIf="category.tatami" class="badge badge-info ml-2 py-1 px-2">
+                                <i class="fa fa-desktop mr-1"></i> {{category.tatami}}
+                            </span>
+                        </td>
+                        <td class="align-middle text-right pr-4">
+    <div class="action-wrapper">
+        
+        <button *ngIf="category.status == categoryStatus.CLOSED" type="button" 
+                class="btn btn-warning btn-pill-action rounded-pill box-shadow hover-lift" 
+                (click)="openRankingModal(category)">
+            <i class="fa fa-trophy mr-1"></i> Classifica
+        </button>
+
+        <button *ngIf="category.id.includes('KU')" type="button" 
+                class="btn btn-primary btn-pill-action rounded-pill box-shadow hover-lift" 
+                (click)="openKumiteBrackets(category)">
+            Tabellone
+        </button>
+
+        <button *ngIf="category.status != categoryStatus.CLOSED" type="button" 
+                class="btn-circle-utility btn-assign" 
+                (click)="openTatamiModal(category.id)" 
+                title="Assegna a Tatami">
+            <i class="fa fa-upload"></i>
+        </button>
+        
+        <button type="button" class="btn-circle-utility btn-detail" 
+                (click)="openCategory(category)" 
+                title="Visualizza Dettaglio">
+            <i class="fa fa-file-text"></i>
+        </button>
+        
+        <button *ngIf="category.status == categoryStatus.BACKLOG && category.sesso == 'M/F'" 
+                type="button" class="btn-circle-utility btn-split" 
+                (click)="splitCategory(category)" 
+                title="Dividi in Maschile e Femminile">
+            <i class="fa fa-files-o"></i>
+        </button>
+        
+    </div>
+</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div *ngIf="type=='grid' && !dettaglio" class="row">
+    <div *ngFor="let tatami of tatamiStatus" class="col-xl-4 col-lg-6 mb-4">
+        <div class="flip">
+            <div class="content">
+                <div class="front">
+                    <div class="card border-0 box-shadow rounded-lg h-100">
+                        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 font-weight-bold text-primary">
+                                <i class="fa fa-desktop mr-2 text-muted"></i>{{tatami.name}}
+                            </h5>
+                            <button class="btn btn-sm btn-light rounded-circle shadow-none" (click)="openMenuAssign($event)">
+                                <i class="fa fa-history text-muted"></i>
+                            </button>
+                        </div>
+                        <div class="card-body pt-0 scroll-categories">
+                            <div class="list-group list-group-flush">
+                                <div *ngFor="let category of tatami.userCategories" 
+                                     [hidden]="category.status == categoryStatus.CLOSED"
+                                     class="list-group-item px-0 border-0 d-flex align-items-start mb-2">
+                                    <span class="badge mr-2 mt-1 py-1 px-2" [ngClass]="{
+                                        'badge-success': category.status == categoryStatus.TODO,
+                                        'badge-primary': category.status == categoryStatus.OPEN,
+                                        'badge-warning': category.status == categoryStatus.DOING
+                                    }">{{category.categorycode.id}}</span>
+                                    <span class="small font-weight-bold text-dark">{{category.categorycode.specialita}} - {{category.categorycode.categoria}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="back">
+                    <div class="card border-0 box-shadow rounded-lg h-100 bg-light">
+                        <div class="card-header border-0 bg-transparent py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-muted text-uppercase small font-weight-bold">Concluse</h6>
+                            <button class="btn btn-sm btn-dark rounded-circle shadow-none" (click)="closeMenuAssign($event)">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="card-body pt-0">
+                            <div *ngFor="let category of tatami.userCategories">
+                                <div *ngIf="category.status == categoryStatus.CLOSED" class="d-flex align-items-center mb-1">
+                                    <i class="fa fa-check-circle text-danger mr-2"></i>
+                                    <span class="small text-muted">{{category.categorycode.id}} - {{category.categorycode.specialita}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="row" *ngIf="type=='list' && !dettaglio">
-  <div class="col-12">
-      <div class="bg-white text-center">
-          <pagination-controls autoHide="true" (pageChange)="p = $event" maxSize="3"></pagination-controls>
+
+      <div class="col-12 text-center">
+          <pagination-controls 
+              autoHide="true" 
+              (pageChange)="p = $event" 
+              maxSize="5"
+              previousLabel="Prec"
+              nextLabel="Succ">
+            
+          </pagination-controls>
       </div>        
+
+</div>
+
+<div *ngIf="dettaglio" class="detail-view-container animate__animated animate__fadeIn">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <button type="button" class="btn btn-link text-primary font-weight-bold p-0 mb-2" (click)="backTocategory()">
+                <i class="fa fa-chevron-left mr-2"></i> Torna all'elenco categorie
+            </button>
+            <h2 class="display-5 font-weight-bold text-dark mb-0">
+                {{selectedCategory.specialita}} <span class="text-primary">{{selectedCategory.categoria}}</span>
+            </h2>
+            <p class="text-muted lead mb-0">
+                {{selectedCategory.grado}} {{selectedCategory.cat_peso}} — 
+                <span class="badge badge-light border px-2">{{selectedCategory.sesso}}</span>
+            </p>
+        </div>
+        <div class="col-md-4 text-right">
+            <button type="button" class="btn btn-outline-primary rounded-pill px-4 hover-lift shadow-sm">
+                <i class="fa fa-print mr-2"></i> Stampa Tabellone
+            </button>
+        </div>
+    </div>
+
+    <div class="card border-0 box-shadow rounded-lg overflow-hidden">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 font-weight-bold text-muted text-uppercase small">
+                <i class="fa fa-sitemap mr-2"></i> Visualizzazione Tabellone Kumite
+            </h5>
+        </div>
+        <div class="card-body bg-light p-5">
+            <div id="kumite-wrapper" class="d-flex flex-column align-items-center justify-content-center">
+                <div id="minimal" class="bracket-display shadow-sm bg-white p-4 rounded border"></div>
+
+                <div class="row w-100 mt-4" *ngIf="athleteList.length == 3">
+                    <div class="col-md-6 mb-4">
+                        <div id="girone-2" class="bracket-display shadow-sm bg-white p-3 rounded border"></div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div id="girone-3" class="bracket-display shadow-sm bg-white p-3 rounded border"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div bsModal #primaryModal="bs-modal" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 box-shadow-lg rounded-lg overflow-hidden">
+      <div class="modal-header modal-header-light py-3">
+        <h5 class="modal-title font-weight-bold"><i class="fa fa-desktop mr-2 text-success"></i> Assegna a Tatami</h5>
+        <button type="button" class="close text-white" (click)="primaryModal.hide()">&times;</button>
+      </div>
+      <div class="modal-body p-4 bg-light">
+        <div *ngIf="message" class="alert alert-info border-0 shadow-sm mb-4">
+            <i class="fa fa-info-circle mr-2"></i> {{message}}
+        </div>
+        
+        <form [formGroup]="tatamiForm">
+          <div class="form-group mb-0">
+            <label class="font-weight-bold text-uppercase small text-primary">Seleziona Tatami di destinazione</label>
+            <ng-select [items]="tatamiList"
+                       bindLabel="name"
+                       bindValue="id"
+                       formControlName="user_id"
+                       [clearable]="false"
+                       [searchable]="false"
+                       class="custom-ng-select"
+                       placeholder="Scegli un tatami...">
+            </ng-select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer bg-white border-top-0">
+        <button type="button" class="btn btn-light rounded-pill px-4" (click)="primaryModal.hide()">Annulla</button>
+        <button type="button" class="btn btn-primary rounded-pill px-4 box-shadow" (click)="assignTatami()">
+            Conferma Assegnazione <i class="fa fa-check ml-1"></i>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
-<div *ngIf="dettaglio">
-  <div class="col-lg-12 text-center">
-    <h2>{{selectedCategory.specialita}} {{selectedCategory.categoria}} - {{selectedCategory.grado}} {{selectedCategory.cat_peso}} {{selectedCategory.sesso}}</h2>
-    
-    <button type="button" data-toggle="tooltip" data-placement="top" class="btn btn-outline-primary tt mt-4" data-animation="false" (click)="backTocategory()">
-      Torna all'elenco categorie
-    </button>
-    <button type="button" class="btn btn-outline-primary mr-1" data-toggle="modal" (click)="generatePdf(selectedCategory)">
-      <i class="fa fa-print mr-3" tooltip="Stampa tabellone"> Stampa</i>
-    </button>
-
-    </div>
-  
-
-<div class="row">
-
-<div id="kumite" style="margin: 0 auto;">
-  <div id="minimal"></div>
-
-  <div id="girone-2"></div>
-
-  <div id="girone-3"></div>
-</div>
-</div>
-</div>
-
-<div bsModal #primaryModal="bs-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-primary" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h4 class="modal-title">Assegna a Tatami</h4>
-        <button type="button" class="close" (click)="primaryModal.hide()" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-
-        <p>{{message}}</p>
-        
-        <form [formGroup]="tatamiForm" method="post" enctype="multipart/form-data" class="form-horizontal">
-
-          <div class="form-group row">
-            <label class="col-md-3 col-form-label" for="select1">Select</label>
-            <div class="col-md-9">
-              <select class="form-control" id="selectTatami" formControlName="user_id" (change)="showTatamiStatus()" >
-                <option *ngFor="let tatami of tatamiList" [value]="tatami.id">{{tatami.name}}</option>
-            </select>
-            </div>
-          </div>
-        </form>
-
-        
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-danger" (click)="primaryModal.hide()"><i class="fa fa-ban"></i> Chiudi</button>
-        <button type="button" class="btn btn-sm btn-primary" (click)="assignTatami()"><i class="fa fa-dot-circle-o"></i> Invia</button>
-      </div>
-    </div><!-- /.modal-content -->
-  </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-
-<div bsModal #listModal="bs-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-primary" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h4 *ngIf="selectedCategory" class="modal-title">{{selectedCategory.id}} - {{selectedCategory.specialita}} - {{selectedCategory.categoria}} - {{selectedCategory.grado}} {{selectedCategory.sesso}} {{selectedCategory.cat_peso}}</h4>
-        <button type="button" class="close" (click)="listModal.hide()" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="row">
-          <div class="col-lg-12">
-            <div class="card">
-
-              <div class="card-body">
-                <table datatable class="table table-sm dataTable table-striped hover">
-                  <thead>
-                    <tr role="row">  
-                      <th>Colore</th>
-                      <th>Nome</th>
-                      <th>Data Nascita</th>
-                      <th>Società</th>
-                      <th>Responsabile</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let athlete of athleteList" [ngClass]="athlete.accorpamento ? 'table-info': ''">
-                      <td><i class="fa fa-user-circle-o fa-lg" style="color:blue"></i></td>
-                      <td>{{athlete.athlete.cognome}} {{athlete.athlete.nome}}</td>
-                      <td>{{athlete.athlete.data_nascita}}</td>
-                      <td>{{athlete.athlete.club.club_name}}</td>
-                      <td>{{athlete.athlete.club.club_manager}}</td>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          <!--/.col-->
-      
-        </div>
-
-        
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-danger" (click)="listModal.hide()"><i class="fa fa-ban"></i> Chiudi</button>
-      </div>
-    </div><!-- /.modal-content -->
-  </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-
-<div bsModal #rankingModal="bs-modal" class="modal fade" id="rankingModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-    <div class="modal-content">
-      
-      <div class="modal-header bg-dark text-white">
-        <h5 class="modal-title">
-            <i class="fa fa-trophy text-warning mr-2"></i>
-            Classifica: {{ selectedCategory?.specialita }} {{ selectedCategory?.categoria }} {{ selectedCategory?.grado }}  {{ selectedCategory?.sesso }}  {{ selectedCategory?.cat_peso }}
+<div bsModal #listModal="bs-modal" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 box-shadow-lg rounded-lg overflow-hidden">
+      <div class="modal-header modal-header-light py-3">
+        <h5 *ngIf="selectedCategory" class="modal-title font-weight-bold">
+            <i class="fa fa-users mr-2"></i> {{selectedCategory.id}} - {{selectedCategory.specialita}}
         </h5>
-        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" (click)="rankingModal.hide()">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="close text-white" (click)="listModal.hide()">&times;</button>
       </div>
-
-      <div class="modal-body">
-        
-        <div *ngIf="!rankingData || rankingData.length === 0" class="text-center py-4">
-            <p class="text-muted">Nessuna classifica disponibile.</p>
+      <div class="modal-body p-0">
+        <div class="bg-light p-3 border-bottom">
+            <h6 class="mb-0 text-dark font-weight-bold">{{selectedCategory?.categoria}} {{selectedCategory?.grado}}</h6>
         </div>
+        <div class="table-responsive">
+          <table class="table modal-table mb-0">
+            <thead>
+              <tr>
+                <th>Atleta</th>
+                <th>Data Nascita</th>
+                <th>Società</th>
+                <th class="text-right">Responsabile</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let athlete of athleteList" [ngClass]="{'table-info': athlete.accorpamento}">
+                <td class="align-middle">
+                    <i class="fa fa-user-circle text-primary mr-2"></i>
+                    <strong>{{athlete.athlete.cognome}} {{athlete.athlete.nome}}</strong>
+                </td>
+                <td class="align-middle">{{athlete.athlete.data_nascita}}</td>
+                <td class="align-middle text-muted small">{{athlete.athlete.club.club_name}}</td>
+                <td class="align-middle text-right small">{{athlete.athlete.club.club_manager}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary rounded-pill px-4" (click)="listModal.hide()">Chiudi</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-        <div *ngIf="rankingData && rankingData.length > 0" class="table-responsive">
-            <table class="table table-striped table-hover mb-0">
-                <thead class="thead-light">
+<div bsModal #rankingModal="bs-modal" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 box-shadow-lg rounded-lg overflow-hidden">
+      <div class="modal-header modal-header-light py-3">
+        <h5 class="modal-title font-weight-bold">
+            <i class="fa fa-trophy text-warning mr-2"></i> 
+            Classifica {{selectedCategory?.specialita}} {{selectedCategory?.categoria}} - {{selectedCategory?.grado}} {{selectedCategory?.sesso}} {{selectedCategory?.cat_peso}}
+        </h5>
+        <button type="button" class="close text-white" (click)="rankingModal.hide()">&times;</button>
+      </div>
+      <div class="modal-body p-0 bg-light">
+        <div class="table-responsive">
+            <table class="table modal-table mb-0">
+                <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Atleta</th>
+                        <th width="80">Pos</th>
+                        <th>Atleta / Società</th>
                         <th class="text-center">Punti</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let row of rankingData; index as i">
+                    <tr *ngFor="let row of rankingData">
                         <td class="align-middle font-weight-bold">
-                          <span *ngIf="row.final_ranking == 1" title="Oro">🥇 1°</span>
-                          <span *ngIf="row.final_ranking == 2" title="Argento">🥈 2°</span>
-                          <span *ngIf="row.final_ranking == 3" title="Bronzo">🥉 3°</span>
-                          <span *ngIf="row.final_ranking == 4"   title="Bronzo">🥉 3°</span>
+                          <span *ngIf="row.final_ranking == 1" class="medal-gold">🥇 1°</span>
+                          <span *ngIf="row.final_ranking == 2" class="medal-silver">🥈 2°</span>
+                          <span *ngIf="row.final_ranking == 3" class="medal-bronze">🥉 3°</span>
+                          <span *ngIf="row.final_ranking == 4" class="medal-bronze">🥉 3°</span>
                         </td>
                         <td class="align-middle">
-                            <strong>{{ row.athlete.cognome }} {{ row.athlete.nome }}</strong><br>
+                            <div class="font-weight-bold">{{ row.athlete.cognome }} {{ row.athlete.nome }}</div>
                             <small class="text-muted">{{ row.athlete.club.club_name }}</small>
                         </td>
-                        <td class="text-center align-middle">{{ row.panel_data?.total_score }}</td>
+                        <td class="text-center align-middle">
+                            <span class="badge badge-primary py-2 px-3">{{ row.panel_data?.total_score || row.panel_data?.total_time }}</span>
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-
       </div>
-      
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="rankingModal.hide()" data-dismiss="modal">Chiudi</button>
+        <button type="button" class="btn btn-secondary rounded-pill px-4" (click)="rankingModal.hide()">Chiudi</button>
       </div>
-
     </div>
   </div>
 </div>
 
-<div bsModal #modalClassifica="bs-modal" class="modal fade" id="modalClassifica" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-      
-      <div class="modal-header bg-warning text-white">
-        <h5 class="modal-title"><i class="fa fa-trophy"></i> Classifica Società</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close" (click)="modalClassifica.hide()">
-          <span aria-hidden="true">&times;</span>
-        </button>
+<div bsModal #modalClassifica="bs-modal" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 box-shadow-lg rounded-lg overflow-hidden">
+      <div class="modal-header bg-gradient-warning text-white border-0 py-3">
+        <h5 class="modal-title font-weight-bold"><i class="fa fa-medal mr-2"></i> Classifica Generale Società</h5>
+        <button type="button" class="close text-white" (click)="modalClassifica.hide()">&times;</button>
       </div>
-      
-      <div class="modal-body">
+      <div class="modal-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover table-striped text-center">
-                <thead class="thead-dark">
+            <table class="table modal-table text-center mb-0">
+                <thead class="thead-light-modern">
                     <tr>
                         <th>Pos</th>
                         <th class="text-left">Società</th>
-                        <th>Atleti (x2pt)</th>
-                        <th class="text-warning"><i class="fa fa-medal"></i> Oro (10pt)</th>
-                        <th class="text-secondary"><i class="fa fa-medal"></i> Arg (8pt)</th>
-                        <th class="text-danger"><i class="fa fa-medal"></i> Bro (6pt)</th>
-                        <th class="bg-primary text-white">TOTALE</th>
+                        <th>Atleti</th>
+                        <th class="text-warning">Oro</th>
+                        <th class="text-secondary">Arg</th>
+                        <th class="text-danger">Bro</th>
+                        <th class="bg-light">TOTALE</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let row of rankingList; let i = index" [ngClass]="{'font-weight-bold': i < 4}">
-                        <td>
-                            <span *ngIf="i==0">🥇</span>
-                            <span *ngIf="i==1">🥈</span>
-                            <span *ngIf="i==2">🥉</span>
-                            <span *ngIf="i==3">🥉</span>
-                            <span *ngIf="i>3">{{ i + 1 }}</span>
+                    <tr *ngFor="let row of rankingList; let i = index" [ngClass]="{'bg-soft-primary font-weight-bold': i == 0}">
+                        <td class="align-middle">
+                            <span *ngIf="i==0" class="medal-gold">🥇</span>
+                            <span *ngIf="i==1" class="medal-silver">🥈</span>
+                            <span *ngIf="i==2" class="medal-bronze">🥉</span>
+                            <span *ngIf="i>2">{{ i + 1 }}</span>
                         </td>
-                        <td class="text-left">{{ row.club_name }}</td>
-                        <td>{{ row.athletes_count }}</td>
-                        <td>{{ row.golds }}</td>
-                        <td>{{ row.silvers }}</td>
-                        <td>{{ row.bronzes }}</td>
-                        <td class="bg-light font-weight-bold text-primary">{{ row.points }}</td>
+                        <td class="text-left align-middle"><strong>{{ row.club_name }}</strong></td>
+                        <td class="align-middle text-muted">{{ row.athletes_count }}</td>
+                        <td class="align-middle font-weight-bold">{{ row.golds }}</td>
+                        <td class="align-middle font-weight-bold">{{ row.silvers }}</td>
+                        <td class="align-middle font-weight-bold">{{ row.bronzes }}</td>
+                        <td class="align-middle bg-light">
+                            <span class="text-primary font-weight-bold" style="font-size: 1.1rem;">{{ row.points }}</span>
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
       </div>
-
+      <div class="modal-footer">
+        <button type="button" class="btn btn-warning rounded-pill px-4 font-weight-bold box-shadow" (click)="modalClassifica.hide()">Ottimo!</button>
+      </div>
     </div>
   </div>
 </div>

@@ -164,18 +164,40 @@ class CompetitionsController extends ApiController
 
             // 4. Importazione Dati (Usando patchEntities e saveMany per velocità)
             
-            // Funzione Helper per pulire ID vuoti
+            // -------------------------------------------------------------------
+            // HELPER 1: Pulisce i dati vuoti e RE-INDICIZZA l'array (Fondamentale!)
+            // -------------------------------------------------------------------
             $cleanData = function($items) {
                 if (empty($items)) return [];
-                return array_filter($items, function($item) {
+                    $filtered = array_filter($items, function($item) {
                     return !empty($item['id']) && $item['id'] !== '';
                 });
+                // array_values è cruciale per far coincidere gli indici con le Entities
+                return array_values($filtered);
+            };
+
+            // -------------------------------------------------------------------
+            // HELPER 2: La magia per forzare l'ID originale e la INSERT
+            // -------------------------------------------------------------------
+            $forceIds = function($entities, $sourceData) {
+                foreach ($entities as $index => $entity) {
+                    $entity->setAccess('id', true); // Sblocca il campo
+                    $entity->id = $sourceData[$index]['id']; // Inietta l'ID originale
+                    $entity->isNew(true); // Forza CakePHP a fare una INSERT e non un UPDATE
+                }
+                return $entities;
             };
 
             // --- 1. COMPETITION ---
             if (!empty($data['competition']) && !empty($data['competition']['id'])) {
                 $compEntity = $this->Competitions->newEmptyEntity();
                 $compEntity = $this->Competitions->patchEntity($compEntity, $data['competition'], $saveOptions);
+
+                // Forza ID per la gara singola
+                $compEntity->setAccess('id', true);
+                $compEntity->id = $data['competition']['id'];
+                $compEntity->isNew(true);
+
                 if (!$this->Competitions->save($compEntity, $saveOptions)) {
                     throw new \Exception("Errore salvataggio Competition: " . json_encode($compEntity->getErrors()));
                 }
@@ -185,8 +207,9 @@ class CompetitionsController extends ApiController
             $cleanClubs = $cleanData($data['clubs'] ?? []);
             if (!empty($cleanClubs)) {
                 $entities = $this->Clubs->newEntities($cleanClubs, $saveOptions);
+                $entities = $forceIds($entities, $cleanClubs); // Applica la forzatura ID
                 // saveMany restituisce le entità salvate o false in caso di fallimento grave
-                $result = $this->Clubs->saveMany($entities, $saveOptions);
+                $this->Clubs->saveMany($entities, $saveOptions);
                 
                 // Verifica errori specifici nelle entità
                 foreach ($entities as $entity) {
@@ -200,7 +223,9 @@ class CompetitionsController extends ApiController
             $cleanAthletes = $cleanData($data['athletes'] ?? []);
             if (!empty($cleanAthletes)) {
                 $entities = $this->Athletes->newEntities($cleanAthletes, $saveOptions);
+                $entities = $forceIds($entities, $cleanAthletes); // Applica la forzatura ID
                 $this->Athletes->saveMany($entities, $saveOptions);
+                
                 foreach ($entities as $entity) {
                     if ($entity->hasErrors()) {
                         throw new \Exception("Errore Atleta ID " . $entity->id . ": " . json_encode($entity->getErrors()));
@@ -212,6 +237,7 @@ class CompetitionsController extends ApiController
             $cleanCats = $cleanData($data['categorycodes'] ?? []);
             if (!empty($cleanCats)) {
                 $entities = $this->Categorycodes->newEntities($cleanCats, $saveOptions);
+                $entities = $forceIds($entities, $cleanCats); // Applica la forzatura ID
                 $this->Categorycodes->saveMany($entities, $saveOptions);
                 foreach ($entities as $entity) {
                     if ($entity->hasErrors()) {
@@ -224,6 +250,7 @@ class CompetitionsController extends ApiController
             $cleanClubInscr = $cleanData($data['clubInscirption'] ?? []);
             if (!empty($cleanClubInscr)) {
                 $entities = $this->ClubInscriptions->newEntities($cleanClubInscr, $saveOptions);
+                $entities = $forceIds($entities, $cleanClubInscr); // Applica la forzatura ID
                 $this->ClubInscriptions->saveMany($entities, $saveOptions);
                 foreach ($entities as $entity) {
                     if ($entity->hasErrors()) {
@@ -236,6 +263,7 @@ class CompetitionsController extends ApiController
             $cleanAthInscr = $cleanData($data['atheleInscirption'] ?? []);
             if (!empty($cleanAthInscr)) {
                 $entities = $this->AthleteInscriptions->newEntities($cleanAthInscr, $saveOptions);
+                $entities = $forceIds($entities, $cleanAthInscr); // Applica la forzatura ID
                 $this->AthleteInscriptions->saveMany($entities, $saveOptions);
                 foreach ($entities as $entity) {
                     if ($entity->hasErrors()) {

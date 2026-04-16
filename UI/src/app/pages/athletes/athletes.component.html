@@ -1,257 +1,245 @@
-<div widget class="card border-0 box-shadow">
-    <div class="card-header transparent border-0 text-muted">
-        <h5 class="mb-0">Lista Atleti</h5>
-        <button class="btn btn-primary btn-lg btn-custom box-shadow mr-3"
-            (click)="openModal(modalContent)">
-            <i class="fa fa-user-plus mr-2"></i>
-            Aggiungi atleta
+<div class="card border-0 box-shadow mb-4 rounded-lg bg-white">
+    <div class="card-body p-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="font-weight-bold text-dark mb-0">
+                <i class="fa fa-vcard text-primary mr-2"></i>Anagrafica Gara
+            </h3>
+            <p class="text-muted mb-0">Gestione globale iscritti e categorie</p>
+        </div>
+        <button class="btn btn-success btn-lg rounded-pill px-4 hover-lift" (click)="openModal(modalContent)">
+            <i class="fa fa-user-plus mr-2"></i> Aggiungi Atleta
         </button>
-               
-    </div>
-    <div class="card-body pt-0 widget-body">
-        <div class="table-responsive">
-            <ng2-smart-table  class="table table-hover"
-                              [settings]="settings" 
-                              [source]="data" 
-                              (custom)="onCustom($event, editCategory)"
-                              (deleteConfirm)="onDeleteConfirm($event)"></ng2-smart-table>
-        </div>          
     </div>
 </div>
 
 
+    <div class="card border-0 box-shadow rounded-lg">
+        <div class="card-body table-container">
+            <ng2-smart-table  class="table table-hover"
+                              [settings]="settings" 
+                              [source]="data" 
+                              (custom)="onCustom($event, editCategory, duplicateInscription)">
+            </ng2-smart-table>
+        </div>          
+    </div>
+
+
 <ng-template #modalContent>
-    <!-- <div class="modal-body bg-gray"> -->
-    <div class="row">
-        <div class="col-12 vertical-tabs">
-            <div widget class="card border-0 box-shadow">
-                <div class="card-header transparent border-0 text-muted " style="background-color: #202F40;">
-                    <h5 class="mb-0" style="color:white !important">INSERISCI NUOVO ISCRITTO</h5>
-                </div>
-                <div *ngIf="!confirmed" class="card-body widget-body">
-
-                    <div *ngFor="let step of steps" [hidden]="!step.active" class="bg-light col mx-auto">
-
-                        <form *ngIf="step.name=='dati atleta'" [formGroup]="athleteForm"
-                            class="row bg-light pt-2 mx-auto">
-
-                            <div class="form-group col-md-12">
-                                <ngx-select-dropdown [instanceId]="'instance1'" 
-                                (change)="selectionChanged($event)" 
-                                [multiple]="false" 
-                                [config]="config" 
-                                [options]="athletes"></ngx-select-dropdown> 
-                                
-                                </div> 
-                            <!-- nome e cognome -->
-                            <div class="form-group col-md-5"
-                                [ngClass]="{'has-danger' : step.hasError && athleteForm.get('surname').hasError('required'), 'has-success' : !athleteForm.get('surname').hasError('required') }">
-                                <label class="form-control-label">Cognome *</label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend"><span class="input-group-text"><i
-                                                class="fa fa-user-o"></i></span></div>
-                                    <input formControlName="surname" class="form-control"
-                                        [ngClass]="{'form-control-danger' :  athleteForm.get('surname').hasError('required'), 'form-control-success' :  !athleteForm.get('surname').hasError('required') }"
-                                        type="text" data-hj-whitelist>
-                                </div>
-                                <small class="text-danger"
-                                    *ngIf="step.hasError && athleteForm.get('surname').hasError('required')">Campo
-                                    obbligatorio</small>
-                            </div>
-                            <div class="form-group col-md-5"
-                                [ngClass]="{'has-danger' : step.hasError && athleteForm.get('name').hasError('required'), 'has-success' : !athleteForm.get('name').hasError('required') }">
-                                <label class="form-control-label">Nome *</label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend"><span class="input-group-text"><i
-                                                class="fa fa-user-o"></i></span></div>
-                                    <input formControlName="name" class="form-control"
-                                        [ngClass]="{'form-control-danger' :  athleteForm.get('name').hasError('required'), 'form-control-success' :  !athleteForm.get('name').hasError('required') }"
-                                        type="text" data-hj-whitelist>
-                                </div>
-                                <small class="text-danger"
-                                    *ngIf="step.hasError && athleteForm.get('name').hasError('required')">Campo
-                                    obbligatorio</small>
-                            </div>
-
-
-                            <!-- data di nascita -->
-                            <div class="form-group col-md-5"
-                                [ngClass]="{'has-danger' : (step.hasError && athleteForm.get('birthdate_day').hasError('required')) || (step.hasError && athleteForm.get('birthdate_month').hasError('required')) || (step.hasError && athleteForm.get('birthdate_year').hasError('required')), 'has-success' : !athleteForm.get('birthdate_day').hasError('required') && !athleteForm.get('birthdate_month').hasError('required') && !athleteForm.get('birthdate_year').hasError('required') }">
-                                <div class="form-group">
-                                    <label for="birthdate_day" class="form-control-label">Data di nascita*</label>
-                                    <div class="row ml-1">
-                                        <input type="text" placeholder="giorno" class="col-md-3 form-control mr-2"
-                                            id="birthdate_day" formControlName="birthdate_day" data-hj-whitelist>
-                                        <input type="text" placeholder="mese" class="col-md-3 form-control mr-2"
-                                            id="birthdate_month" formControlName="birthdate_month" data-hj-whitelist>
-                                        <input type="text" placeholder="anno" class="col-md-3 form-control mr-2" (change)="checkCategory()"
-                                            id="birthdate_year" formControlName="birthdate_year" data-hj-whitelist>
-                                    </div>
-                                </div>
-                                <small class="text-danger"
-                                    *ngIf="step.hasError && athleteForm.get('birthdate_day').hasError('required')">Campo
-                                    obbligatorio</small>
-                                <small class="text-danger"
-                                    *ngIf="step.hasError && athleteForm.get('birthdate_month').hasError('required')">Campo
-                                    obbligatorio</small>
-                                <small class="text-danger"
-                                    *ngIf="step.hasError && athleteForm.get('birthdate_year').hasError('required')">Campo
-                                    obbligatorio</small>
-
-
-                            </div>
-
-                            <!-- cintura -->
-                            <div class="form-group col-md-5"
-                                [ngClass]="{'has-danger' : step.hasError && athleteForm.get('cintura').hasError('required'), 'has-success' : !athleteForm.get('cintura').hasError('required') }">
-                                <div class="form-group">
-                                    <label for="exampleSelect1" class="form-control-label">Cintura</label>
-                                    <select class="form-control" id="exampleSelect1" formControlName="cintura">
-                                        <option value="Bianca">BIANCA</option>
-                                        <option value="Gialla">GIALLA</option>
-                                        <option value="Arancione">ARANCIONE</option>
-                                        <option value="Verde">VERDE</option>
-                                        <option value="Blu">BLU</option>
-                                        <option value="Marrone">MARRONE</option>
-                                        <option value="Nera">NERA</option>
-                                    </select>
-                                </div>
-                                <small class="text-danger"
-                                    *ngIf="step.hasError && athleteForm.get('cintura').hasError('required')">Campo
-                                    obbligatorio</small>
-                            </div>
-
-                            <!-- sesso, con menù a tendina -->
-                            <div class="form-group col-md-2"
-                                [ngClass]="{'has-danger' : step.hasError && athleteForm.get('sesso').hasError('required'), 'has-success' : !athleteForm.get('sesso').hasError('required') }">
-                                <div class="form-group">
-                                    <label for="exampleSelect1" class="form-control-label">Genere</label>
-                                    <select class="form-control" id="exampleSelect1" formControlName="sesso">
-                                        <option value='M'>M</option>
-                                        <option value='F'>F</option>
-                                    </select>
-                                </div>
-                                <small class="text-danger"
-                                    *ngIf="step.hasError && athleteForm.get('sesso').hasError('required')">Campo
-                                    obbligatorio</small>
-                            </div>
-
-                            <div class="form-group col-md-5"
-                                [ngClass]="{'has-danger' : step.hasError && erroreCategoria, 'has-success' : !erroreCategoria }">
-                                <label class="control-label">Categoria</label>
-                                <input type="text" name="categoria" [value]="categoria" class="form-control"
-                                    disabled="true" data-hj-whitelist>
-                                <small class="text-danger" *ngIf="step.hasError && erroreCategoria">Non è stato
-                                    possibile recuperare la categoria di appartenenza. Controllare che la data di
-                                    nascita sia
-                                    stata inserita correttamente</small>
-                            </div>
-                        </form>
-
-                        <div *ngIf="step.name=='selezione prove'" class="row bg-light pt-2">
-                            <div class="col-12">
-                                <p>Selezionare una o più prove. Nel caso venga selezionata la prova KUMITE comparirà un
-                                    campo PESO nel quale andrà inserito il peso effettivo dell'atleta.</p>
-                            </div>
-                            <div class="col-12 ml-4">
-                                <div class="col-12 mb-4">
-                                    <!-- <div widget class="card border-0 box-shadow"> -->
-
-                                    <!-- <h6>selezione prove</h6> -->
-                                    <div class="form-group">
-                                        <div *ngFor="let item of prove" class="custom-control custom-checkbox">
-                                            <input type="checkbox" class="custom-control-input checkbox-dark-gray"
-                                                [id]="item.label" [(ngModel)]="item.checked" (change)="showPeso()">
-                                            <label class="custom-control-label"
-                                                [for]="item.label">{{item.label}}</label>
-                                        </div>
-                                    </div>
-                                    <!--  </div> -->
-                                </div>
-                                <form *ngIf="show" [formGroup]="weightForm">
-                                    <div class="form-group col-md-6"
-                                        [ngClass]="{'has-danger' : (step.hasError &&  weightForm.get('peso').hasError('required')) || errorePeso, 'has-success' : !weightForm.get('peso').hasError('required') }">
-                                        <div class="form-group">
-                                            <label for="exampleSelect1" class="form-control-label mr-2">Peso *</label>
-                                            <input type="number" id="exampleSelect1" formControlName="peso">
-                                        </div>
-                                        <small class="text-danger"
-                                            *ngIf="(step.hasError && weightForm.get('peso').hasError('required')) || errorePeso">Campo
-                                            obbligatorio. Inserire un peso valido</small>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                        <button *ngIf="!steps[0].active" class="btn btn-primary btn-custom mx-auto" (click)="prev()"><i
-                                class="fa fa-chevron-left arrow"></i>&nbsp;
-                            Indietro</button>
-                        <button *ngIf="steps[0].active" class="btn btn-primary btn-custom mx-auto"
-                            (click)="closeModal()">
-                            Chiudi</button>
-                        <button *ngIf="!steps[steps.length-1].active" class="btn-custom btn btn-primary mx-auto"
-                            (click)="next()" style="float: right">Prosegui
-                            &nbsp;<i class="fa fa-chevron-right arrow"></i></button>
-                        <button *ngIf="steps[steps.length-1].active" class="btn-custom btn btn-primary mx-auto"
-                            (click)="confirm()" style="float: right">Conferma
-                            &nbsp;<i class="fa fa-check arrow"></i></button>
-
+    <div class="card border-0 box-shadow overflow-hidden m-0">
+        
+        <div class="card-header bg-dark text-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold">
+                <i class="fa fa-user-plus mr-2 text-success"></i> 
+                NUOVA ISCRIZIONE ATLETA
+            </h5>
+            <button type="button" class="close text-white" (click)="closeModal()" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        
+        <div class="card-body p-0 bg-light">
+            <div *ngIf="steps[0].active" class="p-4 bg-white">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label class="font-weight-bold text-primary text-uppercase small">1. Seleziona Società di appartenenza *</label>
+                        <select class="form-control form-control-lg box-shadow-sm" [(ngModel)]="atleta.club_id" (change)="onClubChange()">
+                            <option [ngValue]="undefined" disabled>-- Scegli la società --</option>
+                            <option *ngFor="let club of clubList" [value]="club.id">{{club.club_name}}</option>
+                        </select>
                     </div>
 
+                    <div class="col-12 mb-4 mt-2 pb-3 border-bottom" *ngIf="atleta.club_id">
+                        <label class="font-weight-bold text-primary text-uppercase small">2. Cerca atleta nel database della società</label>
+                        <ngx-select-dropdown 
+                            [instanceId]="'instanceAthletes'" 
+                            (change)="selectionChanged($event)" 
+                            [multiple]="false" 
+                            [config]="config" 
+                            [options]="athletesFilteredByClub">
+                        </ngx-select-dropdown>
+                        <p class="text-muted small mt-2 italic">
+                            <i class="fa fa-info-circle"></i> Se l'atleta non è in lista, compila manualmente i campi sottostanti.
+                        </p>
+                    </div>
                 </div>
 
+                <form *ngIf="atleta.club_id" [formGroup]="athleteForm" class="row mt-3">
+                    <div class="form-group col-md-6">
+                        <label class="form-control-label font-weight-bold">Cognome *</label>
+                        <input formControlName="surname" class="form-control" type="text">
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="form-control-label font-weight-bold">Nome *</label>
+                        <input formControlName="name" class="form-control" type="text">
+                    </div>
+                    <div class="form-group col-md-7">
+                        <label class="form-control-label font-weight-bold">Data di nascita *</label>
+                        <div class="d-flex gap-1">
+                            <input type="text" placeholder="GG" class="form-control text-center w-25 mr-1" formControlName="birthdate_day">
+                            <input type="text" placeholder="MM" class="form-control text-center w-25 mr-1" formControlName="birthdate_month">
+                            <input type="text" placeholder="AAAA" class="form-control text-center w-50" (change)="checkCategory()" formControlName="birthdate_year">
+                        </div>
+                    </div>
+                    <div class="form-group col-md-5">
+                        <label class="form-control-label font-weight-bold">Genere *</label>
+                        <select class="form-control" formControlName="sesso">
+                            <option value='M'>M</option>
+                            <option value='F'>F</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="form-control-label font-weight-bold">Cintura *</label>
+                        <select class="form-control" formControlName="cintura">
+                            <option value="Bianca">BIANCA</option>
+                            <option value="Gialla">GIALLA</option>
+                            <option value="Arancione">ARANCIONE</option>
+                            <option value="Verde">VERDE</option>
+                            <option value="Blu">BLU</option>
+                            <option value="Marrone">MARRONE</option>
+                            <option value="Nera">NERA</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="control-label font-weight-bold text-muted">Categoria Calcolata</label>
+                        <input type="text" [value]="categoria" class="form-control bg-light font-weight-bold text-primary" disabled>
+                    </div>
+                </form>
+            </div>
+
+            <div *ngIf="steps[1].active" class="p-4 bg-white">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <h6 class="font-weight-bold text-dark border-bottom pb-2 text-uppercase">
+                            Seleziona Specialità per {{ athleteForm.value.name }} {{ athleteForm.value.surname }}
+                        </h6>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="form-group">
+                            <div *ngFor="let item of prove" class="custom-control custom-checkbox mb-3 p-2 border rounded hover-light">
+                                <input type="checkbox" class="custom-control-input" [id]="'p_'+item.label" [(ngModel)]="item.checked" (change)="showPeso()">
+                                <label class="custom-control-label w-100 cursor-pointer" [for]="'p_'+item.label">
+                                    {{item.label}}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-5" *ngIf="show">
+                        <form [formGroup]="weightForm" class="bg-light p-3 rounded border border-warning">
+                            <label class="font-weight-bold text-uppercase small">Peso Atleta (Kg) *</label>
+                            <input type="number" class="form-control form-control-lg text-center" formControlName="peso">
+                            <small class="text-danger" *ngIf="errorePeso">Inserire un peso valido per il Kumite</small>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer bg-white p-3 border-top d-flex justify-content-between">
+            <button class="btn btn-outline-secondary px-4 rounded-pill" (click)="prev()" [disabled]="steps[0].active">
+                <i class="fa fa-chevron-left mr-2"></i> Indietro
+            </button>
+            
+            <div>
+                <button class="btn btn-light px-4 rounded-pill mr-2" (click)="closeModal()">Annulla</button>
+                
+                <button *ngIf="steps[0].active" class="btn btn-primary px-4 rounded-pill box-shadow" 
+                        [disabled]="!atleta.club_id || athleteForm.invalid || categoria == ''" (click)="next()">
+                    Seleziona Prove <i class="fa fa-chevron-right ml-2"></i>
+                </button>
+                
+                <button *ngIf="steps[1].active" class="btn btn-success px-5 rounded-pill box-shadow" (click)="confirm()">
+                    <i class="fa fa-check mr-2"></i> {{ athleteForm.value.id ? 'Salva Modifiche' : 'Conferma Iscrizione' }}
+                </button>
             </div>
         </div>
     </div>
-    <!-- </div> -->
 </ng-template>
 
 <ng-template #editCategory>
-    <div class="row">
-        <div class="col-12 vertical-tabs">
-            <div widget class="card border-0 box-shadow">
-                <div class="card-header transparent border-0 text-muted ">
-                    <h5 class="mb-0">Modifica categoria</h5>
-                </div>
-                <div class="card-body widget-body">
+    <div class="card border-0 box-shadow rounded-lg m-0">
+        <div class="card-header bg-primary text-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold"><i class="fa fa-pencil mr-2"></i> MODIFICA CATEGORIA</h5>
+            <button type="button" class="close text-white" (click)="closeModal()"><span>&times;</span></button>
+        </div>
 
-                    <div class="modal-body">
-
-                        {{selectedInscription.firstName}} {{selectedInscription.lastName}} - {{selectedInscription.codes}}
-        
-                        <form [formGroup]="categoryForm" method="post" enctype="multipart/form-data" class="form-horizontal mt-2">
-                
-                          <div class="form-group row">
-                            <label class="col-md-3 col-form-label" for="select1">Nuova categoria</label>
-                            <div class="col-md-9">
-                              <select class="form-control" id="selectTatami" formControlName="categorycode_id" >
-                                <option *ngFor="let category of categoryList" [value]="category.id">{{category.id}} - {{category.specialita}} - {{category.categoria}} {{category.sesso}} {{category.grado}} {{category.cat_peso }}</option>
-                            </select>
-                            </div>
-                          </div>
-
-                          <div class="form-group row">
-                        
-                            <div class="col-md-9">
-                                <div class="custom-control custom-checkbox checkbox-circle">
-                                    <input type="checkbox" class="custom-control-input checkbox-primary" id="checkboxPrimary2" formControlName="accorpamento">
-                                    <label class="custom-control-label" for="checkboxPrimary2">Accorpamento Kumite</label>
-                                </div>
-                            </div>
-                          </div>
-                        </form>
-                
-                        
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-sm btn-danger" (click)="closeModal()"><i class="fa fa-ban"></i> Chiudi</button>
-                        <button type="button" class="btn btn-sm btn-primary" (click)="updateCategory()"><i class="fa fa-dot-circle-o"></i> Aggiorna</button>
-                      </div>
-
-
-                </div>
-
+        <div class="card-body p-4 bg-light">
+            <div class="alert alert-info border-0 box-shadow-sm">
+                Stai modificando l'iscrizione di: 
+                <strong>{{selectedInscription.firstName}} {{selectedInscription.lastName}}</strong> 
+                <span class="badge badge-primary ml-2">{{selectedInscription.codes}}</span>
             </div>
+            
+            <form [formGroup]="categoryForm" class="mt-4">
+                <div class="form-group mb-4">
+                    <label class="font-weight-bold text-uppercase small text-primary">Nuova categoria *</label>
+                    <ng-select
+                        [items]="categoryList"
+                        bindLabel="fullDescription"
+                        formControlName="categorycode_id"
+                        [appendTo]="'body'"
+                        [searchable]="true"
+                        [clearable]="false">
+                    </ng-select>
+                </div>
+
+                <div class="form-group mb-0">
+                    <div class="custom-control custom-checkbox p-2 border rounded bg-white box-shadow-sm hover-lift">
+                        <input type="checkbox" class="custom-control-input" id="checkAccorpamento" formControlName="accorpamento">
+                        <label class="custom-control-label w-100 cursor-pointer font-weight-bold" for="checkAccorpamento">
+                            Accorpamento Kumite
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="card-footer bg-white p-3 d-flex justify-content-end border-top-0">
+            <button type="button" class="btn btn-light px-4 rounded-pill mr-2" (click)="closeModal()">
+                Annulla
+            </button>
+            <button type="button" class="btn btn-primary px-5 rounded-pill font-weight-bold box-shadow" 
+                    [disabled]="categoryForm.invalid"
+                    (click)="updateCategory()">
+                <i class="fa fa-refresh mr-2"></i> AGGIORNA
+            </button>
         </div>
     </div>
+</ng-template>
 
+<ng-template #duplicateInscription>
+    <div class="card border-0 box-shadow rounded-lg m-0">
+        <div class="card-header bg-warning text-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold"><i class="fa fa-copy mr-2"></i> DUPLICA ISCRIZIONE</h5>
+            <button type="button" class="close text-white" (click)="closeModal()"><span>&times;</span></button>
+        </div>
+        <div class="card-body p-4 bg-light">
+            <div class="alert alert-info border-0 box-shadow-sm">
+                Stai creando una nuova prova per: <strong>{{selectedInscription.firstName}} {{selectedInscription.lastName}}</strong>
+            </div>
+            
+            <form [formGroup]="duplicateForm" class="mt-4">
+                <div class="form-group">
+                    <label class="font-weight-bold text-uppercase small text-primary">Seleziona la nuova Prova/Categoria da assegnare *</label>
+                    <ng-select 
+                        [items]="categoryList"
+                        bindLabel="fullDescription"
+                        formControlName="categorycode_id"
+                        [appendTo]="'body'"
+                        [searchable]="true"
+                        [clearable]="false"
+                        placeholder="Cerca categoria..."
+                        class="custom-ng-select">
+                    </ng-select>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer bg-white p-3 d-flex justify-content-end">
+            <button class="btn btn-light px-4 rounded-pill mr-2" (click)="closeModal()">Annulla</button>
+            <button class="btn btn-warning px-5 rounded-pill font-weight-bold" 
+                    [disabled]="duplicateForm.invalid" 
+                    (click)="confirmDuplicate()">
+                <i class="fa fa-check mr-2"></i> DUPLICA ORA
+            </button>
+        </div>
+    </div>
 </ng-template>

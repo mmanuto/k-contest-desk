@@ -11,6 +11,7 @@ import { PipesModule } from '../../theme/pipes/pipes.module';
 import { AthletesComponent } from './athletes.component';
 import { ModalModule, BsModalService } from 'ngx-bootstrap/modal';
 import { SelectDropDownModule } from 'ngx-select-dropdown'
+import { NgSelectModule } from '@ng-select/ng-select';
 
 
 import { Ng2SmartTableModule, LocalDataSource } from 'ng2-smart-table';
@@ -37,6 +38,7 @@ export const routes: Routes = [
     SelectDropDownModule,
     Ng2SmartTableModule,
     DirectivesModule,
+    NgSelectModule
   ],
   declarations: [
     AthletesComponent

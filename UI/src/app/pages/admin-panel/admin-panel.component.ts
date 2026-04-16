@@ -77,14 +77,14 @@ export class AdminPanleComponent implements OnInit {
 
   // ======================================================================== SINTETICO CATEGORIA ==============================================================
 
-  generaSinteticoCategoria(kumite = false){
+  generaSinteticoCategoria(){
 
     this.adminPanelService.generaSinteticoCategoria({nomeGara: this.competitionData.nome_gara}).subscribe(blob => {
       // Crea un link temporaneo per scaricare il file
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = kumite ? 'Kumite.pdf' : 'Sintetico_Categorie.pdf';
+      a.download = 'Sintetico_Categorie.pdf';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -126,33 +126,6 @@ export class AdminPanleComponent implements OnInit {
             link.click();
             window.URL.revokeObjectURL(url); // Libera memoria
     });
-  }
-
-
-  createElement(element, attribute, inner) {
-    if (typeof(element) === "undefined") {
-      return false;
-    }
-    if (typeof(inner) === "undefined") {
-      inner = "";
-    }
-    var el = document.createElement(element);
-    if (typeof(attribute) === 'object') {
-      for (var key in attribute) {
-        el.setAttribute(key, attribute[key]);
-      }
-    }
-    if (!Array.isArray(inner)) {
-      inner = [inner];
-    }
-    for (var k = 0; k < inner.length; k++) {
-      if (inner[k].tagName) {
-        el.appendChild(inner[k]);
-      } else {
-        el.appendChild(document.createTextNode(inner[k]));
-      }
-    }
-    return el;
   }
 
 

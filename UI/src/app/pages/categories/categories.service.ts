@@ -11,31 +11,31 @@ export class CategoriesService {
 
     getCategories()
      {
-        console.log('entra');
-         return this.http.post(environment.BASEAPPURL + 'categorycodes/getCategories', {});
-                 
+        return this.http.post(environment.BASEAPPURL + 'categorycodes/getCategories', {});          
     }
 
     getCompetitions(){
         return this.http.post(environment.ISCRIZIONI_URL + 'competitions/getCompetitions', {});
-
     }
 
     getTatami()
-     {
-         return this.http.post(environment.BASEAPPURL + 'users/getTatami', {});
-                 
+    {
+        return this.http.post(environment.BASEAPPURL + 'users/getTatami', {});          
     }
 
     getTatamistatus(){
         return this.http.post(environment.BASEAPPURL + 'tatamiAssignments/getUserCategories', {});
     }
 
-    saveTatamiAssegnee(request){
+    saveTatamiAssegnee(request: { user_id: any; categorycode_id: any; status: "CAT_TODO"; }){
         return this.http.post(environment.BASEAPPURL + 'tatamiAssignments/saveUserCategories', request);
     }
 
-    getAthleteList(request){
+    updateTatamiWeb(request: { tatami: any; competition_id: string; categorycode_id: any; status: "CAT_TODO"; }){
+        return this.http.post(environment.ISCRIZIONI_URL + 'users/addTatamiAssignments', request);
+    }
+
+    getAthleteList(request: { categorycode_id: any; readonly: boolean; }){
         return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/getAthletesByCategory', request);
     }
 
@@ -43,11 +43,15 @@ export class CategoriesService {
         return this.http.post(environment.BASEAPPURL + 'competitions/getTotaleIscrizioni', {});
     }
 
-    splitCategory(request){
+    getTotaleProve(){
+        return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/getTotaleProve', {});
+    }
+
+    splitCategory(request: any){
         return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/splitCategory', request);
     }
 
-    getFinalRanking(request){
+    getFinalRanking(request: { categorycode_id: any; }){
         return this.http.post(environment.BASEAPPURL + 'results/getRankingData', request);
     }
 

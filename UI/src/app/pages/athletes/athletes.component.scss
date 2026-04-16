@@ -1,7 +1,245 @@
+/* athletes.component.scss */
 
-.red-background {
-    background: red;
+/* 1. Container della tabella */
+.table-container {
+    padding: 0 1.25rem 1.25rem 1.25rem;
 }
-.orange-background {
-    background: orange;
+
+
+ng2-smart-table {
+    font-family: 'Inter', 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 0.95rem !important;
+
+    /* Tabella generale */
+    table {
+        border: none !important;
+        background-color: white;
+    }
+
+    /* TESTATA: Fondo bianco, testo blu e font più grande */
+    thead tr.ng2-smart-titles th {
+        background-color: #ffffff !important; /* Rimosso il grigio */
+        padding: 13px 15px !important;
+        border-bottom: 3px solid #e7f1ff !important; /* Linea azzurra spessa */
+        text-transform: uppercase;
+        font-size: 0.9rem !important; /* Caratteri più grandi */
+        font-weight: 800 !important;
+        color: #2c3e50 !important;
+    }
+
+    /* FILTRI: Fondo bianco e input più alti */
+    thead tr.ng2-smart-filters th {
+        background-color: #ffffff !important;
+        padding: 12px !important;
+        border-bottom: 1px solid #f1f3f5 !important;
+            
+        input {
+            border-radius: 10px !important;
+            border: 1px solid #dee2e6 !important;
+            padding: 10px 15px !important;
+            font-size: 0.95rem !important;
+            background-color: #fafbfc !important;
+                
+            &:focus {
+                background-color: #fff !important;
+                border-color: #007bff !important;
+                box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1) !important;
+            }
+        }
+    }
+
+    /* RIGHE: Font più leggibile e hover azzurro */
+    tbody tr.ng2-smart-row {
+        td {
+            padding: 10px 15px !important; /* Più spazio interno */
+            border-bottom: 1px solid #e1e2e2 !important;
+            vertical-align: middle !important;
+            font-size: 0.95rem !important; /* Font standard leggibile */
+            color: #334155 !important;
+        }
+            
+        &:hover {
+            background-color: #f0f7ff !important; /* Hover azzurro delicato */
+        }
+    }
+
+    /* ICONE AZIONI: Più grandi */
+    .ng2-smart-actions {
+        .ng2-smart-action {
+            font-size: 1.1rem !important;
+            margin: 0 3px;
+        }
+    }
+}
+
+/* 3. Classi di stato per le righe (Sovrascrivono il rosso/arancione piatto) */
+
+.row-deleted {
+    background-color: #fff5f5 !important; /* Rosso chiarissimo */
+    td { color: #c92a2a !important; }
+    &:hover { background-color: #ffe3e3 !important; }
+}
+
+.row-modified {
+    background-color: #fff9db !important; /* Giallo chiarissimo */
+    &:hover { background-color: #fff3bf !important; }
+}
+
+
+/* Utility per hover bottoni come già presenti */
+.hover-lift {
+    transition: all 0.2s ease;
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+}
+
+.modal-content, 
+.modal-body,
+.modern-smart-container {
+    overflow: visible !important;
+}
+
+/* ===== NGX-SELECT MODERNO ===== */
+body .ngx-select {
+  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif !important;
+
+  /* Controllo principale */
+  .ngx-select__selected,
+  .ngx-select__toggle {
+    height: 38px !important;
+    padding: 6px 12px !important;
+    border: 1px solid #dae0e5 !important;
+    border-radius: 6px !important;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    background-color: #fff;
+    transition: all 0.2s;
+  }
+
+  /* Focus */
+  &.open .ngx-select__toggle,
+  .ngx-select__toggle:focus {
+    border-color: #80bdff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .15) !important;
+    outline: none;
+  }
+
+  /* Placeholder */
+  .ngx-select__placeholder {
+    color: #6c757d !important;
+  }
+
+  /* Dropdown */
+  .ngx-select__dropdown {
+    border-radius: 8px !important;
+    border: 1px solid #dee2e6 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    overflow: hidden;
+    z-index: 1050 !important;
+  }
+
+  /* Search */
+  .ngx-select__search {
+    padding: 8px !important;
+    border-bottom: 1px solid #eee;
+
+    input {
+      width: 100%;
+      height: 36px !important;
+      padding: 6px 10px !important;
+      border: 1px solid #dae0e5 !important;
+      border-radius: 6px !important;
+      font-size: 0.85rem;
+
+      &:focus {
+        border-color: #80bdff !important;
+        outline: none;
+      }
+    }
+  }
+
+  /* Lista con scroll */
+  .ngx-select__choices {
+    max-height: 300px !important;
+    overflow-y: auto !important;
+
+    /* scrollbar moderna */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 10px;
+    }
+  }
+
+  /* Opzioni */
+  .ngx-select__item {
+    padding: 10px 12px !important;
+    font-size: 0.9rem;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #f1f7ff !important;
+    }
+
+    &.active {
+      background-color: #007bff !important;
+      color: #fff !important;
+    }
+  }
+}
+
+/* Controllo principale del selettore */
+.custom-ng-select {
+    .ng-select-container {
+        height: 45px !important;
+        border-radius: 8px !important;
+        border: 1px solid #ced4da !important;
+        box-shadow: none !important;
+        padding-left: 5px;
+        
+        &:hover { border-color: #80bdff !important; }
+    }
+
+    &.ng-select-opened ::ng-deep .ng-select-container {
+        border-color: #80bdff !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15) !important;
+    }
+}
+
+/* Pannello dropdown (che finisce nel body) */
+.ng-dropdown-panel {
+    border-radius: 8px !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    border: 1px solid #dee2e6 !important;
+    z-index: 9999 !important; /* Sopra la modale */
+    background: #fff;
+
+    .ng-dropdown-panel-items {
+        max-height: 250px !important; /* Attiva lo scroll */
+        
+        .ng-option {
+            padding: 10px 15px !important;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #f8f9fa;
+
+            &.ng-option-marked {
+                background-color: #f1f7ff !important;
+                color: #007bff;
+            }
+
+            &.ng-option-selected {
+                background-color: #e7f1ff !important;
+                font-weight: bold;
+                color: #007bff;
+            }
+        }
+    }
+
+    /* Barra di ricerca e messaggi */
+    .ng-search-placeholder { color: #6c757d; }
 }

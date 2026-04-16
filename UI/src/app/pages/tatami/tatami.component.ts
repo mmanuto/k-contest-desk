@@ -640,6 +640,20 @@ calculateRoundRobinStandings() {
         }
         
         this.tatamiService.updateCategoryStatus(request).subscribe((response: any) => {
+
+          if(response.result.success){
+            let requestWeb = {
+              categorycode_id: this.selectedCategory.categorycode_id,
+              status: status,
+              tatami: this.selectedCategory.user_id,
+              competition_id: 'GTTMLT-2026'
+            }
+
+            console.log(requestWeb);
+
+            this.tatamiService.updateCategoryStatusWeb(requestWeb).subscribe((responseWeb: any) => {});
+
+          }
     
         })
       }
@@ -685,12 +699,25 @@ calculateRoundRobinStandings() {
       this.tatamiService.updateCategoryStatus(request).subscribe((response: any) => {
 
         if(response.result.success){
+
+          let requestWeb = {
+            categorycode_id: this.selectedCategory.categorycode_id,
+            status: categoryStatus.CLOSED,
+            tatami: this.selectedCategory.user_id,
+            competition_id: 'GTTMLT-2026'
+          }
+
+          console.log(requestWeb);
+
+          this.tatamiService.updateCategoryStatusWeb(requestWeb).subscribe((responseWeb: any) => {});
           
           this.selectedCategory = [];
           this.athleteList = [];
           this.kumiteAthleteList = [];
           this.roundRobinStandings = [];
-          jQuery('#minimal').hide();
+          jQuery('#minimal').hide();     
+
+          
         }
 
       })

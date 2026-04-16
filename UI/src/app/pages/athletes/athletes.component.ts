@@ -27,10 +27,13 @@ export class AthletesComponent {
   public categoria = "";
   public erroreCategoria = false;
   public errorePeso = false;
+  public athletesFilteredByClub = []; // Per popolare il dropdown degli atleti filtrati
+  public selectedClub: any; // Per gestire lo stato della società scelta
 
   public categoryForm: FormGroup;
   public categoryList: any[];
   public selectedInscription;
+  public duplicateForm: FormGroup;
 
   public datiGara: any;
 
@@ -46,6 +49,19 @@ export class AthletesComponent {
     enableSelectAll: false, // enable select all option to select all available items, default is false
   }
 
+  public categoryConfig = {
+    search: true,
+    height: '300px',
+    placeholder: 'Scegli la categoria...',
+    noResultsFound: 'Nessuna categoria trovata',
+    searchPlaceholder: 'Cerca per specialità, categoria o grado...',
+    displayKey: 'fullDescription', 
+    searchOnKey: 'fullDescription',
+    moreText: 'altre',
+    limitTo: 0,
+    enableSelectAll: false
+  };
+
   public settings = {
     selectMode: 'single',  //single|multi
     hideHeader: false,
@@ -54,30 +70,22 @@ export class AthletesComponent {
       columnTitle: 'Actions',
       add: false,
       edit: false,
-      delete: true,
-      custom: [{
-        name: 'edit-category',
-        title: '<i class="fa fa-pencil mr-3 text-primary"></i>'
-      }],
+      delete: false,
+      custom: [
+        { name: 'edit-category', title: '<i class="fa fa-pencil text-primary mr-2"></i>' },
+        { name: 'duplicate', title: '<i class="fa fa-copy text-warning mr-2"></i>' },
+        { name: 'delete', title: '<i class="fa fa-trash text-danger"></i>' }
+      ],
       position: 'right' // left|right
-    },
-    edit: {
-      editButtonContent: '<i class="fa fa-pencil mr-3 text-primary"></i>',
-      saveButtonContent: '<i class="fa fa-check mr-3 text-success"></i>',
-      cancelButtonContent: '<i class="fa fa-times text-danger"></i>'
-    },
-    delete: {
-      deleteButtonContent: '<i class="fa fa-trash-o text-danger"></i>',
-      confirmDelete: true
     },
     noDataMessage: 'No data found',
     rowClassFunction: (row) =>{
       if(row.data.deleted){
-        return 'red-background';
+        return 'row-deleted';
       }else if(row.data.modified){
-        return 'orange-background'
+        return 'row-modified'
       }else{
-        return 'none-background';
+        return '';
       }
     },
     columns: {     
@@ -86,7 +94,7 @@ export class AthletesComponent {
         editable: false,
         width: '60px',
         type: 'html',
-        valuePrepareFunction: (value) => { return '<div class="text-center">' + value + '</div>'; }       
+        valuePrepareFunction: (value) => { return `<span class="badge badge-light border text-muted px-2">${value}</span>`; }       
       },
       firstName: {
         title: 'Nome',
@@ -95,11 +103,13 @@ export class AthletesComponent {
       },
       lastName: {
         title: 'Cognome',
-        type: 'string'
+        type: 'string',
+        filter: true
       },
       club: {
         title: 'Società',
-        type: 'string'
+        type: 'string',
+        filter: true
       },
       birthdate: {
         title: 'Data di Nascita',
@@ -110,8 +120,12 @@ export class AthletesComponent {
         type: 'string'
       },
       codes: {
-        title: 'Prove',
-        type: 'string'
+        title: 'Prova',
+        type: 'html',
+        filter: true,
+        valuePrepareFunction: (value) => {
+            return `<span class="text-primary font-weight-bold"><i class="fa fa-tag mr-1 small"></i>${value}</span>`;
+        }
       }
     },
     pager: {
@@ -152,6 +166,10 @@ export class AthletesComponent {
       'categorycode_id': [''],
       'accorpamento':['']
     });
+
+    this.duplicateForm = this.fb.group({
+      'categorycode_id': ['', Validators.required]
+    });
   }
 
   ngOnInit(){
@@ -175,6 +193,10 @@ export class AthletesComponent {
 
     this.athletesService.getAllCategories().subscribe((response: any) => {
       this.categoryList = response.result.data;
+
+      this.categoryList.forEach(c => {
+        c.fullDescription = `${c.id} - ${c.specialita} - ${c.categoria} ${c.grado} ${c.sesso || ''} ${c.cat_peso || ''}`;
+      });
     });
 
   }
@@ -201,64 +223,154 @@ export class AthletesComponent {
     });
   }
 
-   public onDeleteConfirm(event): void {
+  public onCustom(event, editCategory, duplicateInscription) {
+    this.selectedInscription = event.data;
+
+    switch (event.action) {
+      case 'edit-category':
+        this.openEditModal(editCategory);
+        break;
+      case 'duplicate':
+        this.openDuplicateModal(duplicateInscription);
+        break;
+      case 'delete':
+        this.onDeleteConfirm(event);
+        break;
+    }
+    
+  }
+
+  public openEditModal(editCategory) {
+    this.categoryForm.value.inscription_id = this.selectedInscription.id;
+    this.modalRef = this.modalService.open(editCategory, {backdrop: 'static', size: 'lg',  });
+  }
+
+  // Nuova funzione per aprire il popup di duplicazione
+  public openDuplicateModal(duplicateInscription) {
+    this.duplicateForm.reset();
+    this.modalRef = this.modalService.open(duplicateInscription, {backdrop: 'static', size: 'lg' });
+  }
+
+  public onDeleteConfirm(event): void {
 
     this.athletesService.checkCategoryStatus([event.data.categorycode_id]).subscribe((response: any) =>{
-      console.log(response.result.data);
-      if(!response.result.data.safety){
-        window.alert(response.result.data.message);
-      }else{
-        if (window.confirm(response.result.data.message)) {
-          console.log(event);
-          this.athletesService.deteleAtletaInscription({ 'id': event.data.id, 'code': event.data.codes, 'categorycode_id':event.data.categorycode_id}).subscribe((response: any) => {
-            console.log(response);
-            if (response.result.success) {
-              location.reload();
+      if (!response.result.data.safety) {
+            // Se il backend ha bloccato (Kumite in corso) o chiede conferma
+            if (response.message && response.result.data.status) {
+                if (window.confirm(response.result.data.message)) {
+                    this.executeDelete(event);
+                }
+            } else {
+                window.alert(response.apiResponse.message); // Blocco Kumite
             }
-      
-          });
-          event.confirm.resolve();
         } else {
-          event.confirm.reject();
+            // Tutto sicuro
+            if (window.confirm('Sei sicuro di voler eliminare questa iscrizione?')) {
+                this.executeDelete(event);
+            }
         }
-      }
     });
   }
 
-  public onCustom(event, editCategory) {
-    this.selectedInscription = event.data;
-
-    this.categoryForm.value.inscription_id = this.selectedInscription.id;
-    this.modalRef = this.modalService.open(editCategory, { container: '.app', backdrop: 'static', size: 'lg',  });
-  }
+  private executeDelete(event) {
+    this.athletesService.deteleAtletaInscription({ 'id': event.data.id, 'code': event.data.codes, 'categorycode_id':event.data.categorycode_id}).subscribe((response: any) => {
+      console.log(response);
+      if (response.result.success) {
+        location.reload();
+      }
+      
+    });
+}
 
   public updateCategory(){
 
-    console.log(this.selectedInscription);
-
-    this.athletesService.checkCategoryStatus([this.selectedInscription.categorycode_id, this.categoryForm.value.categorycode_id]).subscribe((response: any) =>{
+    this.athletesService.checkCategoryStatus([this.selectedInscription.categorycode_id, this.categoryForm.value.categorycode_id.id]).subscribe((response: any) =>{
       console.log(response.result.data);
-      if(!response.result.data.safety){
-        window.alert(response.result.data.message);
-      }else{
-        if (window.confirm(response.result.data.message)) {
-          
-          let request = {
-            id: this.selectedInscription.id,
-            categorycode_id: this.categoryForm.value.categorycode_id,
-            accorpamento: this.categoryForm.value.accorpamento
-          }
-      
-          this.athletesService.updateCategory(request).subscribe((response: any) => {
-            this.closeModal();
-          });
-          
+      if (!response.result.data.safety) {
+
+        // Se il backend ha bloccato (Kumite in corso) o chiede conferma
+        if (response.message && response.result.data.status) {
+            if (window.confirm(response.result.data.message)) {
+                this.executeDelete(event);
+            }
+        } else {
+            window.alert(response.apiResponse.message); // Blocco Kumite
         }
+      
+      } else {
+          this.proceedUpdateCategory();
       }
     });
 
     
   }
+
+  private proceedUpdateCategory(){
+    let request = {
+      id: this.selectedInscription.id,
+      categorycode_id: this.categoryForm.value.categorycode_id.id,
+      accorpamento: this.categoryForm.value.accorpamento
+    }
+      
+    this.athletesService.updateCategory(request).subscribe((response: any) => {
+      this.closeModal();
+    });
+  }
+
+  // Funzione per salvare la riga duplicata (agisce solo su athlete_inscriptions)
+  public confirmDuplicate() {
+    this.athletesService.checkCategoryStatus([this.duplicateForm.value.categorycode_id.id]).subscribe((response: any) => {
+        if (!response.result.data.safety) {
+
+          if (response.message && response.result.data.status) {
+            if (window.confirm(response.result.data.message)) {
+                this.proceedDuplicate();
+            }
+          } else {
+              window.alert(response.apiResponse.message); // Blocco Kumite
+          }
+
+        } else {
+            this.proceedDuplicate();
+        }
+    });
+    
+  }
+
+  private proceedDuplicate(){
+    let request = {
+      inscription_id: this.selectedInscription.id,
+      categorycode_id: this.duplicateForm.value.categorycode_id.id // Usiamo l'ID diretto scelto dal dropdown
+    };
+
+    this.athletesService.addInscription(request).subscribe((response: any) => {
+      if (response.result.success) {
+        this.closeModal();
+        //location.reload();
+      }
+    });
+  }
+
+  public onClubChange() {
+    // Resettiamo i dati dell'atleta se cambiamo società
+    this.athleteForm.reset();
+    this.categoria = "";
+    
+    if (this.atleta.club_id) {
+        // Filtriamo la lista globale 'athletes' per ID società
+        this.athletesFilteredByClub = this.athletes.filter(a => a.club_id == this.atleta.club_id);
+        
+        // Aggiungiamo il campo 'nominativo' per il dropdown se non presente
+        this.athletesFilteredByClub.forEach(a => {
+            a.nominativo = a.cognome + ' ' + a.nome;
+        });
+        
+        this.selectedClub = true; // Attiva la visualizzazione del resto del form nell'HTML
+    } else {
+        this.athletesFilteredByClub = [];
+        this.selectedClub = false;
+    }
+}
 
   public next() {
     let athleteForm = this.athleteForm;
@@ -379,25 +491,36 @@ export class AthletesComponent {
 
   public openModal(modalContent) {
     this.erroreCategoria = false;
+    this.show = false; // Reset visualizzazione campo peso
+
     this.steps = [
       { name: 'dati atleta', icon: 'fa-lock', active: true, valid: false, hasError: false },
       { name: 'selezione prove', icon: 'fa-user', active: false, valid: false, hasError: false }
     ];
-    
-      this.atleta = {};
-      this.categoria = "";
-      this.prove = [];
-      this.athleteForm.reset();
-      this.weightForm.reset();
+
+    this.atleta = {};
+    this.categoria = "";
+    this.selectedClub = false;
+    this.athleteForm.reset();
+    this.weightForm.reset();
+    this.prove = [];
+      
     this.modalRef = this.modalService.open(modalContent, { container: '.app', backdrop: 'static', size: 'lg' });
 
     this.modalRef.result.then((result) => {
-      this.athleteForm.reset();
-      this.weightForm.reset();
+      this.resetFormState();
     }, (reason) => {
-      this.athleteForm.reset();
-      this.weightForm.reset();
+      this.resetFormState();
     });
+  }
+
+  // Funzione di utility per pulire tutto alla chiusura
+  private resetFormState() {
+    this.athleteForm.reset();
+    this.weightForm.reset();
+    this.atleta = {};
+    this.selectedClub = false;
+    this.athletesFilteredByClub = [];
   }
 
   public closeModal() {

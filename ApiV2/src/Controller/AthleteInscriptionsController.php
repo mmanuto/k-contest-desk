@@ -240,6 +240,22 @@ class AthleteInscriptionsController extends ApiController
         
     }
 
+    public function getTotaleProve(){
+
+
+        // Esegue il conteggio dei record
+        $total = $this->AthleteInscriptions->find()
+            ->where([
+                'deleted' => 0 // Esclude le iscrizioni rimosse logicamente
+            ])
+            ->count();
+
+        // Prepara la risposta per il frontend Angular
+        $this->apiResponse['success'] = true;
+        $this->apiResponse['message'] = 'Totale prove recuperato con successo.';
+        $this->apiResponse['data'] = $total;    
+    }
+
 
 
    /** ===================================================================================================================================
@@ -308,6 +324,24 @@ class AthleteInscriptionsController extends ApiController
         } else {
             $this->apiResponse['success'] = false;
         }
+    }
+
+    public function addInscription(){
+        $data = $this->request->getData(); 
+        $athleteInscription = $this->AthleteInscriptions->get($data['inscription_id']);
+
+        $newInscription = $this->AthleteInscriptions->newEmptyEntity();
+        $newInscription->athlete_id = $athleteInscription->athlete_id;
+        $newInscription->competition_id = $athleteInscription->competition_id;
+        $newInscription->categorycode_id = $data['categorycode_id'];
+
+        if ($this->AthleteInscriptions->save($newInscription)) {
+
+            $this->apiResponse['success'] = true;
+        } else {
+            $this->apiResponse['success'] = false;
+        }
+
     }
 
     public function splitCategory(){
