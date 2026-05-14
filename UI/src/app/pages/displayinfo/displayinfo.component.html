@@ -1,80 +1,71 @@
-
-<div id="container-fullscreen" class="app flex-row displayinfo">
-  <div class="container">
-    <div *ngIf="athleteData?.category.current_phase == categoryPhase.JUDGING_PANEL || 
-    athleteData?.category.current_phase == categoryPhase.JUDGING_FINALIZING || 
-    athleteData?.category.current_phase == categoryPhase.FINALIZED" class="row">
-      <h1 class="display-1 title">{{currentUser.name}}</h1>
+<div class="displayinfo flex-column">
+  
+  <div class="header-monitor d-flex justify-content-between align-items-center">
+    <h1 class="tatami-title">{{currentUser?.name}}</h1>
+    <div class="category-info text-right" *ngIf="athleteData?.category">
+      {{athleteData.category.categorycode.specialita}} {{athleteData.category.categorycode.categoria}}<br>
+      <small>{{athleteData.category.categorycode.grado}} {{athleteData.category.categorycode.sesso}} {{athleteData.category.categorycode.cat_peso}}</small>
     </div>
-    <div *ngIf="athleteData?.category.current_phase == categoryPhase.BRACKETS" class="row mt-4">
-      <div class="col-md-6">
-      <h1 class="display-1 title-kumite">{{currentUser.name}}</h1>
-      </div>
-
-      <div class="col-md-6 text-right mb-4">
-        <h5 *ngIf="currentMatch" class="display-3 category-kumite">{{currentMatch.aka.categorycode.specialita}} {{currentMatch.aka.categorycode.categoria}} <br> {{currentMatch.aka.categorycode.grado}} {{currentMatch.aka.categorycode.sesso}} {{currentMatch.aka.categorycode.cat_peso}}</h5>
-      </div>
-    </div>
-    <div class="flex-row displayinfo-content align-items-center">
-      <div class="column justify-content-center">
-        <div *ngIf="athleteData?.category.current_phase == categoryPhase.JUDGING_PANEL || athleteData?.category.current_phase == categoryPhase.JUDGING_FINALIZING">
-          <h2 class="display-1 category">{{athleteData.category.categorycode.specialita}} {{athleteData.category.categorycode.categoria}} <br> {{athleteData.category.categorycode.grado}} {{athleteData.category.categorycode.sesso}}</h2>
-            <div class="card_body active">
-              <div class="card_body-gradient"></div>
-              <div class="description">
-                <h2 class="display-2">{{athleteData.athlete_inscription.athlete.nome}} {{athleteData.athlete_inscription.athlete.cognome}} {{athleteData.score ? ' - ' + athleteData.score : ''}}</h2>
-                <!-- <h2 *ngIf="!athlete_1 &&!athleteList" class="display-3">Trofeo Gattamelata <br> 29/05/2022</h2> -->
-              </div>
-          </div>
-        </div>
-          
-          
-
-        <div *ngIf="athleteData?.category.current_phase == categoryPhase.FINALIZED">
-          <h3 class="display-3 category">Classifica</h3>
-          <h3 class="display-3 classification-title">{{athleteData.category.categorycode.specialita}} {{athleteData.category.categorycode.categoria}} {{athleteData.category.categorycode.grado}} {{athleteData.category.categorycode.sesso}} {{athleteData.category.categorycode.cat_peso}}</h3>
-          <h3 *ngFor="let athlete of athleteData.athleteList" class="classification display-4">{{athlete.final_ranking}} - {{athlete.athlete.nome}} {{athlete.athlete.cognome}} - {{athlete.athlete.club.club_name}}</h3>
-      </div>
-
-      <div *ngIf="athleteData?.category.current_phase == categoryPhase.AWAITING_BRACKETS">
-          <h3 class="display-3 category">Passano il turno</h3>
-          <h3 class="display-3 classification-title">{{athleteData.category.categorycode.specialita}} {{athleteData.category.categorycode.categoria}} {{athleteData.category.categorycode.grado}} {{athleteData.category.categorycode.sesso}} {{athleteData.category.categorycode.cat_peso}}</h3>
-          <h3 *ngFor="let athlete of athleteData.athleteList" class="classification display-4">{{athlete.pool_ranking}} - {{athlete.athlete_inscription.athlete.nome}} {{athlete.athlete_inscription.athlete.cognome}} - {{athlete.athlete_inscription.athlete.club.club_name}}</h3>
-      </div>
-
-      <div *ngIf="athleteData?.category.current_phase == categoryPhase.BRACKETS" class="row mt-5">
-        <div class="row col-12 mt-4 mb-4"></div>
-        <div class="col-md-5 text-center">
-          <i *ngIf="athleteData?.currentMatch.winner_inscription_id == athleteData?.currentMatch.athlete_aka_inscription_id" class="fa fa-square fa-lg float-right" style="font-size: 3em; color:crimson"></i> 
-          <i *ngIf="athleteData?.currentMatch.winner_inscription_id == athleteData?.currentMatch.athlete_ao_inscription_id" class="fa fa-remove fa-lg float-right" style="font-size: 3em; color:crimson"></i> 
-          <h3 class="display-3 classification aka"><b>{{athleteData?.currentMatch.athlete_aka_inscription.athlete.cognome}} {{athleteData?.currentMatch.athlete_aka_inscription.athlete.nome}}</b></h3>
-          <h1 *ngIf="athleteData?.type == 'KUMITE_BRACKETS' || athleteData?.currentMatch.score_aka > 0" class="display-total mt-5 aka">{{athleteData?.currentMatch.score_aka}}</h1>
-          <p *ngIf="athleteData?.type == 'KUMITE_BRACKETS'" class="display-3 mt-5 aka">C: {{athleteData?.currentMatch.chui_1_aka ? '1C' : '--'}} {{athleteData?.currentMatch.chui_2_aka ? '2C' : '--'}} {{athleteData?.currentMatch.chui_3_aka ? '3C' : '--'}} {{athleteData?.currentMatch.hans_chui_aka ? 'HC' : '--'}} {{athleteData?.currentMatch.hans_aka ? 'H' : '--'}}</p>
-          
-        </div>
-        <div class="col-md-2 text-center mt-4">
-        
-          
-          <i *ngIf="athleteData?.currentMatch.senshu_aka" class="fa fa-flag fa-lg float-left senshu aka"></i> 
-          <i *ngIf="athleteData?.currentMatch.senshu_ao" class="fa fa-flag fa-lg float-right senshu ao"></i> 
-          <h1 *ngIf="athleteData?.type == 'KUMITE_BRACKETS'"  class="classification mt-5" style="font-size: 8em; margin-top: 45% !important"> <b>{{athleteData?.countdown | formatTime}} </b></h1>         
-          <h1 *ngIf="athleteData?.type == 'KATA_BRACKETS'"  class="classification mt-5" style="font-size: 8em; margin-top: 45% !important"> VS </h1>         
-          
-        </div>
-        <div class="col-md-5 text-center">
-          <i *ngIf="athleteData?.currentMatch.winner_inscription_id == athleteData?.currentMatch.athlete_ao_inscription_id" class="fa fa-square fa-lg float-left" style="font-size: 3em; color:dodgerblue"></i> 
-          <i *ngIf="athleteData?.currentMatch.winner_inscription_id == athleteData?.currentMatch.athlete_aka_inscription_id" class="fa fa-remove fa-lg float-left" style="font-size: 3em; color:dodgerblue"></i> 
-            <h3 class="display-3 classification ao"> <b>{{athleteData?.currentMatch.athlete_ao_inscription.athlete.cognome}} {{athleteData?.currentMatch.athlete_ao_inscription.athlete.nome}}</b></h3>
-              <h2 *ngIf="athleteData?.type == 'KUMITE_BRACKETS' || athleteData?.currentMatch.score_ao > 0" class="display-total mt-5 ao" >{{athleteData?.currentMatch.score_ao}}</h2>
-              
-            <p *ngIf="athleteData?.type == 'KUMITE_BRACKETS'" class="display-3 mt-5 ao">C: {{athleteData?.currentMatch.chui_1_ao ? '1C' : '--'}} {{athleteData?.currentMatch.chui_2_ao ? '2C' : '--'}} {{athleteData?.currentMatch.chui_3_ao ? '3C' : '--'}} {{athleteData?.currentMatch.hans_chui_ao ? 'HC' : '--'}} {{athleteData?.currentMatch.hans_ao ? 'H' : '--'}}</p>
-            
-        </div>
-
-      </div>
-
-      </div>   
-
   </div>
+
+  <div class="container-fluid">
+    
+    <div *ngIf="athleteData?.category.current_phase == categoryPhase.JUDGING_PANEL || athleteData?.category.current_phase == categoryPhase.JUDGING_FINALIZING" 
+         class="athlete-spotlight animate__animated animate__zoomIn">
+      <h2 class="name">{{athleteData.athlete_inscription.athlete.nome}} {{athleteData.athlete_inscription.athlete.cognome}}</h2>
+      <div class="score-display">
+        {{athleteData.score ? athleteData.score : 'READY'}}
+      </div>
+    </div>
+
+    <div *ngIf="athleteData?.category.current_phase == categoryPhase.BRACKETS" class="match-container">
+      <div class="side-card aka text-center animate__animated animate__fadeInLeft">
+        <h3 class="competitor-name">{{athleteData.currentMatch.athlete_aka_inscription.athlete.cognome}} {{athleteData.currentMatch.athlete_aka_inscription.athlete.nome}}</h3>
+        <div class="point-box">{{athleteData.currentMatch.score_aka}}</div>
+        <div class="penalties">
+           {{athleteData.currentMatch.chui_1_aka ? 'CH1' : '○'}} 
+           {{athleteData.currentMatch.chui_2_aka ? 'CH2' : '○'}} 
+           {{athleteData.currentMatch.chui_3_aka ? 'CH3' : '○'}}
+           <span class="text-warning">{{athleteData.currentMatch.hans_chui_aka ? 'HC' : '○'}}</span>
+        </div>
+        <i *ngIf="athleteData.currentMatch.senshu_aka" class="fa fa-flag senshu position-absolute" style="top:20px; right:20px"></i>
+      </div>
+
+      <div class="center-info">
+        <div *ngIf="athleteData.countdown" class="timer" [class.text-warning]="athleteData.countdown < 15">
+          {{athleteData.countdown | formatTime}}
+        </div>
+        <div class="vs-label">VS</div>
+      </div>
+
+      <div class="side-card ao text-center animate__animated animate__fadeInRight">
+        <h3 class="competitor-name">{{athleteData.currentMatch.athlete_ao_inscription.athlete.cognome}} {{athleteData.currentMatch.athlete_ao_inscription.athlete.nome}}</h3>
+        <div class="point-box">{{athleteData.currentMatch.score_ao}}</div>
+        <div *ngIf="athleteData.countdown" class="penalties">
+           {{athleteData.currentMatch.chui_1_ao ? 'CH1' : '○'}} 
+           {{athleteData.currentMatch.chui_2_ao ? 'CH2' : '○'}} 
+           {{athleteData.currentMatch.chui_3_ao ? 'CH3' : '○'}}
+           <span class="text-warning">{{athleteData.currentMatch.hans_chui_ao ? 'HC' : '○'}}</span>
+        </div>
+        <i *ngIf="athleteData.currentMatch.senshu_ao" class="fa fa-flag senshu position-absolute" style="top:20px; left:20px"></i>
+      </div>
+    </div>
+
+    <div *ngIf="athleteData?.category.current_phase == categoryPhase.FINALIZED || athleteData?.category.current_phase == categoryPhase.AWAITING_BRACKETS" 
+         class="results-list animate__animated animate__fadeInUp">
+      <h2 class="display-3 mb-3">{{athleteData?.category.current_phase == categoryPhase.FINALIZED ? 'Classifica Finale' : 'Passano il turno'}}</h2>
+      
+      <div *ngFor="let athlete of athleteData.athleteList; let i = index" 
+           class="result-row" 
+           [ngClass]="'podium-' + athlete.final_ranking">
+        <span class="rank">{{athlete.final_ranking || athlete.pool_ranking}}°</span>
+        <span class="flex-grow-1">
+          <strong>{{athlete.athlete?.cognome || athlete.athlete_inscription.athlete.cognome}}</strong> 
+          {{athlete.athlete?.nome || athlete.athlete_inscription.athlete.nome}}
+        </span>
+        <span class="club">{{athlete.athlete?.club.club_name || athlete.athlete_inscription.athlete.club.club_name}}</span>
+      </div>
+    </div>
+
   </div>
 </div>

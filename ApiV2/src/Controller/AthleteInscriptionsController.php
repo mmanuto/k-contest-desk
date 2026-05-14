@@ -281,12 +281,16 @@ class AthleteInscriptionsController extends ApiController
 
         switch ($categoryStatus->current_phase) {
             case Configure::read('PHASE_JUDGING_PANEL'):
-                $recordToDelete = $this->ResultsJudgedPanel->get($request['id']);
+                $recordToDelete = $this->ResultsJudgedPanel->find()
+                ->where(['athlete_inscription_id' => $request['id']])
+                ->first();
                 $this->ResultsJudgedPanel->delete($recordToDelete);
                 break;
             
             case Configure::read('PHASE_TIME_PANEL'):
-                $recordToDelete = $this->ResultsTimed->get($request['id']);
+                $recordToDelete = $this->ResultsTimed->find()
+                ->where(['athlete_inscription_id' => $request['id']])
+                ->first();
                 $this->ResultsJudgedPanel->delete($recordToDelete);
                 break;
             default:
@@ -295,7 +299,7 @@ class AthleteInscriptionsController extends ApiController
         }
 
 
-        $athleteInscription = $this->AthleteInscriptions->get($request['athlete_inscription_id']);
+        $athleteInscription = $this->AthleteInscriptions->get($request['id']);
         $athleteInscription->deleted = 1;
         if ($this->AthleteInscriptions->save($athleteInscription)) {
     

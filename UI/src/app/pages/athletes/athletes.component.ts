@@ -276,7 +276,10 @@ export class AthletesComponent {
     this.athletesService.deteleAtletaInscription({ 'id': event.data.id, 'code': event.data.codes, 'categorycode_id':event.data.categorycode_id}).subscribe((response: any) => {
       console.log(response);
       if (response.result.success) {
-        location.reload();
+        this.athletesService.deteleAtletaInscriptionWEB({ 'id': event.data.id}).subscribe((responseWeb: any) => {
+          location.reload();
+        })
+        
       }
       
     });
@@ -313,6 +316,11 @@ export class AthletesComponent {
     }
       
     this.athletesService.updateCategory(request).subscribe((response: any) => {
+      if(response.result.success){
+        this.athletesService.updateCategoryWEB(request).subscribe((responseWeb: any) => {
+
+        });
+      }
       this.closeModal();
     });
   }

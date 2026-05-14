@@ -55,7 +55,7 @@ class AthleteListPdf
                 ['Categoria', $cat->categoria],
                 ['Cintura', $cat->grado],
                 ['Sesso', $cat->sesso],
-                [$isCombinata ? 'Colore' : 'Peso', $isCombinata? 'colore' : $cat->cat_peso]
+                [$isKumite ? 'Peso' : '', $isKumite? $cat->cat_peso : '']
             ];
 
             // Disegniamo la tabellina info centrata

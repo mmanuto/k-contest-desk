@@ -37,10 +37,7 @@ export class DisplayInfoComponent implements OnInit {
     protected localStorageService: LocalStorageService,
     private displayService: DisplayInfoService,
     private cd: ChangeDetectorRef // Importante per aggiornare la UI
-  ) {/*
-      this.mySubscription= interval(500).subscribe((x =>{
-        this.checkAthlete();
-    }));  */  
+  ) { 
   }
   
   ngOnInit() {
@@ -145,8 +142,12 @@ export class DisplayInfoComponent implements OnInit {
     this.interval = setInterval(() => {
       if(this.countdown > 0) {
         this.countdown--;
+        if(this.countdown == 15){
+          this.playWarningBeep();
+        }
       } else {
         console.log('fineeee');
+        this.playFinalBuzzer();
         if(this.currentMatch.aka.scores.total > this.currentMatch.ao.scores.total){
           this.currentMatch.aka.scores.win = 1;
           this.currentMatch.ao.scores.win = 0;
@@ -169,7 +170,47 @@ export class DisplayInfoComponent implements OnInit {
   pauseTimer() {
     clearInterval(this.interval);
   }
+
+
+  /**
+   * Genera un segnale acustico elettronico (Beep)
+   * @param duration Durata in millisecondi
+   * @param frequency Frequenza in Hz (es. 440 per un tono standard, 880 per uno più acuto)
+   */
+  private playBeep(duration: number, frequency: number) {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.type = 'sine'; // Tono pulito
+      oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+      
+      // Gestione volume per evitare "click" audio all'inizio/fine
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration / 1000);
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + duration / 1000);
+  }
+
+  // Funzione per il segnale singolo (15 secondi)
+  private playWarningBeep() {
+      this.playBeep(200, 440); // 440Hz è un LA standard
+  }
+
+  // Funzione per il segnale doppio (Fine tempo)
+  private playFinalBuzzer() {
+      this.playBeep(150, 600); // Primo beep
+      setTimeout(() => {
+          this.playBeep(150, 600); // Secondo beep dopo 100ms
+      }, 250);
+  }
 }
+
+
 
 
 @Pipe({
@@ -185,3 +226,5 @@ export class FormatTimePipe implements PipeTransform {
     );
   }
 }
+
+

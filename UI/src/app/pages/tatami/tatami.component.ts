@@ -45,8 +45,6 @@ interface RoundGroup {
 export class TatamiComponent {
 
   @ViewChild('dangerModal') public dangerModal: ModalDirective;
-  @ViewChild('matchModal') public matchModal: ModalDirective;
-  @ViewChild('doubleKataModal') public doubleKataModal: ModalDirective;
   @ViewChild('kumiteModal') public kumiteModal: ModalDirective;
 
   //CONSTANTS
@@ -780,21 +778,6 @@ calculateRoundRobinStandings() {
       });
   }
 
-  // ------------------------------------------------ KATA CONTROLS ----------------------------------------------------------
-
-  getPreviousMatch(athlete, type){
-    console.log(athlete);
-    console.log(this.athleteList);
-
-    this.athleteList.forEach(element => {
-      if(element.athlete_inscription_id == athlete.athlete_inscription_id && element.round != athlete.round){
-          this.previousMatches[0] = element;
-          this.matchModal.show();
-      }
-    });   
-    console.log(this.previousMatches);
-
-  }
 
   // ---------------------------------------------- OPEN MONITOR INFO ------------------------------------------------------
   displayAthlete(athlete){

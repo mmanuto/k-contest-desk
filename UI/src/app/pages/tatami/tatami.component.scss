@@ -12,66 +12,70 @@
     min-height: 36px;
     border-radius: 4px;
 }
+
 .categoryList {
-    margin: 0 0 2em 0;
-    list-style-type: none;
-    padding: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    margin-bottom: 10px;
+
+    button {
+      width: 100%;
+      background: #ffffff !important;
+      border: 1px solid #e9ecef !important;
+      padding: 12px 15px !important;
+      border-radius: 12px !important;
+      display: flex;
+      align-items: center;
+      transition: all 0.2s ease;
+      height: auto !important;
+
+      &:hover {
+        transform: translateX(5px);
+        border-color: #5e72e4 !important;
+        background-color: #f8fbff !important;
+      }
+
+      &.selected {
+        background: #5e72e4 !important;
+        border-color: #5e72e4 !important;
+        box-shadow: 0 4px 15px rgba(94, 114, 228, 0.3);
+        
+        .name { color: #ffffff !important; }
+        .text-muted { color: rgba(255,255,255,0.8) !important; }
+        
+        /* Quando la tessera è selezionata, rendiamo il badge più sobrio */
+        .badge-status {
+          background: rgba(255,255,255,0.2) !important;
+          color: #ffffff !important;
+        }
+      }
+
+      .name {
+        color: #32325d;
+        font-size: 1.2rem;
+        line-height: 1.2;
+      }
+    }
   }
-  
-  .categoryList li {
-    display: flex;
-  }
-  
-  .categoryList button {
-    flex: 1;
-    cursor: pointer;
-    position: relative;
-    left: 0;
-    background-color: #f0f3f5;
-    margin: .5em;
-    padding: 0;
-    border-radius: 4px;
-    border: 1px solid #c8ced3 !important;
-    display: flex;
-    align-items: stretch;
-    height: 2.3em;
-    line-height: 2em;
-  }
-  
-  .categoryList button:hover {
-    color: #2c3a41;
-    background-color: #e6e6e6;
-  }
-  
-  .categoryList button:active {
-    background-color: #525252;
-    color: #fafafa;
-  }
-  
-  .categoryList button.selected {
-    background-color: #525252;
-    color: white;
-    border: 1px solid 525252 !important;
-  }
-  
-  .categoryList button.selected:hover {
-    background-color: #505050;
-    color: white;
-  }
-  
-  .categoryList button.selected:active {
-    background-color: 525252;
-    color: white;
-    border: 1px solid 525252 !important;
-  }
-  
-  .categoryList .code {
-    display: inline-block;
-    font-size: small;
-    margin-right: .8em;
-    border-radius: 4px 0 0 4px;
-    line-height: 2em;
-  }
+}
+
+/* 3. DEFINIZIONE COLORI PER STATO (Palette Soft) */
+.badge-status {
+  min-width: 55px;
+  padding: 6px 8px !important;
+  font-size: 1.1rem !important;
+  font-weight: 800 !important;
+  border-radius: 8px !important;
+  text-transform: uppercase;
+  text-align: center;
+
+  &.todo { background: #e8f5e9; color: #2e7d32; border: 1px solid;}      /* Verde (Attiva) */
+  &.open { background: #e3f2fd; color: #1565c0; border: 1px solid;}      /* Blu (Aperta) */
+  &.doing { background: #fff3e0; color: #ef6c00; border: 1px solid;}     /* Arancio (In corso) */
+  &.closed { background: #ffebee; color: #c62828; border: 1px solid;}    /* Rosso (Chiusa) */
+}
 
   .card-header{
     h5{
@@ -324,12 +328,6 @@ $bg-gray: #f5f5f5;
 $red: #d32f2f;
 $blue: #1976d2;
 
-.aka-competitor-name { color: $red; }
-
-.ao-competitor-name { color: $blue; }
-
-
-
 .red-border { 
   color: $red; 
   font-weight: bold;
@@ -446,32 +444,50 @@ $blue: #1976d2;
     font-size: medium;
 }
 
-/* Rimuovi il background verde e usa questo stile */
 .card-athlete {
-  background-color: #fff;
-  /* 1. Aggiungiamo un bordo grigio chiaro su tutti i lati */
-  border: 1px solid #dee2e6; 
-  /* 2. Il bordo sinistro rimane trasparente per fare spazio al colore di stato, ma più spesso */
-  border-left: 5px solid transparent; 
-  /* 3. Aumentiamo lo spazio tra le card per separarle bene */
-  margin-bottom: 0.8rem; 
-  /* 4. Un'ombra leggera aiuta a farle "galleggiare" sullo sfondo */
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  border-radius: 0.35rem; /* Angoli leggermente arrotondati */
-  overflow: hidden;
+    border-radius: 15px !important;
+    border: 1px solid #e9ecef !important;
+    background: #fff !important;
+    transition: all 0.3s ease;
+    overflow: hidden;
+
+    .card-header-custom {
+        background: #ffffff !important;
+        padding: 15px 20px !important;
+        border-bottom: 1px solid #f1f3f5 !important;
+    }
+
+    &.scored-athlete {
+        border-left: 6px solid #2dce89 !important;
+        background: #f4fbf7 !important;
+    }
+
+    &.tiebreak-athlete {
+        border-left: 6px solid #fb9a05 !important;
+        background: #fff9f1 !important;
+    }
 }
 
-/* Stile per chi ha un punteggio (Verde) */
-.scored-athlete {
-  border-left: 5px solid #28a745 !important; /* Striscia verde */
-  background-color: #fcfcfc; /* Grigio chiarissimo quasi bianco */
+.form-horizontal {
+    .form-control {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        font-weight: 700;
+        text-align: center;
+        &:focus {
+            border-color: #5e72e4;
+            box-shadow: none;
+        }
+    }
+    label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #8898aa;
+        font-weight: 800;
+    }
 }
 
-.card-athlete:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  border-color: #cbd3da;
-}
 
 /* Header Custom */
 .card-header-custom {
@@ -518,4 +534,207 @@ a.text-decoration-none:hover {
         border-bottom: 2px solid #e9ecef !important;
         padding: 12px 15px !important;
     }
+}
+
+.timer-display {
+      font-family: 'Courier New', monospace;
+      font-size: 3.3rem !important; /* Molto grande */
+      font-weight: 700;
+      transition: color 0.3s ease;
+      color: #333 !important; 
+    }
+
+    .timer-alert {
+      color: #dc3545 !important;
+      animation: blink-timer 1s infinite;
+    }
+
+    @keyframes blink-timer {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Area di trascinamento */
+.cursor-move {
+    cursor: move; /* Cambia il cursore in una croce di movimento */
+}
+
+/* Fix per la modale quando viene trascinata */
+.cdk-drag-preview {
+    box-shadow: 0 15px 35px rgba(50,50,93,.2), 0 5px 15px rgba(0,0,0,.17);
+}
+
+.cdk-drag-placeholder {
+    opacity: 0;
+}
+
+.cdk-drag-animating {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Importante: reset del transform di Bootstrap che può bloccare il drag */
+.modal-dialog[cdkDrag] {
+    transition: transform 0.2s ease-out;
+    &.cdk-drag-active {
+        transition: none; /* Disabilita transizioni fluide durante il trascinamento attivo */
+    }
+}
+
+/* 2. PULSANTI TATTILI (Cockpit Style) */
+/* Miglioramento dei pulsanti di punteggio (+Ippon, +Yuko, ecc) */
+.btn-outline-primary, .btn-outline-danger {
+    &.w-100p {
+        border-radius: 12px !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        
+        &:active {
+            transform: scale(0.95);
+        }
+    }
+}
+
+/* Spaziatura tra le sezioni della bottoniera */
+.row .ml-4 {
+    margin-left: 2rem !important; /* Aumenta lo stacco tra AKA e AO */
+}
+
+/* 1. DIMENSIONI MODALE GIGANTE */
+.cockpit-modal {
+    max-width: 1100px !important;
+    .modal-content {
+        border-radius: 20px;
+        border: none;
+        overflow: hidden;
+        background-color: #fcfcfc;
+    }
+
+    .modal-header {
+        background-color: #ffffff !important;
+        border-bottom: 2px solid #e9ecef !important;
+        padding: 20px 30px;
+        .modal-title { color: #5e72e4 !important; font-weight: 800; }
+        .close { color: #8898aa; }
+    }
+
+    .modal-footer {
+        background-color: #f8f9fe !important;
+        //border-top: 1px solid #e9ecef !important;
+        //padding: 20px;
+    }
+}
+
+/* 2. ZONE DI COLORE NETTE */
+.cockpit-side {
+  padding: 25px;
+  border-radius: 20px;
+  height: 100%;
+  min-height: 500px;
+  border-radius: 20px;
+  &.ao-side { 
+        background: #ffffff; 
+        border: 3px solid rgba(0, 123, 255, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 123, 255, 0.05);
+
+        h2 {margin: 10px 0 !important}
+    }
+    
+    &.aka-side { 
+        background: #ffffff; 
+        border: 3px solid rgba(220, 53, 69, 0.2);
+        box-shadow: 0 10px 30px rgba(220, 53, 69, 0.05);
+        h2 {margin: 10px 0 !important}
+    }
+}
+
+/* 3. TESTI */
+.club-label-lg { font-size: 1rem; color: #666; font-weight: 600; margin: 10px 0 !important }
+.giant-score-display { font-size: 6rem; font-weight: 900; line-height: 1; margin: 15px 0; }
+.aka-competitor-name { color: $red !important; }
+.ao-competitor-name { color: $blue !important; }
+
+
+/* 4. BOTTONI GIGANTI E PULITI */
+.btn-cockpit-main {
+    min-height: 50px !important;
+    font-size: 1.1rem !important;
+    font-weight: 800 !important;
+    border-radius: 15px !important;
+    border-width: 2px !important;
+    text-transform: uppercase;
+    align-content: center;
+}
+
+.btn-cockpit-sub {
+    min-height: 50px !important;
+    font-size: 1rem !important;
+    font-weight: 700;
+    border-radius: 10px !important;
+    border: 1px solid #e2e6ea !important;
+}
+
+/* 5. PENALITÀ: LOOK MODERNO */
+.penalty-box {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 20px;
+
+    .p-btn {
+        height: 45px;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 1.3rem;
+        cursor: pointer;
+        background: #fff;
+        transition: all 0.2s ease;
+        margin: 0;
+
+        &.active {
+            background: #525f7f; color: #fff; border-color: #525f7f;
+        }
+        &.warning.active { background: #fb9a05; border-color: #fb9a05; }
+        &.danger.active { background: #f5365c; border-color: #f5365c; }
+    }
+}
+
+/* 6. TIMER COCKPIT */
+.timer-container-light {
+    //background: #ffffff;
+    //border-radius: 25px;
+    //padding: 20px 10px;
+    //border: 3px solid #e9ecef;
+    //box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+
+    .timer-val {
+        //font-family: 'Courier New', monospace;
+        font-size: 3.5rem;
+        font-weight: 900;
+        color: #32325d; /* Grigio molto scuro quasi blu */
+        line-height: 1;
+        
+        &.timer-alert {
+            color: #f5365c !important;
+            animation: pulse-light-red 1s infinite;
+        }
+    }
+}
+
+@keyframes pulse-light-red {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* FIX KATA ADULTI */
+.score-input-giant {
+    height: 90px !important;
+    font-size: 3.5rem !important;
+    text-align: center;
+    font-weight: 900;
+    border-width: 4px !important;
 }

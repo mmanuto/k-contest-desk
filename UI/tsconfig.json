@@ -12,7 +12,6 @@
     "importHelpers": true,
     "target": "es2020",
     "module": "es2020",
-    "ignoreDeprecations": "6.0",
     "noImplicitAny": false,
     "strict": false,
     "lib": [
