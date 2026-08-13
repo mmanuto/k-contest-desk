@@ -338,10 +338,12 @@ class AthleteInscriptionsController extends ApiController
         $newInscription->athlete_id = $athleteInscription->athlete_id;
         $newInscription->competition_id = $athleteInscription->competition_id;
         $newInscription->categorycode_id = $data['categorycode_id'];
-
-        if ($this->AthleteInscriptions->save($newInscription)) {
+        $newInscription->cintura = '';
+        $result = $this->AthleteInscriptions->save($newInscription);
+        if ($result) {
 
             $this->apiResponse['success'] = true;
+            $this->apiResponse['data'] = $result;
         } else {
             $this->apiResponse['success'] = false;
         }

@@ -3,7 +3,7 @@
   <div class="header-monitor d-flex justify-content-between align-items-center">
     <h1 class="tatami-title">{{currentUser?.name}}</h1>
     <div class="category-info text-right" *ngIf="athleteData?.category">
-      {{athleteData.category.categorycode.specialita}} {{athleteData.category.categorycode.categoria}}<br>
+      {{athleteData.category.categorycode.id}} - {{athleteData.category.categorycode.specialita}} {{athleteData.category.categorycode.categoria}}<br>
       <small>{{athleteData.category.categorycode.grado}} {{athleteData.category.categorycode.sesso}} {{athleteData.category.categorycode.cat_peso}}</small>
     </div>
   </div>
@@ -22,7 +22,7 @@
       <div class="side-card aka text-center animate__animated animate__fadeInLeft">
         <h3 class="competitor-name">{{athleteData.currentMatch.athlete_aka_inscription.athlete.cognome}} {{athleteData.currentMatch.athlete_aka_inscription.athlete.nome}}</h3>
         <div class="point-box">{{athleteData.currentMatch.score_aka}}</div>
-        <div class="penalties">
+        <div *ngIf="athleteData.countdown" class="penalties">
            {{athleteData.currentMatch.chui_1_aka ? 'CH1' : '○'}} 
            {{athleteData.currentMatch.chui_2_aka ? 'CH2' : '○'}} 
            {{athleteData.currentMatch.chui_3_aka ? 'CH3' : '○'}}

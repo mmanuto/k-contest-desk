@@ -227,7 +227,7 @@ export class CategoriesComponent implements OnInit {
 
         let requestWeb = {
           tatami: this.tatamiForm.value.user_id,
-          competition_id: 'GTTMLT-2026',
+          competition_id: 'SCCSC-2026',
           categorycode_id: this.tatamiForm.value.categorycode_id,
           status: categoryStatus.TODO
         }

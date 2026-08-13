@@ -644,7 +644,7 @@ calculateRoundRobinStandings() {
               categorycode_id: this.selectedCategory.categorycode_id,
               status: status,
               tatami: this.selectedCategory.user_id,
-              competition_id: 'GTTMLT-2026'
+              competition_id: 'SCCSC-2026'
             }
 
             console.log(requestWeb);

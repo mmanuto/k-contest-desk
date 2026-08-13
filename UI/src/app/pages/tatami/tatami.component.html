@@ -425,7 +425,7 @@
                 <div class="col-md-6 mt-4"></div>
                 <button *ngIf="selectedCategory?.current_phase == categoryPhase.AWAITING_BRACKETS" class="btn btn-warning btn-pill-action rounded-pill box-shadow px-4 mr-4" (click)="generateBrackets()"><i class="fa fa-sitemap mr-2"></i> Genera tabelloni</button>
                 <button *ngIf="selectedCategory?.current_phase == categoryPhase.JUDGING_FINALIZING || selectedCategory?.current_phase == categoryPhase.TIMED_FINALIZING" class="btn btn-warning btn-pill-action rounded-pill box-shadow px-4 mr-4" (click)="finalizeScoreAndTimedCategory(selectedCategory.categorycode_id)"><i class="fa fa-dot-circle-o"></i> Elabora punteggi</button>
-                <button *ngIf="typeForm == prova.KUMITE && !isRoundRobin && !hasRepechages && (selectedCategory?.current_phase == categoryPhase.BRACKETS_FINALIZING || selectedCategory?.current_phase == categoryPhase.BRACKETS)" class="btn btn-warning btn-pill-action rounded-pill box-shadow px-4 mr-4" (click)="generateRepechage()"><i class="fa fa-dot-circle-o"></i> Genera Ripescaggi</button>
+                <!--<button *ngIf="typeForm == prova.KUMITE && !isRoundRobin && !hasRepechages && (selectedCategory?.current_phase == categoryPhase.BRACKETS_FINALIZING || selectedCategory?.current_phase == categoryPhase.BRACKETS)" class="btn btn-warning btn-pill-action rounded-pill box-shadow px-4 mr-4" (click)="generateRepechage()"><i class="fa fa-dot-circle-o"></i> Genera Ripescaggi</button> -->
                 <button *ngIf="selectedCategory?.current_phase === categoryPhase.BRACKETS_FINALIZING" class="btn btn-warning btn-pill-action rounded-pill box-shadow px-4 mr-4" (click)="getKumiteFinalRanking(selectedCategory.categorycode_id)"><i class="fa fa-dot-circle-o"></i> Genera classifica</button>
                 <button *ngIf="selectedCategory?.current_phase === categoryPhase.FINALIZED" class="btn btn-danger btn-pill-action rounded-pill box-shadow px-4 mr-4" (click)="closeCategory()"><i class="fa fa-dot-circle-o"></i> Chiudi categoria</button>
               </div>
@@ -701,12 +701,13 @@
                <p class="text-primary font-weight-bold">C: {{currentMatch.chui_1_ao ? '1C' : '--'}} {{currentMatch.chui_2_ao ? '2C' : '--'}} {{currentMatch.chui_3_ao ? '3C' : '--'}} {{currentMatch.hans_chui_ao ? 'HC' : '--'}} {{currentMatch.hans_ao ? 'H' : '--'}}</p> 
                
                <div class="row no-gutters mb-3">
-                  <div class="col-4 p-1"><button class="btn btn-outline-primary btn-cockpit-main w-100" (click)="editScore('ao', 3, 'ADD')">+ IPPON</button></div>
-                  <div class="col-4 p-1"><button class="btn btn-outline-primary btn-cockpit-main w-100" (click)="editScore('ao', 2, 'ADD')">+ WAZA</button></div>
                   <div class="col-4 p-1"><button class="btn btn-outline-primary btn-cockpit-main w-100" (click)="editScore('ao', 1, 'ADD')">+ YUKO</button></div>
-                  <div class="col-4 p-1"><button class="btn btn-light btn-cockpit-sub w-100" (click)="editScore('ao', 3, 'REMOVE')">- IPPON</button></div>
+                  <div class="col-4 p-1"><button class="btn btn-outline-primary btn-cockpit-main w-100" (click)="editScore('ao', 2, 'ADD')">+ WAZA</button></div>
+                  <div class="col-4 p-1"><button class="btn btn-outline-primary btn-cockpit-main w-100" (click)="editScore('ao', 3, 'ADD')">+ IPPON</button></div>
+                  <div class="col-4 p-1"><button class="btn btn-light btn-cockpit-sub w-100" (click)="editScore('ao', 1, 'REMOVE')">- YUKO</button></div>                  
                   <div class="col-4 p-1"><button class="btn btn-light btn-cockpit-sub w-100" (click)="editScore('ao', 2, 'REMOVE')">- WAZA</button></div>
-                  <div class="col-4 p-1"><button class="btn btn-light btn-cockpit-sub w-100" (click)="editScore('ao', 1, 'REMOVE')">- YUKO</button></div>
+                  <div class="col-4 p-1"><button class="btn btn-light btn-cockpit-sub w-100" (click)="editScore('ao', 3, 'REMOVE')">- IPPON</button></div>
+                  
                </div>
 
                <div class="row no-gutters mb-3">
@@ -721,12 +722,12 @@
                </div>
 
                <div class="penalty-box">
-                  <label class="p-btn" [class.active]="currentMatch.chui_1_ao"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.chui_1_ao">C1</label>
-                  <label class="p-btn" [class.active]="currentMatch.chui_2_ao"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.chui_2_ao">C2</label>
-                  <label class="p-btn" [class.active]="currentMatch.chui_3_ao"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.chui_3_ao">C3</label>
-                  <label class="p-btn warning" [class.active]="currentMatch.hans_chui_ao"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.hans_chui_ao">HC</label>
-                  <label class="p-btn danger" [class.active]="currentMatch.hans_ao"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.hans_ao">H</label>
-                </div>
+                <label class="p-btn danger" [class.active]="currentMatch.hans_ao"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.hans_ao">H</label>
+                <label class="p-btn warning" [class.active]="currentMatch.hans_chui_ao"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.hans_chui_ao">HC</label>
+                <label class="p-btn" [class.active]="currentMatch.chui_3_ao"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.chui_3_ao">C3</label>
+                <label class="p-btn" [class.active]="currentMatch.chui_2_ao"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.chui_2_ao">C2</label>
+                <label class="p-btn" [class.active]="currentMatch.chui_1_ao"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.chui_1_ao">C1</label>
+              </div>
             </div>
           </div>
           <div class="col-md-2 text-center py-4" *ngIf="typeForm == prova.KATA_ADULTI"></div>
@@ -814,11 +815,11 @@
                </div>
 
                <div class="penalty-box">
-                  <label class="p-btn danger" [class.active]="currentMatch.hans_aka"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.hans_aka">H</label>
-                  <label class="p-btn warning" [class.active]="currentMatch.hans_chui_aka"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.hans_chui_aka">HC</label>
-                  <label class="p-btn" [class.active]="currentMatch.chui_3_aka"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.chui_3_aka">C3</label>
-                  <label class="p-btn" [class.active]="currentMatch.chui_2_aka"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.chui_2_aka">C2</label>
-                  <label class="p-btn" [class.active]="currentMatch.chui_1_aka"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.chui_1_aka">C1</label>
+                <label class="p-btn" [class.active]="currentMatch.chui_1_aka"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.chui_1_aka">C1</label>
+                <label class="p-btn" [class.active]="currentMatch.chui_2_aka"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.chui_2_aka">C2</label>
+                <label class="p-btn" [class.active]="currentMatch.chui_3_aka"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.chui_3_aka">C3</label>
+                <label class="p-btn warning" [class.active]="currentMatch.hans_chui_aka"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.hans_chui_aka">HC</label>
+                <label class="p-btn danger" [class.active]="currentMatch.hans_aka"><input type="checkbox" hidden (change)="onCheckboxChange()" [(ngModel)]="currentMatch.hans_aka">H</label>     
                </div>
             </div>
           </div>

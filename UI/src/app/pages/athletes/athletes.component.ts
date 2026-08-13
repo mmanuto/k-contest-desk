@@ -353,8 +353,13 @@ export class AthletesComponent {
 
     this.athletesService.addInscription(request).subscribe((response: any) => {
       if (response.result.success) {
-        this.closeModal();
-        //location.reload();
+        this.athletesService.addInscriptionWEB(response.result.data).subscribe((responseWEB: any) => {
+          if (responseWEB.result.success){
+            this.closeModal();
+            //location.reload();
+          }
+        });
+        
       }
     });
   }

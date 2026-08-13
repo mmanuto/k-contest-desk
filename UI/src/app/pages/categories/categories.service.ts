@@ -27,11 +27,11 @@ export class CategoriesService {
         return this.http.post(environment.BASEAPPURL + 'tatamiAssignments/getUserCategories', {});
     }
 
-    saveTatamiAssegnee(request: { user_id: any; categorycode_id: any; status: "CAT_TODO"; }){
+    saveTatamiAssegnee(request: { user_id: any; categorycode_id: any; status: string; }){
         return this.http.post(environment.BASEAPPURL + 'tatamiAssignments/saveUserCategories', request);
     }
 
-    updateTatamiWeb(request: { tatami: any; competition_id: string; categorycode_id: any; status: "CAT_TODO"; }){
+    updateTatamiWeb(request: { tatami: any; competition_id: string; categorycode_id: any; status: string; }){
         return this.http.post(environment.ISCRIZIONI_URL + 'users/addTatamiAssignments', request);
     }
 
