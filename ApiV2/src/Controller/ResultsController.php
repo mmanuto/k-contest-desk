@@ -1755,7 +1755,7 @@ private function _createRepechageChain($categoryId, $winnerId, $repechageRoundCo
             ])
             ->where(['ResultsTimed.categorycode_id' => $categorycode_id])
             // Ordiniamo per ordine di esecuzione o alfabetico (opzionale)
-            ->order(['AthleteInscriptions.athlete_id' => 'ASC']) 
+            ->order(['"AthleteInscriptions".athlete_id' => 'ASC']) 
             ->toArray();
     }
 
@@ -1780,11 +1780,11 @@ private function _createRepechageChain($categoryId, $winnerId, $repechageRoundCo
         foreach ($matches as $match) {
 
             if($match->athlete_aka_inscription_id){
-                $match->athlete_aka_inscription = $this->AthleteInscriptions->find()->where(['AthleteInscriptions.id' => $match->athlete_aka_inscription_id])->contain(['Athletes' => ['Clubs']])->first();
+                $match->athlete_aka_inscription = $this->AthleteInscriptions->find()->where(['"AthleteInscriptions".id' => $match->athlete_aka_inscription_id])->contain(['Athletes' => ['Clubs']])->first();
             }
 
             if($match->athlete_ao_inscription_id){                           
-                $match->athlete_ao_inscription = $this->AthleteInscriptions->find()->where(['AthleteInscriptions.id' => $match->athlete_ao_inscription_id])->contain(['Athletes' => ['Clubs']])->first();
+                $match->athlete_ao_inscription = $this->AthleteInscriptions->find()->where(['"AthleteInscriptions".id' => $match->athlete_ao_inscription_id])->contain(['Athletes' => ['Clubs']])->first();
             }
             $grouped[$match->round][] = $match;
         }
@@ -1843,11 +1843,11 @@ private function _createRepechageChain($categoryId, $winnerId, $repechageRoundCo
                 'Athletes' => ['Clubs'] 
             ])
             ->where([
-                'AthleteInscriptions.categorycode_id' => $categorycode_id,
-                'AthleteInscriptions.final_ranking IS NOT NULL', // Prende solo chi ha un piazzamento
-                'AthleteInscriptions.deleted' => 0
+                '"AthleteInscriptions".categorycode_id' => $categorycode_id,
+                '"AthleteInscriptions".final_ranking IS NOT NULL', // Prende solo chi ha un piazzamento
+                '"AthleteInscriptions".deleted' => 0
             ])
-            ->order(['AthleteInscriptions.final_ranking' => 'ASC']) // 1°, 2°, 3°...
+            ->order(['"AthleteInscriptions".final_ranking' => 'ASC']) // 1°, 2°, 3°...
             ->toArray();
         
         if ($this->_isPercorso($categorycode_id)) {

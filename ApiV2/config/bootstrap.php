@@ -60,13 +60,26 @@ use Cake\Utility\Security;
  * security risks. See https://github.com/josegonzalez/php-dotenv#general-security-information
  * for more information for recommended practices.
 */
-// if (!env('APP_NAME') && file_exists(CONFIG . '.env')) {
-//     $dotenv = new \josegonzalez\Dotenv\Loader([CONFIG . '.env']);
-//     $dotenv->parse()
-//         ->putenv()
-//         ->toEnv()
-//         ->toServer();
-// }
+ $envFile = CONFIG . '.env';
+
+if (file_exists($envFile)) {
+    $loader = new \josegonzalez\Dotenv\Loader([$envFile]);
+    $environment = $loader->parse()->toArray();
+
+    foreach ($environment as $key => $value) {
+        if (getenv($key) === false) {
+            putenv($key . '=' . $value);
+        }
+
+        if (!array_key_exists($key, $_ENV)) {
+            $_ENV[$key] = $value;
+        }
+
+        if (!array_key_exists($key, $_SERVER)) {
+            $_SERVER[$key] = $value;
+        }
+    }
+}
 
 /*
  * Read configuration file and inject configuration into various

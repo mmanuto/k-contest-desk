@@ -32,11 +32,11 @@ public function downloadCoverPages()
         // Qui non servono gli atleti, basta la lista delle categorie
         $categories = $this->Categorycodes->find()
             ->select($this->Categorycodes)
-            ->select(['n_athletes' => 'COUNT(AthleteInscriptions.id)'])    
-            ->innerJoinWith('AthleteInscriptions')
+            ->select(['n_athletes' => 'COUNT("AthleteInscriptions".id)'])    
+            ->innerJoinWith('"AthleteInscriptions"')
             ->where([
                 'Categorycodes.codiceTipoCategorie' => 3, // O $competitionData['codiceTipoCategorie']
-                'AthleteInscriptions.deleted' => 0
+                '"AthleteInscriptions".deleted' => 0
             ])
             ->group(['Categorycodes.id'])    
             ->order(['Categorycodes.order_number' => 'ASC'])    
@@ -69,7 +69,7 @@ public function downloadCoverPages()
             ->contain([
                 // Carichiamo le iscrizioni attive e ordinate
                 'AthleteInscriptions' => function ($q) {
-                    return $q->where(['AthleteInscriptions.deleted' => 0])
+                    return $q->where(['"AthleteInscriptions".deleted' => 0])
                              ->contain(['Athletes.Clubs'])
                              ->order(['Clubs.id', 'Athletes.id']);
                 }

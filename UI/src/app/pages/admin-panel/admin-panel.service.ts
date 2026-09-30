@@ -15,20 +15,12 @@ export class AdminPanelService {
 
     }
 
-    syncCompetitionData(){
-        return this.http.post(environment.ISCRIZIONI_URL + 'competitions/syncCompetitionData', {competition_id:'SCCSC-2026'});
+    syncCompetitionData(competitionId: string){
+        return this.http.post(environment.ISCRIZIONI_URL + 'competitions/syncCompetitionData', {competition_id: competitionId});
     }
 
     importCompetitionData(request){
         return this.http.post(environment.BASEAPPURL + 'competitions/importCompetitionData', request);
-    }
-
-    getModifiedInscriptions(){
-        return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/getModifiedInscriptions', {});
-    }
-
-    updateCompetitionData(request){
-        return this.http.post(environment.ISCRIZIONI_URL + 'athletesInscriptions/updateCompetitionData', request);
     }
 
     //--------------------------------------------------- PRINT PDF ------------------------------------------------------------------

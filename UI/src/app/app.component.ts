@@ -1,8 +1,9 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { AppSettings } from './app.settings';
 import { Settings } from './app.settings.model';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -22,10 +23,17 @@ export class AppComponent {
 
     /* These following methods used for theme preview, you can remove this methods */
     
-    // ngOnInit() { 
-    //     var demo = this.getParameterByName('demo');
-    //     this.setLayout(demo);
-    // }
+    ngOnInit(): void {
+        this.router.events
+            .pipe(filter(event => event instanceof NavigationEnd))
+            .subscribe(() => {
+                const preloader = document.getElementById('preloader');
+
+                if (preloader) {
+                    preloader.classList.add('hide');
+                }
+            });
+    }
     
     // private getParameterByName(name) {
     //     var url = window.location.href;

@@ -1,0 +1,110 @@
+{
+  "generatedAt": "2026-08-21T12:27:51.547Z",
+  "configuration": {
+    "baseUrl": "http://localhost/k-contest-desk/ApiV2/",
+    "virtualUsers": 12,
+    "durationSeconds": 120,
+    "intervalMs": 2000,
+    "timeoutMs": 10000
+  },
+  "summary": {
+    "requests": 616,
+    "errors": 3,
+    "errorRatePercent": 0.49,
+    "averageMs": 217.27,
+    "p50Ms": 174.71,
+    "p95Ms": 396.72,
+    "p99Ms": 501.94,
+    "maximumMs": 1359.55,
+    "elapsedSeconds": 122.06,
+    "requestsPerSecond": 5.05
+  },
+  "byEndpoint": {
+    "totale_iscrizioni": {
+      "requests": 104,
+      "errors": 2,
+      "errorRatePercent": 1.92,
+      "averageMs": 122.32,
+      "p50Ms": 114.21,
+      "p95Ms": 195.4,
+      "p99Ms": 229.73,
+      "maximumMs": 230.84
+    },
+    "totale_prove": {
+      "requests": 102,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 148.1,
+      "p50Ms": 136.69,
+      "p95Ms": 237.86,
+      "p99Ms": 294.7,
+      "maximumMs": 344.79
+    },
+    "categorie": {
+      "requests": 102,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 306.01,
+      "p50Ms": 282.76,
+      "p95Ms": 449.54,
+      "p99Ms": 485.95,
+      "maximumMs": 492.47
+    },
+    "tatami": {
+      "requests": 102,
+      "errors": 1,
+      "errorRatePercent": 0.98,
+      "averageMs": 164.43,
+      "p50Ms": 142.98,
+      "p95Ms": 244.18,
+      "p99Ms": 315.66,
+      "maximumMs": 1359.55
+    },
+    "stato_tatami": {
+      "requests": 103,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 201,
+      "p50Ms": 181.62,
+      "p95Ms": 309.33,
+      "p99Ms": 352.08,
+      "maximumMs": 376.31
+    },
+    "lista_atleti": {
+      "requests": 103,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 362.38,
+      "p50Ms": 343.48,
+      "p95Ms": 501.94,
+      "p99Ms": 561.37,
+      "maximumMs": 660.5
+    }
+  },
+  "errors": [
+    {
+      "endpoint": "tatami",
+      "userId": 4,
+      "status": 500,
+      "elapsedMs": 1359.5478,
+      "bytes": 841,
+      "ok": false
+    },
+    {
+      "endpoint": "totale_iscrizioni",
+      "userId": 3,
+      "status": 500,
+      "elapsedMs": 142.6914,
+      "bytes": 841,
+      "ok": false
+    },
+    {
+      "endpoint": "totale_iscrizioni",
+      "userId": 8,
+      "status": 500,
+      "elapsedMs": 111.9512,
+      "bytes": 841,
+      "ok": false
+    }
+  ]
+}

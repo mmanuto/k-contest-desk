@@ -3,11 +3,18 @@ import { Routes, RouterModule, PreloadAllModules  } from '@angular/router';
 import { PagesComponent } from './pages/pages.component';
 import { SearchComponent } from './pages/search/search.component';
 import { NotFoundComponent } from './pages/errors/not-found/not-found.component';
+import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
+  { path: 'login', loadChildren: () => import('./pages/login/login.module').then(m => m.LoginModule) },
+  { path: 'register', loadChildren: () => import('./pages/register/register.module').then(m => m.RegisterModule) },
+  { path: 'displayinfo', loadChildren: () => import('./pages/displayinfo/displayinfo.module').then(m => m.DisplayInfoModule)},
+  { path: '', pathMatch: 'full', redirectTo: 'login'},
   {
     path: '', 
     component: PagesComponent,
+    canActivate: [AuthGuard],
+    canActivateChild: [AuthGuard],
     children:[
       { path: '', loadChildren: () => import('./pages/dashboard/dashboard.module').then(m => m.DashboardModule), data: { breadcrumb: 'Dashboard' }  },          
       { path: 'categories', loadChildren: () => import('./pages/categories/categories.module').then(m => m.CategoriesModule)},
@@ -28,10 +35,7 @@ export const routes: Routes = [
       { path: 'search', component: SearchComponent, data: { breadcrumb: 'Search' } }
     ]
   },
-  { path: 'login', loadChildren: () => import('./pages/login/login.module').then(m => m.LoginModule) },
-  { path: 'register', loadChildren: () => import('./pages/register/register.module').then(m => m.RegisterModule) },
-  { path: 'displayinfo', loadChildren: () => import('./pages/displayinfo/displayinfo.module').then(m => m.DisplayInfoModule)},
-  { path: '**', component: NotFoundComponent }
+  { path: '**', redirectTo: 'login'}
 ]; 
 
 @NgModule({

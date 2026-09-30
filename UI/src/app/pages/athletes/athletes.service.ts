@@ -70,7 +70,7 @@ export class AthletesService {
 //====================================================================================================
 // Salvataggio dati WEB
 //====================================================================================================
-
+/*
     saveAtletaWEB(request){
         return this.http.post(environment.ISCRIZIONI_URL + "athletes/saveAtleta", request);
     }
@@ -86,6 +86,6 @@ export class AthletesService {
 
     updateCategoryWEB(request){
         return this.http.post(environment.ISCRIZIONI_URL + "athleteInscriptions/updateCategory", request);
-    }
+    }*/
 
 } 

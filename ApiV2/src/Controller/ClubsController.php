@@ -120,7 +120,7 @@ class ClubsController extends ApiController
         $clubs = $this->Clubs->find()
             ->contain([
                 'Athletes.AthleteInscriptions' => function($q) {
-                    return $q->where(['AthleteInscriptions.deleted' => 0]);
+                    return $q->where(['"AthleteInscriptions".deleted' => 0]);
                 }
             ])
             ->all();

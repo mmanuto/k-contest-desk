@@ -225,7 +225,7 @@ export class CategoriesComponent implements OnInit {
 
       if(response.result.success){
 
-        let requestWeb = {
+     /*   let requestWeb = {
           tatami: this.tatamiForm.value.user_id,
           competition_id: 'SCCSC-2026',
           categorycode_id: this.tatamiForm.value.categorycode_id,
@@ -234,7 +234,7 @@ export class CategoriesComponent implements OnInit {
 
         this.categoriesService.updateTatamiWeb(requestWeb).subscribe((response: any) => {
 
-        });
+        });*/
 
         this.alertsDismiss.push({
           type: 'success',

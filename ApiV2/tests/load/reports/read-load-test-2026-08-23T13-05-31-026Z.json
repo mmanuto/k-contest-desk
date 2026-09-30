@@ -1,0 +1,94 @@
+{
+  "generatedAt": "2026-08-23T13:05:31.005Z",
+  "configuration": {
+    "baseUrl": "http://localhost/k-contest-desk/ApiV2/",
+    "virtualUsers": 12,
+    "durationSeconds": 120,
+    "intervalMs": 2000,
+    "timeoutMs": 10000
+  },
+  "summary": {
+    "requests": 551,
+    "errors": 1,
+    "errorRatePercent": 0.18,
+    "averageMs": 505.96,
+    "p50Ms": 430.96,
+    "p95Ms": 903.34,
+    "p99Ms": 989.59,
+    "maximumMs": 1881.02,
+    "elapsedSeconds": 122.83,
+    "requestsPerSecond": 4.49
+  },
+  "byEndpoint": {
+    "totale_iscrizioni": {
+      "requests": 92,
+      "errors": 1,
+      "errorRatePercent": 1.09,
+      "averageMs": 295.49,
+      "p50Ms": 276.52,
+      "p95Ms": 384.25,
+      "p99Ms": 1881.02,
+      "maximumMs": 1881.02
+    },
+    "totale_prove": {
+      "requests": 92,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 346.95,
+      "p50Ms": 338.47,
+      "p95Ms": 442.12,
+      "p99Ms": 510.17,
+      "maximumMs": 510.17
+    },
+    "categorie": {
+      "requests": 91,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 726.1,
+      "p50Ms": 725.25,
+      "p95Ms": 817.38,
+      "p99Ms": 935.01,
+      "maximumMs": 935.01
+    },
+    "tatami": {
+      "requests": 92,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 352.23,
+      "p50Ms": 339.36,
+      "p95Ms": 442.1,
+      "p99Ms": 578.7,
+      "maximumMs": 578.7
+    },
+    "stato_tatami": {
+      "requests": 92,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 460,
+      "p50Ms": 444.18,
+      "p95Ms": 535.08,
+      "p99Ms": 835.11,
+      "maximumMs": 835.11
+    },
+    "lista_atleti": {
+      "requests": 92,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 857.41,
+      "p50Ms": 862.87,
+      "p95Ms": 989.59,
+      "p99Ms": 1442.17,
+      "maximumMs": 1442.17
+    }
+  },
+  "errors": [
+    {
+      "endpoint": "totale_iscrizioni",
+      "userId": 11,
+      "status": 500,
+      "elapsedMs": 1881.0174,
+      "bytes": 841,
+      "ok": false
+    }
+  ]
+}

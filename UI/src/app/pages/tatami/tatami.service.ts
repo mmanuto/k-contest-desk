@@ -67,10 +67,10 @@ export class TatamiService
     updateCategoryStatus(request){
         return this.http.post(environment.BASEAPPURL + 'tatamiAssignments/updateCategoryStatus', request);
     }
-
+/*
     updateCategoryStatusWeb(request){
         return this.http.post(environment.ISCRIZIONI_URL + 'users/updateCategoryStatus', request);
-    }
+    }*/
 
     getAthleteHistory(request){
         return this.http.post(environment.BASEAPPURL + 'results/getAthleteHistory', request);

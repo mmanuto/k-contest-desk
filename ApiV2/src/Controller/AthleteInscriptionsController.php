@@ -267,87 +267,284 @@ class AthleteInscriptionsController extends ApiController
     public function deleteInscription()
     {
         Configure::load('constants');
+
         $this->loadModel('TatamiAssignments');
         $this->loadModel('ResultsJudgedPanel');
         $this->loadModel('ResultsTimed');
+        $this->loadModel('SyncOutbox');
+
         $request = $this->request->getData();
 
-        
-
-        $categoryStatus = $this->TatamiAssignments->find()
-            ->where([
-                'categorycode_id' => $request['categorycode_id']
-            ])->first();
-
-        switch ($categoryStatus->current_phase) {
-            case Configure::read('PHASE_JUDGING_PANEL'):
-                $recordToDelete = $this->ResultsJudgedPanel->find()
-                ->where(['athlete_inscription_id' => $request['id']])
-                ->first();
-                $this->ResultsJudgedPanel->delete($recordToDelete);
-                break;
-            
-            case Configure::read('PHASE_TIME_PANEL'):
-                $recordToDelete = $this->ResultsTimed->find()
-                ->where(['athlete_inscription_id' => $request['id']])
-                ->first();
-                $this->ResultsJudgedPanel->delete($recordToDelete);
-                break;
-            default:
-                
-                break;
-        }
-
-
-        $athleteInscription = $this->AthleteInscriptions->get($request['id']);
-        $athleteInscription->deleted = 1;
-        if ($this->AthleteInscriptions->save($athleteInscription)) {
-    
-            $this->apiResponse['success'] = true;
-        } else {
+        if (
+            empty($request['id']) ||
+            empty($request['categorycode_id'])
+        ) {
             $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] = 'Dati obbligatori mancanti.';
+
+            return;
         }
-        
+
+        $connection = $this->AthleteInscriptions->getConnection();
+
+        try {
+            $outboxId = $connection->transactional(
+                function () use ($request) {
+                    $categoryStatus = $this->TatamiAssignments
+                        ->find()
+                        ->where([
+                            'categorycode_id' =>
+                                $request['categorycode_id'],
+                        ])
+                        ->first();
+
+                    if ($categoryStatus) {
+                        switch ($categoryStatus->current_phase) {
+                            case Configure::read('PHASE_JUDGING_PANEL'):
+                                $record = $this->ResultsJudgedPanel
+                                    ->find()
+                                    ->where([
+                                        'athlete_inscription_id' =>
+                                            $request['id'],
+                                    ])
+                                    ->first();
+
+                                if ($record) {
+                                    $this->ResultsJudgedPanel
+                                        ->deleteOrFail($record);
+                                }
+                                break;
+
+                            case Configure::read('PHASE_TIME_PANEL'):
+                                $record = $this->ResultsTimed
+                                    ->find()
+                                    ->where([
+                                        'athlete_inscription_id' =>
+                                            $request['id'],
+                                    ])
+                                    ->first();
+
+                                if ($record) {
+                                    $this->ResultsTimed
+                                        ->deleteOrFail($record);
+                                }
+                                break;
+                        }
+                    }
+
+                    $athleteInscription =
+                        $this->AthleteInscriptions->get($request['id']);
+
+                    $athleteInscription->deleted = 1;
+
+                    $this->AthleteInscriptions
+                        ->saveOrFail($athleteInscription);
+
+                    $outbox = $this->SyncOutbox->newEntity([
+                        'event_type' =>
+                            'ATHLETE_INSCRIPTION_DELETED',
+                        'endpoint' =>
+                            'athleteInscriptions/deleteInscription',
+                        'payload' => [
+                            'id' => $request['id'],
+                        ],
+                        'status' => 'PENDING',
+                        'attempts' => 0,
+                    ]);
+
+                    $this->SyncOutbox->saveOrFail($outbox);
+
+                    return $outbox->id;
+                }
+            );
+
+            $this->apiResponse['success'] = true;
+            $this->apiResponse['sync_queued'] = true;
+            $this->apiResponse['sync_outbox_id'] = $outboxId;
+        } catch (\Throwable $exception) {
+            $this->log(
+                'Errore cancellazione iscrizione/outbox: ' .
+                $exception->getMessage(),
+                'error'
+            );
+
+            $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] =
+                'Impossibile cancellare l’iscrizione.';
+        }
     }
 
     /**
      * UPDATE CATEGORY
+     * TODO: aggiungere caso in cui una delle due categorie è già iniziata
      */
 
-    public function updateCategory(){
+    public function updateCategory()
+    {
         $data = $this->request->getData();
-        $athleteInscription = $this->AthleteInscriptions->get($data['id']);
-        $athleteInscription['old_category'] = $athleteInscription['categorycode_id'];
-        $athleteInscription['categorycode_id'] = $data['categorycode_id'];
-        $athleteInscription['accorpamento'] = $data['accorpamento'] ? 1 : 0;
-        $athleteInscription['modificato'] = 1;
 
-        if ($this->AthleteInscriptions->save($athleteInscription)) {
+        $this->loadModel('SyncOutbox');
+
+        if (
+            empty($data['id']) ||
+            empty($data['categorycode_id'])
+        ) {
+            $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] = 'Dati obbligatori mancanti.';
+
+            return;
+        }
+
+        $connection = $this->AthleteInscriptions->getConnection();
+
+        try {
+            $outboxId = $connection->transactional(
+                function () use ($data) {
+                    $athleteInscription =
+                        $this->AthleteInscriptions->get($data['id']);
+
+                    $oldCategory =
+                        $athleteInscription->categorycode_id;
+
+                    $athleteInscription->old_category =
+                        $oldCategory;
+
+                    $athleteInscription->categorycode_id =
+                        $data['categorycode_id'];
+
+                    $athleteInscription->accorpamento =
+                        !empty($data['accorpamento']) ? 1 : 0;
+
+                    $athleteInscription->modificato = 1;
+
+                    $this->AthleteInscriptions
+                        ->saveOrFail($athleteInscription);
+
+                    /*
+                    * Mantiene il payload precedentemente inviato
+                    * direttamente da Angular al portale online.
+                    */
+                    $payload = [
+                        'id' => $athleteInscription->id,
+                        'categorycode_id' =>
+                            $athleteInscription->categorycode_id,
+                        'accorpamento' =>
+                            (bool)$athleteInscription->accorpamento,
+                    ];
+
+                    $outbox = $this->SyncOutbox->newEntity([
+                        'event_type' =>
+                            'ATHLETE_INSCRIPTION_CATEGORY_UPDATED',
+                        'endpoint' =>
+                            'athleteInscriptions/updateCategory',
+                        'payload' => $payload,
+                        'status' => 'PENDING',
+                        'attempts' => 0,
+                    ]);
+
+                    $this->SyncOutbox->saveOrFail($outbox);
+
+                    return $outbox->id;
+                }
+            );
 
             $this->apiResponse['success'] = true;
-        } else {
+            $this->apiResponse['sync_queued'] = true;
+            $this->apiResponse['sync_outbox_id'] = $outboxId;
+        } catch (\Throwable $exception) {
+            $this->log(
+                'Errore cambio categoria/outbox: ' .
+                $exception->getMessage(),
+                'error'
+            );
+
             $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] =
+                'Impossibile aggiornare la categoria.';
         }
     }
 
-    public function addInscription(){
-        $data = $this->request->getData(); 
-        $athleteInscription = $this->AthleteInscriptions->get($data['inscription_id']);
+    public function addInscription()
+    {
+        $data = $this->request->getData();
 
-        $newInscription = $this->AthleteInscriptions->newEmptyEntity();
-        $newInscription->athlete_id = $athleteInscription->athlete_id;
-        $newInscription->competition_id = $athleteInscription->competition_id;
-        $newInscription->categorycode_id = $data['categorycode_id'];
-        $newInscription->cintura = '';
-        $result = $this->AthleteInscriptions->save($newInscription);
-        if ($result) {
+        $this->loadModel('SyncOutbox');
 
-            $this->apiResponse['success'] = true;
-            $this->apiResponse['data'] = $result;
-        } else {
+        if (
+            empty($data['inscription_id']) ||
+            empty($data['categorycode_id'])
+        ) {
             $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] = 'Dati obbligatori mancanti.';
+
+            return;
         }
 
+        $connection = $this->AthleteInscriptions->getConnection();
+
+        try {
+            $result = $connection->transactional(
+                function () use ($data) {
+                    $sourceInscription = $this->AthleteInscriptions->get(
+                        $data['inscription_id']
+                    );
+
+                    $newInscription = $this->AthleteInscriptions->newEmptyEntity();
+
+                    $newInscription->athlete_id =
+                        $sourceInscription->athlete_id;
+
+                    $newInscription->competition_id =
+                        $sourceInscription->competition_id;
+
+                    $newInscription->categorycode_id =
+                        $data['categorycode_id'];
+
+                    $newInscription->cintura = '';
+
+                    $this->AthleteInscriptions->saveOrFail(
+                        $newInscription,
+                        ['checkRules' => true]
+                    );
+
+                    /*
+                    * Manteniamo lo stesso payload che prima Angular
+                    * inviava al portale tramite response.result.data.
+                    */
+                    $payload = $newInscription->toArray();
+
+                    $outbox = $this->SyncOutbox->newEntity([
+                        'event_type' => 'ATHLETE_INSCRIPTION_CREATED',
+                        'endpoint' => 'athleteInscriptions/addInscription',
+                        'payload' => $payload,
+                        'status' => 'PENDING',
+                        'attempts' => 0,
+                    ]);
+
+                    $this->SyncOutbox->saveOrFail($outbox);
+
+                    return [
+                        'inscription' => $newInscription,
+                        'outbox_id' => $outbox->id,
+                    ];
+                }
+            );
+
+            $this->apiResponse['success'] = true;
+            $this->apiResponse['data'] = $result['inscription'];
+            $this->apiResponse['sync_queued'] = true;
+            $this->apiResponse['sync_outbox_id'] = $result['outbox_id'];
+        } catch (\Throwable $exception) {
+            $this->log(
+                'Errore creazione iscrizione/outbox: ' .
+                $exception->getMessage(),
+                'error'
+            );
+
+            $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] =
+                'Impossibile creare la nuova iscrizione.';
+        }
     }
 
     public function splitCategory(){
