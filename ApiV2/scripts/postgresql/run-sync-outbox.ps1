@@ -1,10 +1,10 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 $projectRoot = Resolve-Path (
     Join-Path $PSScriptRoot "..\.."
 )
 
-$phpExe = "C:\xampp\php\php.exe"
+$phpExe = "C:\KContest\runtime\php\php.exe"
 $cakeScript = Join-Path $projectRoot "bin\cake.php"
 $logDirectory = Join-Path $projectRoot "logs"
 $logFile = Join-Path $logDirectory "sync-outbox.log"
@@ -40,3 +40,4 @@ Add-Content `
     -Value "[$timestamp] Fine sincronizzazione, codice $exitCode."
 
 exit $exitCode
+
