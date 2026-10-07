@@ -15,6 +15,10 @@ export class AdminPanelService {
 
     }
 
+    getOnlineCompetitions(){
+        return this.http.post(environment.ISCRIZIONI_URL + 'competitions/getCompetitions', {});
+    }
+
     syncCompetitionData(competitionId: string){
         return this.http.post(environment.ISCRIZIONI_URL + 'competitions/syncCompetitionData', {competition_id: competitionId});
     }

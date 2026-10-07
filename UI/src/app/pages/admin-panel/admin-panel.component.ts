@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { AdminPanelService } from './admin-panel.service';
 import { CategoriesService } from '../categories/categories.service';
 import { ToastrService } from 'ngx-toastr';
@@ -7,7 +7,7 @@ import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'admin-panel',
   templateUrl: './admin-panel.component.html',
-  encapsulation: ViewEncapsulation.None
+  styleUrls: ['./admin-panel.component.scss']
 })
 export class AdminPanleComponent implements OnInit {
 
@@ -15,15 +15,45 @@ export class AdminPanleComponent implements OnInit {
   download: HTMLElement;
 
   competitionData;
+  onlineCompetitions: any[] = [];
+  selectedCompetitionId = '';
+  isLoadingCompetitions = false;
+  isSyncing = false;
 
   constructor(public adminPanelService: AdminPanelService,
     public toastrService: ToastrService, 
     public categoriesService: CategoriesService) { }
 
   ngOnInit() {
+    this.loadLocalCompetition();
+    this.loadOnlineCompetitions();
+  }
+
+  loadLocalCompetition(){
     this.adminPanelService.getCompetitionData().subscribe((response:any) => {
       this.competitionData = response.result.data;
-      console.log(this.competitionData);
+      if (this.competitionData && !this.selectedCompetitionId) {
+        this.selectedCompetitionId = this.competitionData.id;
+      }
+    });
+  }
+
+  loadOnlineCompetitions(){
+    this.isLoadingCompetitions = true;
+
+    this.adminPanelService.getOnlineCompetitions().subscribe({
+      next: (response:any) => {
+        this.onlineCompetitions = response.result.data || [];
+        this.isLoadingCompetitions = false;
+      },
+      error: () => {
+        this.onlineCompetitions = [];
+        this.isLoadingCompetitions = false;
+        this.toastrService.error(
+          'Impossibile recuperare l\'elenco delle gare dal portale online.',
+          'Errore di connessione'
+        );
+      }
     });
   }
 
@@ -31,14 +61,57 @@ export class AdminPanleComponent implements OnInit {
 
   
   syncCompetitionData(){
-    this.adminPanelService.syncCompetitionData(this.competitionData.id).subscribe((response:any) => {
-      if(response.result.success){
-        this.adminPanelService.importCompetitionData(response.result.data).subscribe((response:any) => {
+    if (!this.selectedCompetitionId) {
+      this.toastrService.warning('Seleziona prima la gara da sincronizzare.', 'Gara non selezionata');
+      return;
+    }
 
-          if(response.result.success){
-            this.toastrService.success('Caricamento completato', 'Toastr fun!');
+    const selectedCompetition = this.onlineCompetitions.find(
+      competition => competition.id === this.selectedCompetitionId
+    );
+    const competitionName = selectedCompetition
+      ? selectedCompetition.nome_gara
+      : this.selectedCompetitionId;
+
+    if (!window.confirm(
+      `Sincronizzare "${competitionName}"? I dati della gara attualmente presenti sul PC verranno sostituiti.`
+    )) {
+      return;
+    }
+
+    this.isSyncing = true;
+
+    this.adminPanelService.syncCompetitionData(this.selectedCompetitionId).subscribe({
+      next: (response:any) => {
+        if (!response.result.success) {
+          this.isSyncing = false;
+          this.toastrService.error('Il portale non ha restituito i dati della gara.', 'Sincronizzazione non riuscita');
+          return;
+        }
+
+        this.adminPanelService.importCompetitionData(response.result.data).subscribe({
+          next: (importResponse:any) => {
+            this.isSyncing = false;
+
+            if(importResponse.result.success){
+              this.loadLocalCompetition();
+              this.toastrService.success('Caricamento completato', 'Sincronizzazione completata');
+            } else {
+              this.toastrService.error(
+                importResponse.result.message || 'Non è stato possibile importare i dati.',
+                'Importazione non riuscita'
+              );
+            }
+          },
+          error: () => {
+            this.isSyncing = false;
+            this.toastrService.error('Errore durante l\'importazione locale dei dati.', 'Importazione non riuscita');
           }
         });
+      },
+      error: () => {
+        this.isSyncing = false;
+        this.toastrService.error('Errore durante il download dei dati dal portale.', 'Sincronizzazione non riuscita');
       }
     });
   }

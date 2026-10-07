@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule, Routes } from '@angular/router';
 import { DirectivesModule } from '../../theme/directives/directives.module';
 import { AdminPanleComponent } from './admin-panel.component';
@@ -14,6 +15,7 @@ export const routes: Routes = [
 @NgModule({
   imports: [
     CommonModule,
+    FormsModule,
     DirectivesModule,
     RouterModule.forChild(routes)
   ],
