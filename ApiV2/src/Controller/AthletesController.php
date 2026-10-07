@@ -161,7 +161,10 @@ class AthletesController extends ApiController
         $stmt = $conn->execute("SELECT * FROM athlete_inscriptions 
                                 JOIN athletes ON athletes.id = athlete_inscriptions.athlete_id 
                                 JOIN categorycodes ON categorycodes.id = athlete_inscriptions.categorycode_id 
-                                 WHERE athlete_inscriptions.competition_id =" . $data['competition_id'] . " AND athletes.club_id = " . $data['club_id']);
+                                 WHERE athlete_inscriptions.competition_id = :competition_id AND athletes.club_id = :club_id", [
+                                    'competition_id' => $data['competition_id'],
+                                    'club_id' => $data['club_id'],
+                                 ]);
 
         $listaIscritti = $stmt->fetchAll('assoc');
 
@@ -204,7 +207,12 @@ class AthletesController extends ApiController
         $conn = ConnectionManager::get('default');
         $stmt = $conn->execute("SELECT DISTINCT categoria 
                                     FROM categorycodes 
-                                    WHERE codiceTipoCategorie =" . $data['categorycode_type'] . " AND " . $data['anno'] . " BETWEEN anno_min AND anno_max AND specialita <> 'Kata Squadre'");
+                                    WHERE \"codiceTipoCategorie\" = :category_type
+                                      AND :anno BETWEEN anno_min AND anno_max
+                                      AND specialita <> 'Kata Squadre'", [
+                                        'category_type' => $data['categorycode_type'],
+                                        'anno' => $data['anno'],
+                                    ]);
         
         
         $categoria = $stmt->fetchAll('assoc');
@@ -223,7 +231,15 @@ class AthletesController extends ApiController
     {
         $data = $this->request->getData();
         $conn = ConnectionManager::get('default');
-        $stmt = $conn->execute("SELECT distinct specialita FROM categorycodes WHERE codiceTipoCategorie =" . $data['categorycode_type'] . " AND grado LIKE '%" . $data['grado'] . "%' AND " . $data['anno'] . " BETWEEN anno_min AND anno_max");
+        $stmt = $conn->execute("SELECT DISTINCT specialita
+                                FROM categorycodes
+                                WHERE \"codiceTipoCategorie\" = :category_type
+                                  AND grado LIKE :grado
+                                  AND :anno BETWEEN anno_min AND anno_max", [
+                                    'category_type' => $data['categorycode_type'],
+                                    'grado' => '%' . $data['grado'] . '%',
+                                    'anno' => $data['anno'],
+                                ]);
 
         $result = $stmt->fetchAll('assoc');
         $this->apiResponse['data'] = $result;
@@ -266,14 +282,24 @@ class AthletesController extends ApiController
 
             $dataNascita = explode("/", $athltete['data_nascita']);
 
-            $query = "SELECT * FROM categorycodes WHERE codiceTipoCategorie =" . $prove['categorycode_type'] . " AND grado LIKE '%" . $athltete['grado'] . "%' 
-                        AND sesso LIKE '%" . $athltete['sesso'] . "%' AND " . $dataNascita[2] . " BETWEEN anno_min AND anno_max";
+            $query = "SELECT * FROM categorycodes
+                      WHERE \"codiceTipoCategorie\" = :category_type
+                        AND grado LIKE :grado
+                        AND sesso LIKE :sesso
+                        AND :anno BETWEEN anno_min AND anno_max";
+            $params = [
+                'category_type' => $prove['categorycode_type'],
+                'grado' => '%' . $athltete['grado'] . '%',
+                'sesso' => '%' . $athltete['sesso'] . '%',
+                'anno' => $dataNascita[2],
+            ];
             if ($athltete['peso']) {
-                $query .= "  AND " . $athltete['peso'] . " BETWEEN peso_min AND peso_max-1";
+                $query .= " AND :peso BETWEEN peso_min AND peso_max - 1";
+                $params['peso'] = $athltete['peso'];
             } else {
                 $athltete['peso'] = 0;
             }
-            $stmt = $conn->execute($query);
+            $stmt = $conn->execute($query, $params);
 
 
             $result = $stmt->fetchAll('assoc');

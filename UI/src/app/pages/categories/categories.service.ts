@@ -13,10 +13,10 @@ export class CategoriesService {
      {
         return this.http.post(environment.BASEAPPURL + 'categorycodes/getCategories', {});          
     }
-
+/*
     getCompetitions(){
         return this.http.post(environment.ISCRIZIONI_URL + 'competitions/getCompetitions', {});
-    }
+    }*/
 
     getTatami()
     {
@@ -30,10 +30,10 @@ export class CategoriesService {
     saveTatamiAssegnee(request: { user_id: any; categorycode_id: any; status: string; }){
         return this.http.post(environment.BASEAPPURL + 'tatamiAssignments/saveUserCategories', request);
     }
-
+/*
     updateTatamiWeb(request: { tatami: any; competition_id: string; categorycode_id: any; status: string; }){
         return this.http.post(environment.ISCRIZIONI_URL + 'users/addTatamiAssignments', request);
-    }
+    }*/
 
     getAthleteList(request: { categorycode_id: any; readonly: boolean; }){
         return this.http.post(environment.BASEAPPURL + 'athleteInscriptions/getAthletesByCategory', request);

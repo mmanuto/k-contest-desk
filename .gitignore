@@ -1,6 +1,32 @@
-aemserver/logs
-aemserver/vendor
-aemserver/tmp
-aemserver/uploads
-aemserver/ftpfiles
-.vscode
+# Configurazioni locali e segreti
+**/.env
+**/.env.local
+!**/.env.example
+!Installer/configuration/.env.template
+
+# Backend CakePHP
+ApiV2/logs/*
+ApiV2/tmp/*
+ApiV2/config/app_local.php
+
+# Frontend Angular
+UI/node_modules/
+UI/dist/
+UI/.angular/
+UI/coverage/
+
+# Pacchetti generati
+KContest-Build/
+*.zip
+*.sha256
+manifest-sha256.txt
+
+# Database e backup
+*.backup
+*.dump
+
+# File locali
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/

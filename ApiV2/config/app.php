@@ -2,7 +2,7 @@
 
 use Cake\Cache\Engine\FileEngine;
 use Cake\Database\Connection;
-use Cake\Database\Driver\Mysql;
+use Cake\Database\Driver\Postgres;
 use Cake\Log\Engine\FileLog;
 use Cake\Mailer\Transport\MailTransport;
 
@@ -294,10 +294,10 @@ return [
          */
         'default' => [
             'className' => Connection::class,
-            'driver' => Mysql::class,
+            'driver' => Postgres::class,
             'persistent' => false,
             'timezone' => 'UTC',
-            'host' => 'localhost',
+            'host' => env('DB_HOST', '127.0.0.1'),
             /*
              * For MariaDB/MySQL the internal default changed from utf8 to utf8mb4, aka full utf-8 support, in CakePHP 3.6
              */
@@ -308,9 +308,11 @@ return [
              * then you MUST use the `flags` config to set your charset encoding.
              * For e.g. `'flags' => [\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4']`
              */
-            'username' => 'root',
-            'password' => '',
-            'database' => 'kcontest-desk',
+            'port' => (int)env('DB_PORT', 5432),
+            'username' => env('DB_USERNAME', 'kcontest_app'),
+            'password' => env('DB_PASSWORD', ''),
+            'database' => env('DB_DATABASE', 'kcontest_desk'),
+            'schema' => env('DB_SCHEMA', 'public'),
             'encoding' => 'utf8',
 	        'flags' => [],
             'cacheMetadata' => true,
@@ -324,7 +326,7 @@ return [
              * decreases performance because each query needs to be traversed and
              * manipulated before being executed.
              */
-            'quoteIdentifiers' => false,
+            'quoteIdentifiers' => true,
 
             /*
              * During development, if using MySQL < 5.6, uncommenting the
@@ -341,13 +343,13 @@ return [
          */
         'test' => [
             'className' => Connection::class,
-            'driver' => Mysql::class,
+            'driver' => Postgres::class,
             'persistent' => false,
             'timezone' => 'UTC',
             //'encoding' => 'utf8mb4',
             'flags' => [],
             'cacheMetadata' => true,
-            'quoteIdentifiers' => false,
+            'quoteIdentifiers' => true,
             'log' => false,
             //'init' => ['SET GLOBAL innodb_stats_on_metadata = 0'],
         ],

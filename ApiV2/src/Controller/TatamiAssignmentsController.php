@@ -153,50 +153,194 @@ class TatamiAssignmentsController extends ApiController
     }
 
     public function updateCategoryStatus(){
+
+        $this->loadModel('Competitions');
+        $this->loadModel('SyncOutbox');
+
         $request = $this->request->getData();
-        $usersCategorycode = $this->TatamiAssignments->get($request['id']);
-        $usersCategorycode = $this->TatamiAssignments->patchEntity($usersCategorycode, $request);
-        if ($this->TatamiAssignments->save($usersCategorycode)) {
-            $this->apiResponse['success'] = true;
-        }else{
-            $this->apiResponse['message'] = 'The user category could not be saved. Please, try again.';
+
+        if (
+            empty($request['id']) ||
+            empty($request['categorycode_id']) ||
+            empty($request['status']) ||
+            empty($request['user_id'])
+        ) {
             $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] = 'Dati obbligatori mancanti.';
+
+            return;
+        }
+
+         $competitions = $this->Competitions
+                                ->find()
+                                ->select(['id'])
+                                ->limit(2)
+                                ->toArray();
+        
+        if (count($competitions) !== 1) {
+            $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] =
+                'Deve essere presente una sola competizione nel database locale.';
+
+            return;
+        }
+
+        $competitionId = $competitions[0]->id;
+        $connection = $this->TatamiAssignments->getConnection();
+
+        try {
+            $outboxId = $connection->transactional(
+                function () use ($request, $competitionId) {
+                    $assignment = $this->TatamiAssignments->get($request['id']);
+
+                    $assignment = $this->TatamiAssignments->patchEntity(
+                        $assignment,
+                        [
+                            'status' => $request['status'],
+                        ]
+                    );
+
+                    $this->TatamiAssignments->saveOrFail($assignment);
+
+                    $outbox = $this->SyncOutbox->newEntity([
+                        'event_type' => 'CATEGORY_STATUS_UPDATED',
+                        'endpoint' => 'users/updateCategoryStatus',
+                        'payload' => [
+                            'categorycode_id' => $request['categorycode_id'],
+                            'status' => $request['status'],
+                            'tatami' => $request['user_id'],
+                            'competition_id' => $competitionId,
+                        ],
+                        'status' => 'PENDING',
+                        'attempts' => 0,
+                    ]);
+
+                    $this->SyncOutbox->saveOrFail($outbox);
+
+                    return $outbox->id;
+                }
+            );
+
+            $this->apiResponse['success'] = true;
+            $this->apiResponse['sync_queued'] = true;
+            $this->apiResponse['sync_outbox_id'] = $outboxId;
+        } catch (\Throwable $exception) {
+            $this->log(
+                'Errore aggiornamento categoria/outbox: ' .
+                $exception->getMessage(),
+                'error'
+            );
+
+            $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] =
+                'Impossibile aggiornare lo stato della categoria.';
         }
     }
 
     /**
      * Assegno categoria a tatami
      */
-    public function saveUserCategories(){
-        
-        $itemToSave = $this->request->getData();
+    public function saveUserCategories()
+{
+    $request = $this->request->getData();
 
-        //controllo che non sia già assegnata ad un altro tatami
-        $categoryStatus = $this->TatamiAssignments->find()
-         ->where([
-            'categorycode_id' => $itemToSave['categorycode_id']
-         ])->first();
+    $this->loadModel('Competitions');
+    $this->loadModel('SyncOutbox');
 
-         //se è già su un altro tatami la sposto mantenendo lo stato
-        if ($categoryStatus){
-            $categoryStatus->user_id =  $itemToSave['user_id'];
-            if ($this->TatamiAssignments->save($categoryStatus)) {
-                $this->apiResponse['success'] = true;
-            }else{
-                $this->apiResponse['message'] = 'The user category could not be saved. Please, try again.';
-                $this->apiResponse['success'] = false;
-            }
-        }else{ //Altrimenti creo un nunovo record
-            $userCategory = $this->TatamiAssignments->newEmptyEntity();
-            $userCategory = $this->TatamiAssignments->patchEntity($userCategory, $this->request->getData());
-            if ($this->TatamiAssignments->save($userCategory)) {
-                $this->apiResponse['success'] = true;
-            }else{
-                $this->apiResponse['message'] = 'The user category could not be saved. Please, try again.';
-                $this->apiResponse['success'] = false;
-            }
-        }
+    if (
+        empty($request['user_id']) ||
+        empty($request['categorycode_id']) ||
+        !isset($request['status'])
+    ) {
+        $this->apiResponse['success'] = false;
+        $this->apiResponse['message'] = 'Dati obbligatori mancanti.';
+
+        return;
     }
+
+    $competitions = $this->Competitions
+        ->find()
+        ->select(['id'])
+        ->limit(2)
+        ->toArray();
+
+    if (count($competitions) !== 1) {
+        $this->apiResponse['success'] = false;
+        $this->apiResponse['message'] =
+            'Deve essere presente una sola competizione nel database locale.';
+
+        return;
+    }
+
+    $competitionId = $competitions[0]->id;
+    $connection = $this->TatamiAssignments->getConnection();
+
+    try {
+        $result = $connection->transactional(
+            function () use ($request, $competitionId) {
+                $assignment = $this->TatamiAssignments
+                    ->find()
+                    ->where([
+                        'categorycode_id' => $request['categorycode_id'],
+                    ])
+                    ->first();
+
+                if ($assignment) {
+                    $assignment = $this->TatamiAssignments->patchEntity(
+                        $assignment,
+                        [
+                            'user_id' => $request['user_id'],
+                            'status' => $request['status'],
+                        ]
+                    );
+                } else {
+                    $assignment = $this->TatamiAssignments->newEntity([
+                        'user_id' => $request['user_id'],
+                        'categorycode_id' => $request['categorycode_id'],
+                        'status' => $request['status'],
+                    ]);
+                }
+
+                $this->TatamiAssignments->saveOrFail($assignment);
+
+                $outbox = $this->SyncOutbox->newEntity([
+                    'event_type' => 'TATAMI_ASSIGNMENT_CREATED',
+                    'endpoint' => 'users/addTatamiAssignments',
+                    'payload' => [
+                        'tatami' => $request['user_id'],
+                        'competition_id' => $competitionId,
+                        'categorycode_id' => $request['categorycode_id'],
+                        'status' => $request['status'],
+                    ],
+                    'status' => 'PENDING',
+                    'attempts' => 0,
+                ]);
+
+                $this->SyncOutbox->saveOrFail($outbox);
+
+                return [
+                    'assignment_id' => $assignment->id,
+                    'outbox_id' => $outbox->id,
+                ];
+            }
+        );
+
+        $this->apiResponse['success'] = true;
+        $this->apiResponse['sync_queued'] = true;
+        $this->apiResponse['assignment_id'] = $result['assignment_id'];
+        $this->apiResponse['sync_outbox_id'] = $result['outbox_id'];
+    } catch (\Throwable $exception) {
+        $this->log(
+            'Errore assegnazione categoria/outbox: ' .
+            $exception->getMessage(),
+            'error'
+        );
+
+        $this->apiResponse['success'] = false;
+        $this->apiResponse['message'] =
+            'Impossibile assegnare la categoria al tatami.';
+    }
+}
 
         
     /** =========================================================================================================

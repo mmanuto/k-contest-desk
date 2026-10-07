@@ -273,13 +273,17 @@ export class AthletesComponent {
   }
 
   private executeDelete(event) {
-    this.athletesService.deteleAtletaInscription({ 'id': event.data.id, 'code': event.data.codes, 'categorycode_id':event.data.categorycode_id}).subscribe((response: any) => {
-      console.log(response);
+
+    const request = {
+      id: event.data.id,
+      code: event.data.codes,
+      categorycode_id: event.data.categorycode_id
+    };
+
+    this.athletesService.deteleAtletaInscription(request).subscribe((response: any) => {
+
       if (response.result.success) {
-        this.athletesService.deteleAtletaInscriptionWEB({ 'id': event.data.id}).subscribe((responseWeb: any) => {
-          location.reload();
-        })
-        
+        location.reload();        
       }
       
     });
@@ -309,19 +313,17 @@ export class AthletesComponent {
   }
 
   private proceedUpdateCategory(){
-    let request = {
+    const request = {
       id: this.selectedInscription.id,
       categorycode_id: this.categoryForm.value.categorycode_id.id,
       accorpamento: this.categoryForm.value.accorpamento
-    }
+    };
       
     this.athletesService.updateCategory(request).subscribe((response: any) => {
       if(response.result.success){
-        this.athletesService.updateCategoryWEB(request).subscribe((responseWeb: any) => {
-
-        });
+        this.closeModal();
+        location.reload(); 
       }
-      this.closeModal();
     });
   }
 
@@ -353,12 +355,13 @@ export class AthletesComponent {
 
     this.athletesService.addInscription(request).subscribe((response: any) => {
       if (response.result.success) {
-        this.athletesService.addInscriptionWEB(response.result.data).subscribe((responseWEB: any) => {
+        this.closeModal();
+        /*this.athletesService.addInscriptionWEB(response.result.data).subscribe((responseWEB: any) => {
           if (responseWEB.result.success){
-            this.closeModal();
+            
             //location.reload();
           }
-        });
+        });*/
         
       }
     });

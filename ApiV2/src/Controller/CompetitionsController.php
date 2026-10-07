@@ -143,16 +143,13 @@ class CompetitionsController extends ApiController
             // 1. Inizia la Transazione
             $conn->begin();
 
-            // 2. Disabilita i controlli Chiave Esterna (MySQL)
-            // Questo permette di salvare in qualsiasi ordine e velocizza l'importazione
-            $conn->execute('SET FOREIGN_KEY_CHECKS = 0');
-
-            // 3. Pulisci le tabelle (Sposta qui la logica di cleanTables per sicurezza)
+            // 2. Pulisci le tabelle. PostgreSQL rende TRUNCATE transazionale:
+            // un eventuale rollback ripristina anche i dati rimossi.
             // Se qualcosa va storto prima, non avrai cancellato i dati vecchi invano.
             $tables = ['athlete_inscriptions', 'club_inscriptions', 'athletes', 'clubs', 'categorycodes', 'competitions', 'tatami_assignments'];
-            foreach($tables as $table) {
-                $conn->execute("TRUNCATE TABLE $table");
-            }
+            $conn->execute(
+                'TRUNCATE TABLE ' . implode(', ', $tables) . ' RESTART IDENTITY CASCADE'
+            );
 
             // Opzioni per forzare il salvataggio degli ID manualmente
             $saveOptions = [
@@ -272,8 +269,7 @@ class CompetitionsController extends ApiController
                 }
             }
 
-            // Riabilita controlli e committa
-            $conn->execute('SET FOREIGN_KEY_CHECKS = 1');
+            // Conferma la transazione
             $conn->commit();
 
             $response['success'] = true;
@@ -282,9 +278,6 @@ class CompetitionsController extends ApiController
         } catch (\Exception $e) {
             // Se c'è un errore, annulla tutto e torna allo stato precedente
             $conn->rollback();
-            // Riabilita sempre le chiavi esterne anche in caso di errore
-            $conn->execute('SET FOREIGN_KEY_CHECKS = 1');
-            
             // Logga l'errore per capire cosa non va
             \Cake\Log\Log::error("Errore Importazione: " . $e->getMessage());
             

@@ -31,23 +31,13 @@ export class AdminPanleComponent implements OnInit {
 
   
   syncCompetitionData(){
-    this.adminPanelService.syncCompetitionData().subscribe((response:any) => {
+    this.adminPanelService.syncCompetitionData(this.competitionData.id).subscribe((response:any) => {
       if(response.result.success){
         this.adminPanelService.importCompetitionData(response.result.data).subscribe((response:any) => {
 
           if(response.result.success){
             this.toastrService.success('Caricamento completato', 'Toastr fun!');
           }
-        });
-      }
-    });
-  }
-
-  updateCompetitionData(){
-    this.adminPanelService.getModifiedInscriptions().subscribe((response:any) => {
-      if(response.result.success && response.result.data.length > 0){
-        this.adminPanelService.updateCompetitionData(response.result.data).subscribe((responseUpdate:any) =>{
-
         });
       }
     });

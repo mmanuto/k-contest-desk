@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-08-23T13:17:29.874Z",
+  "configuration": {
+    "baseUrl": "http://localhost/k-contest-desk/ApiV2/",
+    "virtualUsers": 12,
+    "durationSeconds": 120,
+    "intervalMs": 2000,
+    "timeoutMs": 10000
+  },
+  "summary": {
+    "requests": 546,
+    "errors": 0,
+    "errorRatePercent": 0,
+    "averageMs": 518.04,
+    "p50Ms": 436.1,
+    "p95Ms": 915.68,
+    "p99Ms": 963.22,
+    "maximumMs": 1098.13,
+    "elapsedSeconds": 122.58,
+    "requestsPerSecond": 4.45
+  },
+  "byEndpoint": {
+    "totale_iscrizioni": {
+      "requests": 91,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 299.6,
+      "p50Ms": 292.62,
+      "p95Ms": 382.46,
+      "p99Ms": 407.62,
+      "maximumMs": 407.62
+    },
+    "totale_prove": {
+      "requests": 90,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 365.95,
+      "p50Ms": 353.25,
+      "p95Ms": 472.86,
+      "p99Ms": 605.1,
+      "maximumMs": 605.1
+    },
+    "categorie": {
+      "requests": 90,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 735.43,
+      "p50Ms": 731.77,
+      "p95Ms": 816.52,
+      "p99Ms": 860.78,
+      "maximumMs": 860.78
+    },
+    "tatami": {
+      "requests": 92,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 361.76,
+      "p50Ms": 352.85,
+      "p95Ms": 455.12,
+      "p99Ms": 475.46,
+      "maximumMs": 475.46
+    },
+    "stato_tatami": {
+      "requests": 92,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 465.14,
+      "p50Ms": 457.43,
+      "p95Ms": 519,
+      "p99Ms": 727.64,
+      "maximumMs": 727.64
+    },
+    "lista_atleti": {
+      "requests": 91,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 883.41,
+      "p50Ms": 887.04,
+      "p95Ms": 965.34,
+      "p99Ms": 1098.13,
+      "maximumMs": 1098.13
+    }
+  },
+  "errors": []
+}

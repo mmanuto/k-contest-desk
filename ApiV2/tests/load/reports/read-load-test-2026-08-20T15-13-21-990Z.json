@@ -1,0 +1,118 @@
+{
+  "generatedAt": "2026-08-20T15:13:21.986Z",
+  "configuration": {
+    "baseUrl": "http://localhost/k-contest-desk/ApiV2/",
+    "virtualUsers": 2,
+    "durationSeconds": 20,
+    "intervalMs": 2000,
+    "timeoutMs": 10000
+  },
+  "summary": {
+    "requests": 18,
+    "errors": 4,
+    "errorRatePercent": 22.22,
+    "averageMs": 203.3,
+    "p50Ms": 134.41,
+    "p95Ms": 672.34,
+    "p99Ms": 672.34,
+    "maximumMs": 672.34,
+    "elapsedSeconds": 21.18,
+    "requestsPerSecond": 0.85
+  },
+  "byEndpoint": {
+    "totale_iscrizioni": {
+      "requests": 2,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 111.83,
+      "p50Ms": 109.28,
+      "p95Ms": 114.39,
+      "p99Ms": 114.39,
+      "maximumMs": 114.39
+    },
+    "totale_prove": {
+      "requests": 3,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 195.25,
+      "p50Ms": 134.41,
+      "p95Ms": 325.49,
+      "p99Ms": 325.49,
+      "maximumMs": 325.49
+    },
+    "categorie": {
+      "requests": 4,
+      "errors": 4,
+      "errorRatePercent": 100,
+      "averageMs": 264.65,
+      "p50Ms": 128.51,
+      "p95Ms": 672.34,
+      "p99Ms": 672.34,
+      "maximumMs": 672.34
+    },
+    "tatami": {
+      "requests": 4,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 134.94,
+      "p50Ms": 129.06,
+      "p95Ms": 146.48,
+      "p99Ms": 146.48,
+      "maximumMs": 146.48
+    },
+    "stato_tatami": {
+      "requests": 3,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 190.82,
+      "p50Ms": 176.79,
+      "p95Ms": 234.34,
+      "p99Ms": 234.34,
+      "maximumMs": 234.34
+    },
+    "lista_atleti": {
+      "requests": 2,
+      "errors": 0,
+      "errorRatePercent": 0,
+      "averageMs": 339.58,
+      "p50Ms": 298.77,
+      "p95Ms": 380.4,
+      "p99Ms": 380.4,
+      "maximumMs": 380.4
+    }
+  },
+  "errors": [
+    {
+      "endpoint": "categorie",
+      "userId": 2,
+      "status": 500,
+      "elapsedMs": 672.3373,
+      "bytes": 841,
+      "ok": false
+    },
+    {
+      "endpoint": "categorie",
+      "userId": 1,
+      "status": 500,
+      "elapsedMs": 128.5086,
+      "bytes": 841,
+      "ok": false
+    },
+    {
+      "endpoint": "categorie",
+      "userId": 2,
+      "status": 500,
+      "elapsedMs": 124.9873,
+      "bytes": 841,
+      "ok": false
+    },
+    {
+      "endpoint": "categorie",
+      "userId": 1,
+      "status": 500,
+      "elapsedMs": 132.7542,
+      "bytes": 841,
+      "ok": false
+    }
+  ]
+}

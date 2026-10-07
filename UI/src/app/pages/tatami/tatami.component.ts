@@ -638,7 +638,7 @@ calculateRoundRobinStandings() {
         }
         
         this.tatamiService.updateCategoryStatus(request).subscribe((response: any) => {
-
+/*
           if(response.result.success){
             let requestWeb = {
               categorycode_id: this.selectedCategory.categorycode_id,
@@ -651,7 +651,7 @@ calculateRoundRobinStandings() {
 
             this.tatamiService.updateCategoryStatusWeb(requestWeb).subscribe((responseWeb: any) => {});
 
-          }
+          }*/
     
         })
       }
@@ -697,7 +697,7 @@ calculateRoundRobinStandings() {
       this.tatamiService.updateCategoryStatus(request).subscribe((response: any) => {
 
         if(response.result.success){
-
+/*
           let requestWeb = {
             categorycode_id: this.selectedCategory.categorycode_id,
             status: categoryStatus.CLOSED,
@@ -708,7 +708,7 @@ calculateRoundRobinStandings() {
           console.log(requestWeb);
 
           this.tatamiService.updateCategoryStatusWeb(requestWeb).subscribe((responseWeb: any) => {});
-          
+          */
           this.selectedCategory = [];
           this.athleteList = [];
           this.kumiteAthleteList = [];
