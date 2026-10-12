@@ -124,7 +124,7 @@ class TatamiAssignmentsController extends ApiController
             $userCategories = $this->TatamiAssignments->find()
             ->where([
                 'user_id' => $request['id'],
-                'status <>' => 'CAT_CLOSED'
+                'status NOT IN' => ['CAT_CLOSED', 'CAT_AWARD']
             ])
             ->contain(['Categorycodes'])
             ->toArray();

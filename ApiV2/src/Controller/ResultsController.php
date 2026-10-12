@@ -1813,6 +1813,82 @@ private function _createRepechageChain($categoryId, $winnerId, $repechageRoundCo
         
     }
 
+    public function confirmRanking()
+    {
+        $this->request->allowMethod(['post']);
+        $categoryId = $this->request->getData('categorycode_id');
+        $this->loadModel('Competitions');
+        $this->loadModel('TatamiAssignments');
+        $this->loadModel('AthleteInscriptions');
+        $this->loadModel('SyncOutbox');
+        try {
+            if (!$categoryId) {
+                throw new \RuntimeException('Categoria obbligatoria.');
+            }
+            $competitions = $this->Competitions->find()->limit(2)->toArray();
+            if (count($competitions) !== 1) {
+                throw new \RuntimeException('Deve essere presente una sola gara locale.');
+            }
+            $competitionId = $competitions[0]->id;
+            $result = $this->TatamiAssignments->getConnection()->transactional(function ($connection) use ($categoryId, $competitionId) {
+                $rows = $connection->execute(
+                    'SELECT id, status FROM tatami_assignments WHERE categorycode_id = :category AND competition_id = :competition FOR UPDATE',
+                    ['category' => $categoryId, 'competition' => $competitionId]
+                )->fetchAll('assoc');
+                if (count($rows) !== 1) {
+                    throw new \RuntimeException('Assegnazione categoria non univoca.');
+                }
+                if ($rows[0]['status'] === 'CAT_AWARD') {
+                    return ['already_confirmed' => true];
+                }
+                if ($rows[0]['status'] !== 'CAT_CLOSED') {
+                    throw new \RuntimeException('La categoria deve essere chiusa.');
+                }
+                $inscriptionQuery = $this->AthleteInscriptions->find()->where([
+                    'competition_id' => $competitionId,
+                    'categorycode_id' => $categoryId,
+                    'deleted' => 0,
+                    'final_ranking >' => 0,
+                ])->order(['final_ranking' => 'ASC', 'id' => 'ASC']);
+                if ($this->_isDirectFinalCategory($categoryId) || $this->_isPercorso($categoryId)) {
+                    $inscriptionQuery->limit(3);
+                }
+                $inscriptions = $inscriptionQuery->toArray();
+                $rankings = [];
+                foreach ($inscriptions as $inscription) {
+                    if ($inscription->final_ranking !== null && (int)$inscription->final_ranking > 0) {
+                        $rankings[] = ['id' => $inscription->id, 'final_ranking' => (int)$inscription->final_ranking];
+                    }
+                }
+                if (!$rankings) {
+                    throw new \RuntimeException('Nessuna classifica disponibile.');
+                }
+                $assignment = $this->TatamiAssignments->get($rows[0]['id']);
+                $assignment->status = 'CAT_AWARD';
+                $this->TatamiAssignments->saveOrFail($assignment);
+                $event = $this->SyncOutbox->newEntity([
+                    'event_type' => 'CATEGORY_RANKING_CONFIRMED',
+                    'endpoint' => 'athleteInscriptions/updateCategoryRanking',
+                    'payload' => [
+                        'competition_id' => $competitionId,
+                        'categorycode_id' => $categoryId,
+                        'rankings' => $rankings,
+                    ],
+                    'status' => 'PENDING',
+                    'attempts' => 0,
+                ]);
+                $this->SyncOutbox->saveOrFail($event);
+                return ['already_confirmed' => false, 'sync_outbox_id' => $event->id];
+            });
+            $this->apiResponse['success'] = true;
+            $this->apiResponse['data'] = $result;
+            $this->apiResponse['message'] = 'Classifica confermata. Invio online accodato.';
+        } catch (\Throwable $exception) {
+            $this->apiResponse['success'] = false;
+            $this->apiResponse['message'] = $exception->getMessage();
+        }
+    }
+
     public function getRankingData(){
 
         $request = $this->request->getData();
@@ -1837,7 +1913,7 @@ private function _createRepechageChain($categoryId, $winnerId, $repechageRoundCo
         $this->loadModel('ResultsTimed');
         $this->loadModel('ResultsJudgedPanel');
 
-        $rankings = $this->AthleteInscriptions->find()
+        $rankingQuery = $this->AthleteInscriptions->find()
             ->contain([
                 // Assicurati che le associazioni siano corrette nel tuo Model
                 'Athletes' => ['Clubs'] 
@@ -1847,8 +1923,11 @@ private function _createRepechageChain($categoryId, $winnerId, $repechageRoundCo
                 '"AthleteInscriptions".final_ranking IS NOT NULL', // Prende solo chi ha un piazzamento
                 '"AthleteInscriptions".deleted' => 0
             ])
-            ->order(['"AthleteInscriptions".final_ranking' => 'ASC']) // 1°, 2°, 3°...
-            ->toArray();
+            ->order(['"AthleteInscriptions".final_ranking' => 'ASC', '"AthleteInscriptions".id' => 'ASC']);
+        if ($this->_isDirectFinalCategory($categorycode_id) || $this->_isPercorso($categorycode_id)) {
+            $rankingQuery->limit(3);
+        }
+        $rankings = $rankingQuery->toArray();
         
         if ($this->_isPercorso($categorycode_id)) {
             foreach ($rankings as $item) {

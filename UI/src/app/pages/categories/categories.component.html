@@ -96,6 +96,7 @@
                             <span *ngIf="category.status == categoryStatus.DOING" class="badge badge-status doing">In corso</span>
                             <span *ngIf="category.status == categoryStatus.BACKLOG" class="badge badge-status backlog">Non assegnata</span>
                             <span *ngIf="category.status == categoryStatus.CLOSED" class="badge badge-status closed">Chiusa</span>
+                            <span *ngIf="category.status == categoryStatus.AWARD" class="badge badge-success">Da premiare</span>
                             
                             <span *ngIf="category.tatami" class="badge badge-info ml-2 py-1 px-2">
                                 <i class="fa fa-desktop mr-1"></i> {{category.tatami}}
@@ -104,7 +105,7 @@
                         <td class="align-middle text-right pr-4">
     <div class="action-wrapper">
         
-        <button *ngIf="category.status == categoryStatus.CLOSED" type="button" 
+        <button *ngIf="category.status == categoryStatus.CLOSED || category.status == categoryStatus.AWARD" type="button"
                 class="btn btn-warning btn-pill-action rounded-pill box-shadow hover-lift" 
                 (click)="openRankingModal(category)">
             <i class="fa fa-trophy mr-1"></i> Classifica
@@ -116,7 +117,7 @@
             Tabellone
         </button>
 
-        <button *ngIf="category.status != categoryStatus.CLOSED" type="button" 
+        <button *ngIf="category.status != categoryStatus.CLOSED && category.status != categoryStatus.AWARD" type="button"
                 class="btn-circle-utility btn-assign" 
                 (click)="openTatamiModal(category.id)" 
                 title="Assegna a Tatami">
@@ -162,7 +163,7 @@
                         <div class="card-body pt-0 scroll-categories">
                             <div class="list-group list-group-flush">
                                 <div *ngFor="let category of tatami.userCategories" 
-                                     [hidden]="category.status == categoryStatus.CLOSED"
+                                     [hidden]="category.status == categoryStatus.CLOSED || category.status == categoryStatus.AWARD"
                                      class="list-group-item px-0 border-0 d-flex align-items-start mb-2">
                                     <span class="badge mr-2 mt-1 py-1 px-2" [ngClass]="{
                                         'badge-success': category.status == categoryStatus.TODO,
@@ -185,7 +186,7 @@
                         </div>
                         <div class="card-body pt-0">
                             <div *ngFor="let category of tatami.userCategories">
-                                <div *ngIf="category.status == categoryStatus.CLOSED" class="d-flex align-items-center mb-1">
+                                <div *ngIf="category.status == categoryStatus.CLOSED || category.status == categoryStatus.AWARD" class="d-flex align-items-center mb-1">
                                     <i class="fa fa-check-circle text-danger mr-2"></i>
                                     <span class="small text-muted">{{category.categorycode.id}} - {{category.categorycode.specialita}}</span>
                                 </div>
@@ -365,6 +366,7 @@
                           <span *ngIf="row.final_ranking == 2" class="medal-silver">🥈 2°</span>
                           <span *ngIf="row.final_ranking == 3" class="medal-bronze">🥉 3°</span>
                           <span *ngIf="row.final_ranking == 4" class="medal-bronze">🥉 3°</span>
+                          <span *ngIf="row.final_ranking > 4">{{ row.final_ranking }}°</span>
                         </td>
                         <td class="align-middle">
                             <div class="font-weight-bold">{{ row.athlete.cognome }} {{ row.athlete.nome }}</div>
@@ -379,6 +381,15 @@
         </div>
       </div>
       <div class="modal-footer">
+        <span *ngIf="selectedCategory?.status == categoryStatus.AWARD" class="text-success mr-auto">
+            <i class="fa fa-check-circle"></i> Classifica confermata · Da premiare
+        </span>
+        <button *ngIf="selectedCategory?.status == categoryStatus.CLOSED"
+                type="button" class="btn btn-success rounded-pill px-4"
+                [disabled]="isConfirmingRanking || !rankingData.length"
+                (click)="confirmSelectedRanking()">
+            {{ isConfirmingRanking ? 'Conferma in corso...' : 'Conferma classifica e invia online' }}
+        </button>
         <button type="button" class="btn btn-secondary rounded-pill px-4" (click)="rankingModal.hide()">Chiudi</button>
       </div>
     </div>

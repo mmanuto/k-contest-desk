@@ -8,6 +8,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import {interval,Subscription} from 'rxjs';
 import {categoryStatus} from '../../constants';
+import { LocalStorageService } from 'angular-2-local-storage';
 
 import * as Dataset from '../tatami/datasets';
 import { InMemoryDatabase } from '../tatami/storage/memory';
@@ -102,17 +103,21 @@ export class CategoriesComponent implements OnInit {
 
   selectedCategoryForRanking: any = null;
   rankingData: any[] = [];
+  isConfirmingRanking = false;
+  isAdmin = false;
 
   rankingList: any[] = []; // Qui salviamo i dati
 
   public tatamiForm: FormGroup;
   
   constructor(public fb:UntypedFormBuilder, 
+              private storageService: LocalStorageService,
               public toastrService: ToastrService,
               public translateService: TranslateService,
               public categoriesService:CategoriesService,
               public menuService:MenuService, 
               public modalService: NgbModal) {
+                this.isAdmin = this.storageService.get('userType') === 'admin';
 
                 this.mySubscription= interval(50000).subscribe((x =>{
                   this.getCategories();
@@ -533,8 +538,37 @@ export class CategoriesComponent implements OnInit {
   // Visualizza classifica
   //====================================================================================================
 
+    public confirmSelectedRanking(){
+      if (this.isConfirmingRanking || !this.rankingData.length ||
+          this.selectedCategory?.status !== categoryStatus.CLOSED) {
+        return;
+      }
+      if (!window.confirm('Confermi che la classifica corrisponde al cartaceo? La categoria passerà a Da premiare e la classifica sarà accodata per l’invio online.')) {
+        return;
+      }
+      this.isConfirmingRanking = true;
+      this.categoriesService.confirmRanking(this.selectedCategory.id).subscribe({
+        next: (response: any) => {
+          this.isConfirmingRanking = false;
+          if (!response.result.success) {
+            this.toastrService.error(response.result.message || 'Conferma non riuscita.');
+            return;
+          }
+          this.selectedCategory.status = categoryStatus.AWARD;
+          this.toastrService.success('Classifica confermata. Categoria da premiare; invio online accodato.');
+          this.getCategories();
+          this.getTatamiStatus();
+        },
+        error: () => {
+          this.isConfirmingRanking = false;
+          this.toastrService.error('Impossibile confermare la classifica. Verifica la connessione locale.');
+        }
+      });
+    }
+
     public openRankingModal(category: { id: any; }){
     this.selectedCategory = category;
+    this.rankingData = [];
 
     console.log(this.selectedCategory);
 

@@ -55,7 +55,11 @@ export class CategoriesService {
         return this.http.post(environment.BASEAPPURL + 'results/getRankingData', request);
     }
 
+    confirmRanking(categoryId: string){
+        return this.http.post(environment.BASEAPPURL + 'results/confirmRanking', {categorycode_id: categoryId});
+    }
+
     getClassificaSocieta(): Observable<any[]> {
         return this.http.get<any[]>(environment.BASEAPPURL + '/clubs/getClassificaSocieta');
 }
-} 
+}
